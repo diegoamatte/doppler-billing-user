@@ -1,14 +1,27 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading.Tasks;
+using Doppler.BillingUser.Test.Controllers;
+using Microsoft.AspNetCore.Mvc.ApplicationParts;
+using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Doppler.BillingUser
+namespace Doppler.BillingUser.Test
 {
+    public class ExternalControllersFeatureProvider : IApplicationFeatureProvider<ControllerFeature>
+    {
+        public void PopulateFeature(IEnumerable<ApplicationPart> parts, ControllerFeature feature)
+        {
+            feature.Controllers.Add(typeof(HelloController).GetTypeInfo());
+        }
+    }
     public class AuthorizationTest
         : IClassFixture<WebApplicationFactory<Startup>>
     {
@@ -30,11 +43,69 @@ namespace Doppler.BillingUser
 
         public AuthorizationTest(WebApplicationFactory<Startup> factory, ITestOutputHelper output)
         {
+            factory = new WebApplicationFactory<Startup>().WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    var partManager = (ApplicationPartManager)services
+                        .Last(descriptor => descriptor.ServiceType == typeof(ApplicationPartManager))
+                        .ImplementationInstance;
+
+                    partManager.FeatureProviders.Add(new ExternalControllersFeatureProvider());
+                });
+            });
             _factory = factory;
             _output = output;
         }
 
         [Theory]
+        [InlineData("/hello/anonymous", HttpStatusCode.OK)]
+        public async Task GET_helloAnonymous_should_not_require_token(string url, HttpStatusCode expectedStatusCode)
+        {
+            // Arrange
+            var client = _factory.CreateClient(new WebApplicationFactoryClientOptions());
+
+            // Act
+            var response = await client.GetAsync(url);
+
+            // Assert
+            Assert.Equal(expectedStatusCode, response.StatusCode);
+        }
+
+        [Theory]
+        [InlineData("/hello/anonymous", TOKEN_EMPTY, HttpStatusCode.OK)]
+        [InlineData("/hello/anonymous", TOKEN_EXPIRE_20961002, HttpStatusCode.OK)]
+        [InlineData("/hello/anonymous", TOKEN_EXPIRE_20330518, HttpStatusCode.OK)]
+        [InlineData("/hello/anonymous", TOKEN_EXPIRE_20010908, HttpStatusCode.OK)]
+        [InlineData("/hello/anonymous", TOKEN_BROKEN, HttpStatusCode.OK)]
+        [InlineData("/hello/anonymous", TOKEN_SUPERUSER_EXPIRE_20961002, HttpStatusCode.OK)]
+        [InlineData("/hello/anonymous", TOKEN_SUPERUSER_EXPIRE_20330518, HttpStatusCode.OK)]
+        [InlineData("/hello/anonymous", TOKEN_SUPERUSER_EXPIRE_20010908, HttpStatusCode.OK)]
+        [InlineData("/hello/anonymous", TOKEN_SUPERUSER_FALSE_EXPIRE_20330518, HttpStatusCode.OK)]
+        [InlineData("/hello/anonymous", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20961002, HttpStatusCode.OK)]
+        [InlineData("/hello/anonymous", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.OK)]
+        [InlineData("/hello/anonymous", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20010908, HttpStatusCode.OK)]
+        public async Task GET_helloAnonymous_should_accept_any_token(string url, string token, HttpStatusCode expectedStatusCode)
+        {
+            // Arrange
+            var client = _factory.CreateClient(new WebApplicationFactoryClientOptions());
+
+            var request = new HttpRequestMessage(HttpMethod.Get, url)
+            {
+                Headers = { { "Authorization", $"Bearer {token}" } }
+            };
+
+            // Act
+            var response = await client.SendAsync(request);
+            _output.WriteLine(response.GetHeadersAsString());
+
+            // Assert
+            Assert.Equal(expectedStatusCode, response.StatusCode);
+        }
+
+        [Theory]
+        [InlineData("/hello/valid-token", HttpStatusCode.Unauthorized)]
+        [InlineData("/hello/superuser", HttpStatusCode.Unauthorized)]
         [InlineData("/accounts/test1@test.com/currentbillinginformation", HttpStatusCode.Unauthorized)]
         [InlineData("/accounts/test1@test.com/current-payment-method", HttpStatusCode.Unauthorized)]
         public async Task GET_authenticated_endpoints_should_require_token(string url, HttpStatusCode expectedStatusCode)
@@ -52,6 +123,22 @@ namespace Doppler.BillingUser
         }
 
         [Theory]
+        [InlineData("/hello/valid-token", TOKEN_EMPTY, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
+        [InlineData("/hello/valid-token", TOKEN_EXPIRE_20961002, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
+        [InlineData("/hello/valid-token", TOKEN_EXPIRE_20010908, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token expired at")]
+        [InlineData("/hello/valid-token", TOKEN_BROKEN, HttpStatusCode.Unauthorized, "invalid_token", "")]
+        [InlineData("/hello/valid-token", TOKEN_SUPERUSER_EXPIRE_20961002, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
+        [InlineData("/hello/valid-token", TOKEN_SUPERUSER_EXPIRE_20010908, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token expired at")]
+        [InlineData("/hello/valid-token", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20961002, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
+        [InlineData("/hello/valid-token", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20010908, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token expired at")]
+        [InlineData("/hello/superuser", TOKEN_EMPTY, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
+        [InlineData("/hello/superuser", TOKEN_EXPIRE_20961002, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
+        [InlineData("/hello/superuser", TOKEN_EXPIRE_20010908, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token expired at")]
+        [InlineData("/hello/superuser", TOKEN_BROKEN, HttpStatusCode.Unauthorized, "invalid_token", "")]
+        [InlineData("/hello/superuser", TOKEN_SUPERUSER_EXPIRE_20961002, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
+        [InlineData("/hello/superuser", TOKEN_SUPERUSER_EXPIRE_20010908, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token expired at")]
+        [InlineData("/hello/superuser", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20961002, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
+        [InlineData("/hello/superuser", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20010908, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token expired at")]
         [InlineData("/accounts/test1@test.com/currentbillinginformation", TOKEN_EMPTY, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
         [InlineData("/accounts/test1@test.com/currentbillinginformation", TOKEN_EXPIRE_20961002, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
         [InlineData("/accounts/test1@test.com/currentbillinginformation", TOKEN_EXPIRE_20010908, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token expired at")]
@@ -90,6 +177,77 @@ namespace Doppler.BillingUser
         }
 
         [Theory]
+        [InlineData("/hello/valid-token", TOKEN_EXPIRE_20330518, HttpStatusCode.OK)]
+        [InlineData("/hello/valid-token", TOKEN_SUPERUSER_EXPIRE_20330518, HttpStatusCode.OK)]
+        [InlineData("/hello/valid-token", TOKEN_SUPERUSER_FALSE_EXPIRE_20330518, HttpStatusCode.OK)]
+        [InlineData("/hello/valid-token", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.OK)]
+        public async Task GET_helloValidToken_should_accept_valid_token(string url, string token, HttpStatusCode expectedStatusCode)
+        {
+            // Arrange
+            var client = _factory.CreateClient(new WebApplicationFactoryClientOptions());
+
+            var request = new HttpRequestMessage(HttpMethod.Get, url)
+            {
+                Headers = { { "Authorization", $"Bearer {token}" } }
+            };
+
+            // Act
+            var response = await client.SendAsync(request);
+            _output.WriteLine(response.GetHeadersAsString());
+
+            // Assert
+            Assert.Equal(expectedStatusCode, response.StatusCode);
+        }
+
+        [Theory]
+        [InlineData("/hello/superuser", TOKEN_EXPIRE_20330518, HttpStatusCode.Forbidden)]
+        [InlineData("/hello/superuser", TOKEN_SUPERUSER_FALSE_EXPIRE_20330518, HttpStatusCode.Forbidden)]
+        [InlineData("/hello/superuser", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.Forbidden)]
+        public async Task GET_helloSuperUser_should_require_a_valid_token_with_isSU_flag(string url, string token, HttpStatusCode expectedStatusCode)
+        {
+            // Arrange
+            var client = _factory.CreateClient(new WebApplicationFactoryClientOptions());
+
+            var request = new HttpRequestMessage(HttpMethod.Get, url)
+            {
+                Headers = { { "Authorization", $"Bearer {token}" } }
+            };
+
+            // Act
+            var response = await client.SendAsync(request);
+            _output.WriteLine(response.GetHeadersAsString());
+
+            // Assert
+            Assert.Equal(expectedStatusCode, response.StatusCode);
+        }
+
+        [Theory]
+        [InlineData("/hello/superuser", TOKEN_SUPERUSER_EXPIRE_20330518, HttpStatusCode.OK)]
+        public async Task GET_helloSuperUser_should_accept_valid_token_with_isSU_flag(string url, string token, HttpStatusCode expectedStatusCode)
+        {
+            // Arrange
+            var client = _factory.CreateClient(new WebApplicationFactoryClientOptions());
+
+            var request = new HttpRequestMessage(HttpMethod.Get, url)
+            {
+                Headers = { { "Authorization", $"Bearer {token}" } }
+            };
+
+            // Act
+            var response = await client.SendAsync(request);
+            _output.WriteLine(response.GetHeadersAsString());
+
+            // Assert
+            Assert.Equal(expectedStatusCode, response.StatusCode);
+        }
+
+        [Theory]
+        [InlineData("/accounts/123/hello", TOKEN_EXPIRE_20330518, HttpStatusCode.Forbidden)]
+        [InlineData("/accounts/123/hello", TOKEN_SUPERUSER_FALSE_EXPIRE_20330518, HttpStatusCode.Forbidden)]
+        [InlineData("/accounts/456/hello", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.Forbidden)]
+        [InlineData("/accounts/test1@test.com/hello", TOKEN_EXPIRE_20330518, HttpStatusCode.Forbidden)]
+        [InlineData("/accounts/test1@test.com/hello", TOKEN_SUPERUSER_FALSE_EXPIRE_20330518, HttpStatusCode.Forbidden)]
+        [InlineData("/accounts/test2@test.com/hello", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.Forbidden)]
         [InlineData("/accounts/test1@test.com/currentbillinginformation", TOKEN_EXPIRE_20330518, HttpStatusCode.Forbidden)]
         [InlineData("/accounts/test1@test.com/currentbillinginformation", TOKEN_SUPERUSER_FALSE_EXPIRE_20330518, HttpStatusCode.Forbidden)]
         [InlineData("/accounts/test2@test.com/currentbillinginformation", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.Forbidden)]
@@ -115,6 +273,10 @@ namespace Doppler.BillingUser
         }
 
         [Theory]
+        [InlineData("/accounts/123/hello", TOKEN_SUPERUSER_EXPIRE_20330518, HttpStatusCode.OK)]
+        [InlineData("/accounts/123/hello", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.OK)]
+        [InlineData("/accounts/test1@test.com/hello", TOKEN_SUPERUSER_EXPIRE_20330518, HttpStatusCode.OK)]
+        [InlineData("/accounts/test1@test.com/hello", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.OK)]
         [InlineData("/accounts/test1@test.com/currentbillinginformation", TOKEN_SUPERUSER_EXPIRE_20330518, HttpStatusCode.OK)]
         [InlineData("/accounts/test1@test.com/currentbillinginformation", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.OK)]
         [InlineData("/accounts/test1@test.com/current-payment-method", TOKEN_SUPERUSER_EXPIRE_20330518, HttpStatusCode.OK)]
