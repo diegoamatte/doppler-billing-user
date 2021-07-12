@@ -106,8 +106,8 @@ namespace Doppler.BillingUser.Test
         [Theory]
         [InlineData("/hello/valid-token", HttpStatusCode.Unauthorized)]
         [InlineData("/hello/superuser", HttpStatusCode.Unauthorized)]
-        [InlineData("/accounts/test1@test.com/currentbillinginformation", HttpStatusCode.Unauthorized)]
-        [InlineData("/accounts/test1@test.com/current-payment-method", HttpStatusCode.Unauthorized)]
+        [InlineData("/accounts/test1@test.com/billing-information", HttpStatusCode.Unauthorized)]
+        [InlineData("/accounts/test1@test.com/payment-methods/current", HttpStatusCode.Unauthorized)]
         public async Task GET_authenticated_endpoints_should_require_token(string url, HttpStatusCode expectedStatusCode)
         {
             // Arrange
@@ -139,22 +139,22 @@ namespace Doppler.BillingUser.Test
         [InlineData("/hello/superuser", TOKEN_SUPERUSER_EXPIRE_20010908, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token expired at")]
         [InlineData("/hello/superuser", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20961002, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
         [InlineData("/hello/superuser", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20010908, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token expired at")]
-        [InlineData("/accounts/test1@test.com/currentbillinginformation", TOKEN_EMPTY, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
-        [InlineData("/accounts/test1@test.com/currentbillinginformation", TOKEN_EXPIRE_20961002, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
-        [InlineData("/accounts/test1@test.com/currentbillinginformation", TOKEN_EXPIRE_20010908, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token expired at")]
-        [InlineData("/accounts/test1@test.com/currentbillinginformation", TOKEN_BROKEN, HttpStatusCode.Unauthorized, "invalid_token", "")]
-        [InlineData("/accounts/test1@test.com/currentbillinginformation", TOKEN_SUPERUSER_EXPIRE_20961002, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
-        [InlineData("/accounts/test1@test.com/currentbillinginformation", TOKEN_SUPERUSER_EXPIRE_20010908, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token expired at")]
-        [InlineData("/accounts/test1@test.com/currentbillinginformation", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20961002, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
-        [InlineData("/accounts/test1@test.com/currentbillinginformation", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20010908, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token expired at")]
-        [InlineData("/accounts/test1@test.com/current-payment-method", TOKEN_EMPTY, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
-        [InlineData("/accounts/test1@test.com/current-payment-method", TOKEN_EXPIRE_20961002, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
-        [InlineData("/accounts/test1@test.com/current-payment-method", TOKEN_EXPIRE_20010908, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token expired at")]
-        [InlineData("/accounts/test1@test.com/current-payment-method", TOKEN_BROKEN, HttpStatusCode.Unauthorized, "invalid_token", "")]
-        [InlineData("/accounts/test1@test.com/current-payment-method", TOKEN_SUPERUSER_EXPIRE_20961002, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
-        [InlineData("/accounts/test1@test.com/current-payment-method", TOKEN_SUPERUSER_EXPIRE_20010908, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token expired at")]
-        [InlineData("/accounts/test1@test.com/current-payment-method", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20961002, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
-        [InlineData("/accounts/test1@test.com/current-payment-method", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20010908, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token expired at")]
+        [InlineData("/accounts/test1@test.com/billing-information", TOKEN_EMPTY, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
+        [InlineData("/accounts/test1@test.com/billing-information", TOKEN_EXPIRE_20961002, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
+        [InlineData("/accounts/test1@test.com/billing-information", TOKEN_EXPIRE_20010908, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token expired at")]
+        [InlineData("/accounts/test1@test.com/billing-information", TOKEN_BROKEN, HttpStatusCode.Unauthorized, "invalid_token", "")]
+        [InlineData("/accounts/test1@test.com/billing-information", TOKEN_SUPERUSER_EXPIRE_20961002, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
+        [InlineData("/accounts/test1@test.com/billing-information", TOKEN_SUPERUSER_EXPIRE_20010908, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token expired at")]
+        [InlineData("/accounts/test1@test.com/billing-information", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20961002, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
+        [InlineData("/accounts/test1@test.com/billing-information", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20010908, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token expired at")]
+        [InlineData("/accounts/test1@test.com/payment-methods/current", TOKEN_EMPTY, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
+        [InlineData("/accounts/test1@test.com/payment-methods/current", TOKEN_EXPIRE_20961002, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
+        [InlineData("/accounts/test1@test.com/payment-methods/current", TOKEN_EXPIRE_20010908, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token expired at")]
+        [InlineData("/accounts/test1@test.com/payment-methods/current", TOKEN_BROKEN, HttpStatusCode.Unauthorized, "invalid_token", "")]
+        [InlineData("/accounts/test1@test.com/payment-methods/current", TOKEN_SUPERUSER_EXPIRE_20961002, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
+        [InlineData("/accounts/test1@test.com/payment-methods/current", TOKEN_SUPERUSER_EXPIRE_20010908, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token expired at")]
+        [InlineData("/accounts/test1@test.com/payment-methods/current", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20961002, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token has no expiration\"")]
+        [InlineData("/accounts/test1@test.com/payment-methods/current", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20010908, HttpStatusCode.Unauthorized, "invalid_token", "error_description=\"The token expired at")]
         public async Task GET_authenticated_endpoints_should_require_a_valid_token(string url, string token, HttpStatusCode expectedStatusCode, string error, string extraErrorInfo)
         {
             // Arrange
@@ -248,12 +248,12 @@ namespace Doppler.BillingUser.Test
         [InlineData("/accounts/test1@test.com/hello", TOKEN_EXPIRE_20330518, HttpStatusCode.Forbidden)]
         [InlineData("/accounts/test1@test.com/hello", TOKEN_SUPERUSER_FALSE_EXPIRE_20330518, HttpStatusCode.Forbidden)]
         [InlineData("/accounts/test2@test.com/hello", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.Forbidden)]
-        [InlineData("/accounts/test1@test.com/currentbillinginformation", TOKEN_EXPIRE_20330518, HttpStatusCode.Forbidden)]
-        [InlineData("/accounts/test1@test.com/currentbillinginformation", TOKEN_SUPERUSER_FALSE_EXPIRE_20330518, HttpStatusCode.Forbidden)]
-        [InlineData("/accounts/test2@test.com/currentbillinginformation", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.Forbidden)]
-        [InlineData("/accounts/test1@test.com/current-payment-method", TOKEN_EXPIRE_20330518, HttpStatusCode.Forbidden)]
-        [InlineData("/accounts/test1@test.com/current-payment-method", TOKEN_SUPERUSER_FALSE_EXPIRE_20330518, HttpStatusCode.Forbidden)]
-        [InlineData("/accounts/test2@test.com/current-payment-method", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.Forbidden)]
+        [InlineData("/accounts/test1@test.com/billing-information", TOKEN_EXPIRE_20330518, HttpStatusCode.Forbidden)]
+        [InlineData("/accounts/test1@test.com/billing-information", TOKEN_SUPERUSER_FALSE_EXPIRE_20330518, HttpStatusCode.Forbidden)]
+        [InlineData("/accounts/test2@test.com/billing-information", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.Forbidden)]
+        [InlineData("/accounts/test1@test.com/payment-methods/current", TOKEN_EXPIRE_20330518, HttpStatusCode.Forbidden)]
+        [InlineData("/accounts/test1@test.com/payment-methods/current", TOKEN_SUPERUSER_FALSE_EXPIRE_20330518, HttpStatusCode.Forbidden)]
+        [InlineData("/accounts/test2@test.com/payment-methods/current", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.Forbidden)]
         public async Task GET_account_endpoint_should_require_a_valid_token_with_isSU_flag_or_a_token_for_the_right_account(string url, string token, HttpStatusCode expectedStatusCode)
         {
             // Arrange
@@ -277,10 +277,10 @@ namespace Doppler.BillingUser.Test
         [InlineData("/accounts/123/hello", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.OK)]
         [InlineData("/accounts/test1@test.com/hello", TOKEN_SUPERUSER_EXPIRE_20330518, HttpStatusCode.OK)]
         [InlineData("/accounts/test1@test.com/hello", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.OK)]
-        [InlineData("/accounts/test1@test.com/currentbillinginformation", TOKEN_SUPERUSER_EXPIRE_20330518, HttpStatusCode.OK)]
-        [InlineData("/accounts/test1@test.com/currentbillinginformation", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.OK)]
-        [InlineData("/accounts/test1@test.com/current-payment-method", TOKEN_SUPERUSER_EXPIRE_20330518, HttpStatusCode.OK)]
-        [InlineData("/accounts/test1@test.com/current-payment-method", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.OK)]
+        [InlineData("/accounts/test1@test.com/billing-information", TOKEN_SUPERUSER_EXPIRE_20330518, HttpStatusCode.OK)]
+        [InlineData("/accounts/test1@test.com/billing-information", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.OK)]
+        [InlineData("/accounts/test1@test.com/payment-methods/current", TOKEN_SUPERUSER_EXPIRE_20330518, HttpStatusCode.OK)]
+        [InlineData("/accounts/test1@test.com/payment-methods/current", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.OK)]
         public async Task GET_account_endpoint_should_accept_valid_token_with_isSU_flag_or_a_token_for_the_right_account(string url, string token, HttpStatusCode expectedStatusCode)
         {
             // Arrange

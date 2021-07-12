@@ -9,31 +9,31 @@ namespace Doppler.BillingUser.Controllers
     public class BillingController
     {
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
-        [HttpGet("/accounts/{accountname}/currentbillinginformation")]
-        public string GetCurrentBillingInformation(string accountname)
+        [HttpGet("/accounts/{accountname}/billing-information")]
+        public string GetBillingInformation(string accountname)
         {
             return $"Hello! \"you\" that have access to GetCurrentBillingInformation with accountname '{accountname}'";
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
-        [HttpPut("/accounts/{accountname}/billinginformation")]
+        [HttpPut("/accounts/{accountname}/billing-information")]
         public string UpdateBillingInformation(string accountname)
         {
             return $"Hello! \"you\" that have access to UpdateBillingInformation with accountname '{accountname}'";
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
-        [HttpGet("/accounts/{accountname}/current-payment-method")]
+        [HttpGet("/accounts/{accountname}/payment-methods/current")]
         public string GetCurrentPaymentMethod(string accountname)
         {
             return $"Hello! \"you\" that have access to GetCurrentPaymentMethod with accountname '{accountname}'";
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
-        [HttpPost("/accounts/{accountname}/billing")]
-        public string TryBilling(string accountname)
+        [HttpPost("/accounts/{accountname}/upgrade")]
+        public string Upgrade(string accountname)
         {
-            return $"Hello! \"you\" that have access to TryBilling with accountname '{accountname}'";
+            return $"Hello! \"you\" that have access to Upgrade with accountname '{accountname}'";
         }
     }
 }
