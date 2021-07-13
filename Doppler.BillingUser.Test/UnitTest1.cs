@@ -1,7 +1,7 @@
 using System;
 using Xunit;
 
-namespace Doppler.BillingUser
+namespace Doppler.BillingUser.Test
 {
     public class UnitTest1
     {

@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Net.Http;
 
-namespace Doppler.BillingUser
+namespace Doppler.BillingUser.Test
 {
     public static class HttpResponseMessageExtensions
     {
