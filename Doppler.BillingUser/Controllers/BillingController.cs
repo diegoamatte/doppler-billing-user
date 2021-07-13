@@ -30,8 +30,8 @@ namespace Doppler.BillingUser.Controllers
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
-        [HttpPost("/accounts/{accountname}/upgrade")]
-        public string Upgrade(string accountname)
+        [HttpPost("/accounts/{accountname}/agreements")]
+        public string CreateAgreement(string accountname)
         {
             return $"Hello! \"you\" that have access to Upgrade with accountname '{accountname}'";
         }
