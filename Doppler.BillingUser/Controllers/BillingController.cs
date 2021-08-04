@@ -1,6 +1,9 @@
 using Doppler.BillingUser.DopplerSecurity;
+using Doppler.BillingUser.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace Doppler.BillingUser.Controllers
 {
@@ -8,11 +11,27 @@ namespace Doppler.BillingUser.Controllers
     [ApiController]
     public class BillingController
     {
-        [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
-        [HttpGet("/accounts/{accountname}/billing-information")]
-        public string GetBillingInformation(string accountname)
+        private readonly ILogger _logger;
+        private readonly BillingRepository _billingRepository;
+
+        public BillingController(ILogger<BillingController> logger, BillingRepository billingRepository)
         {
-            return $"Hello! \"you\" that have access to GetCurrentBillingInformation with accountname '{accountname}'";
+            _logger = logger;
+            _billingRepository = billingRepository;
+        }
+
+        //[Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
+        [HttpGet("/accounts/{accountName}/billing-information")]
+        public async Task<IActionResult> GetBillingInformation(string accountName)
+        {
+            var billingInformation = await _billingRepository.GetBillingInformation(accountName);
+
+            if (billingInformation == null)
+            {
+                return new NotFoundResult();
+            }
+
+            return new OkObjectResult(billingInformation);
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
