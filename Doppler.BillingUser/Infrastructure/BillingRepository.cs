@@ -21,17 +21,17 @@ namespace Doppler.BillingUser.Infrastructure
 SELECT
     U.BillingFirstName AS Firstname,
     U.BillingLastName AS Lastname,
-    U.Address,
-    U.CityName AS City,
+    U.BillingAddress AS Address,
+    U.BillingCity AS City,
     isnull(S.Name, '') AS Province,
     isnull(CO.Code, '') AS Country,
-    U.ZipCode,
-    U.PhoneNumber AS Phone,
+    U.BillingZip AS ZipCode,
+    U.BillingPhone AS Phone,
     U.IdSecurityQuestion AS ChooseQuestion,
     U.IdSecurityQuestion AS AnswerQuestion
 FROM
     [User] U
-    LEFT JOIN [State] S ON U.IdState = S.IdState
+    LEFT JOIN [State] S ON U.IdBillingState = S.IdState
     LEFT JOIN [Country] CO ON S.IdCountry = CO.IdCountry
     LEFT JOIN [SecurityQuestion] SQ ON SQ.IdSecurityQuestion = U.IdSecurityQuestion
 WHERE

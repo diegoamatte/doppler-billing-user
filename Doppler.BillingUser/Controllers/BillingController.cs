@@ -20,7 +20,7 @@ namespace Doppler.BillingUser.Controllers
             _billingRepository = billingRepository;
         }
 
-        //[Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
+        [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
         [HttpGet("/accounts/{accountName}/billing-information")]
         public async Task<IActionResult> GetBillingInformation(string accountName)
         {
