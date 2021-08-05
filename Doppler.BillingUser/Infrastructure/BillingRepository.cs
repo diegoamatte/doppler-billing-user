@@ -23,17 +23,14 @@ SELECT
     U.BillingLastName AS Lastname,
     U.BillingAddress AS Address,
     U.BillingCity AS City,
-    isnull(S.Name, '') AS Province,
+    isnull(S.StateCode, '') AS Province,
     isnull(CO.Code, '') AS Country,
     U.BillingZip AS ZipCode,
-    U.BillingPhone AS Phone,
-    U.IdSecurityQuestion AS ChooseQuestion,
-    U.IdSecurityQuestion AS AnswerQuestion
+    U.BillingPhone AS Phone
 FROM
     [User] U
     LEFT JOIN [State] S ON U.IdBillingState = S.IdState
     LEFT JOIN [Country] CO ON S.IdCountry = CO.IdCountry
-    LEFT JOIN [SecurityQuestion] SQ ON SQ.IdSecurityQuestion = U.IdSecurityQuestion
 WHERE
     U.Email = @email",
                     new { email });

@@ -97,9 +97,7 @@ namespace Doppler.BillingUser.Test
                 City = "Test City",
                 Province = "Test Province",
                 ZipCode = "Test ZipCode",
-                Country = "Test Country",
-                ChooseQuestion = 1,
-                AnswerQuestion = "answertest"
+                Country = "Test Country"
             } };
 
             var mockConnection = new Mock<DbConnection>();
@@ -140,12 +138,10 @@ namespace Doppler.BillingUser.Test
                 City = "Test City",
                 Province = "Test Province",
                 ZipCode = "Test ZipCode",
-                Country = "Test Country",
-                ChooseQuestion = 1,
-                AnswerQuestion = "answertest"
+                Country = "Test Country"
             } };
 
-            var expectedContent = "{\"firstname\":\"Test First Name\",\"lastname\":\"Test Last Name\",\"address\":\"Test Address\",\"city\":\"Test City\",\"province\":\"Test Province\",\"country\":\"Test Country\",\"zipCode\":\"Test ZipCode\",\"phone\":\"5555555\",\"chooseQuestion\":1,\"answerQuestion\":\"answertest\"}";
+            var expectedContent = "{\"firstname\":\"Test First Name\",\"lastname\":\"Test Last Name\",\"address\":\"Test Address\",\"city\":\"Test City\",\"province\":\"Test Province\",\"country\":\"Test Country\",\"zipCode\":\"Test ZipCode\",\"phone\":\"5555555\"}";
 
             var mockConnection = new Mock<DbConnection>();
 

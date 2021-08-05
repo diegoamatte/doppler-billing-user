@@ -10,7 +10,5 @@ namespace Doppler.BillingUser.Model
         public string Country { get; set; }
         public string ZipCode { get; set; }
         public string Phone { get; set; }
-        public int ChooseQuestion { get; set; }
-        public string AnswerQuestion { get; set; }
     }
 }
