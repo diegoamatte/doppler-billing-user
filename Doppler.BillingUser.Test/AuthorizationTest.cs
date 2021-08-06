@@ -1,15 +1,14 @@
-using System;
+using Doppler.BillingUser.Test.Controllers;
+using Microsoft.AspNetCore.Mvc.ApplicationParts;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
-using Doppler.BillingUser.Test.Controllers;
-using Microsoft.AspNetCore.Mvc.ApplicationParts;
-using Microsoft.AspNetCore.Mvc.Controllers;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -248,9 +247,6 @@ namespace Doppler.BillingUser.Test
         [InlineData("/accounts/test1@test.com/hello", TOKEN_EXPIRE_20330518, HttpStatusCode.Forbidden)]
         [InlineData("/accounts/test1@test.com/hello", TOKEN_SUPERUSER_FALSE_EXPIRE_20330518, HttpStatusCode.Forbidden)]
         [InlineData("/accounts/test2@test.com/hello", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.Forbidden)]
-        [InlineData("/accounts/test1@test.com/billing-information", TOKEN_EXPIRE_20330518, HttpStatusCode.Forbidden)]
-        [InlineData("/accounts/test1@test.com/billing-information", TOKEN_SUPERUSER_FALSE_EXPIRE_20330518, HttpStatusCode.Forbidden)]
-        [InlineData("/accounts/test2@test.com/billing-information", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.Forbidden)]
         [InlineData("/accounts/test1@test.com/payment-methods/current", TOKEN_EXPIRE_20330518, HttpStatusCode.Forbidden)]
         [InlineData("/accounts/test1@test.com/payment-methods/current", TOKEN_SUPERUSER_FALSE_EXPIRE_20330518, HttpStatusCode.Forbidden)]
         [InlineData("/accounts/test2@test.com/payment-methods/current", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.Forbidden)]
@@ -277,8 +273,6 @@ namespace Doppler.BillingUser.Test
         [InlineData("/accounts/123/hello", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.OK)]
         [InlineData("/accounts/test1@test.com/hello", TOKEN_SUPERUSER_EXPIRE_20330518, HttpStatusCode.OK)]
         [InlineData("/accounts/test1@test.com/hello", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.OK)]
-        [InlineData("/accounts/test1@test.com/billing-information", TOKEN_SUPERUSER_EXPIRE_20330518, HttpStatusCode.OK)]
-        [InlineData("/accounts/test1@test.com/billing-information", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.OK)]
         [InlineData("/accounts/test1@test.com/payment-methods/current", TOKEN_SUPERUSER_EXPIRE_20330518, HttpStatusCode.OK)]
         [InlineData("/accounts/test1@test.com/payment-methods/current", TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518, HttpStatusCode.OK)]
         public async Task GET_account_endpoint_should_accept_valid_token_with_isSU_flag_or_a_token_for_the_right_account(string url, string token, HttpStatusCode expectedStatusCode)
