@@ -1,9 +1,11 @@
 using Doppler.BillingUser.DopplerSecurity;
+using Doppler.BillingUser.Model;
 using Doppler.BillingUser.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
+using FluentValidation;
 
 namespace Doppler.BillingUser.Controllers
 {
@@ -13,11 +15,16 @@ namespace Doppler.BillingUser.Controllers
     {
         private readonly ILogger _logger;
         private readonly BillingRepository _billingRepository;
+        private readonly IValidator<BillingInformation> _validator;
 
-        public BillingController(ILogger<BillingController> logger, BillingRepository billingRepository)
+        public BillingController(
+            ILogger<BillingController> logger,
+            BillingRepository billingRepository,
+            IValidator<BillingInformation> validator)
         {
             _logger = logger;
             _billingRepository = billingRepository;
+            _validator = validator;
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
@@ -36,9 +43,17 @@ namespace Doppler.BillingUser.Controllers
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
         [HttpPut("/accounts/{accountname}/billing-information")]
-        public string UpdateBillingInformation(string accountname)
+        public async Task<IActionResult> UpdateBillingInformation(string accountname, [FromBody] BillingInformation billingInformation)
         {
-            return $"Hello! \"you\" that have access to UpdateBillingInformation with accountname '{accountname}'";
+            var results = await _validator.ValidateAsync(billingInformation);
+            if (!results.IsValid)
+            {
+                return new BadRequestObjectResult(results.ToString("-"));
+            }
+
+            await _billingRepository.UpdateBillingInformation(accountname, billingInformation);
+
+            return new OkObjectResult("Successfully");
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]

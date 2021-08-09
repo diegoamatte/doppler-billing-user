@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Doppler.BillingUser.Infrastructure;
+using Doppler.BillingUser.Model;
+using Doppler.BillingUser.Validators;
+using FluentValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -63,6 +66,8 @@ namespace Doppler.BillingUser
                     c.AddServer(new OpenApiServer() { Url = baseUrl });
                 };
             });
+
+            services.AddScoped<IValidator<BillingInformation>, BillingInformationValidator>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

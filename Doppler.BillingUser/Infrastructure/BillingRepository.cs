@@ -37,5 +37,33 @@ WHERE
                 return results.FirstOrDefault();
             }
         }
+
+        public async Task UpdateBillingInformation(string accountName, BillingInformation billingInformation)
+        {
+            using var connection = await _connectionFactory.GetConnection();
+
+            await connection.ExecuteAsync(@"
+UPDATE [User] SET
+    [BillingFirstName] = @firstname,
+    [BillingLastName] = @lastname,
+    [BillingAddress] = @address,
+    [BillingCity] = @city,
+    [IdBillingState] = (SELECT IdState FROM [State] WHERE StateCode = @idBillingState),
+    [BillingPhone] = @phoneNumber,
+    [BillingZip] = @zipCode
+WHERE
+    Email = @email;",
+                new
+                {
+                    @firstname = billingInformation.Firstname,
+                    @lastname = billingInformation.Lastname,
+                    @address = billingInformation.Address,
+                    @city = billingInformation.City,
+                    @idBillingState = billingInformation.Province,
+                    @phoneNumber = billingInformation.Phone,
+                    @zipCode = billingInformation.ZipCode,
+                    @email = accountName
+                });
+        }
     }
 }
