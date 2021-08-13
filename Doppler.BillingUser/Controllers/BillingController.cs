@@ -58,9 +58,18 @@ namespace Doppler.BillingUser.Controllers
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
         [HttpGet("/accounts/{accountname}/payment-methods/current")]
-        public string GetCurrentPaymentMethod(string accountname)
+        public async Task<IActionResult> GetCurrentPaymentMethod(string accountname)
         {
-            return $"Hello! \"you\" that have access to GetCurrentPaymentMethod with accountname '{accountname}'";
+            _logger.LogDebug("Get current payment method.");
+
+            var currentPaymentMethod = await _billingRepository.GetCurrentPaymentMethod(accountname);
+
+            if (currentPaymentMethod == null)
+            {
+                return new NotFoundResult();
+            }
+
+            return new OkObjectResult(currentPaymentMethod);
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]

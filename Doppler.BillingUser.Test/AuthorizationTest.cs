@@ -4,13 +4,21 @@ using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
+using Dapper;
+using Doppler.BillingUser.Encryption;
+using Doppler.BillingUser.Model;
+using Doppler.BillingUser.Test.Utils;
+using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using Xunit;
 using Xunit.Abstractions;
+using Moq.Dapper;
 
 namespace Doppler.BillingUser.Test
 {
@@ -278,7 +286,24 @@ namespace Doppler.BillingUser.Test
         public async Task GET_account_endpoint_should_accept_valid_token_with_isSU_flag_or_a_token_for_the_right_account(string url, string token, HttpStatusCode expectedStatusCode)
         {
             // Arrange
-            var client = _factory.CreateClient(new WebApplicationFactoryClientOptions());
+            var mockConnection = new Mock<DbConnection>();
+            mockConnection.SetupDapperAsync(c => c.QueryFirstOrDefaultAsync<PaymentMethod>(null, null, null, null, null))
+                .ReturnsAsync(new PaymentMethod
+                {
+                    CCHolderFullName = "Holder test"
+                });
+
+            var encryptedMock = new Mock<IEncryptionService>();
+            encryptedMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("TEST");
+
+            var client = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    services.SetupConnectionFactory(mockConnection.Object);
+                    services.AddSingleton(encryptedMock.Object);
+                });
+            }).CreateClient(new WebApplicationFactoryClientOptions());
 
             var request = new HttpRequestMessage(HttpMethod.Get, url)
             {
