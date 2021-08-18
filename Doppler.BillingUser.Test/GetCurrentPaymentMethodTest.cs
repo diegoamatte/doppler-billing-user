@@ -67,7 +67,7 @@ namespace Doppler.BillingUser.Test
         public async Task GET_current_payment_method_should_get_right_values_when_username_is_valid()
         {
             // Arrange
-            const string expectedContent = "{\"ccHolderFullName\":\"TEST\",\"ccNumber\":\"TEST\",\"ccVerification\":\"****\",\"ccExpMonth\":\"2\",\"ccExpYear\":\"2130\",\"ccType\":\"Visa\",\"paymentMethodName\":\"CC\",\"renewalMonth\":\"6\",\"cuit\":\"39404521\",\"razonSocial\":\"Company\",\"idConsumerType\":\"9\",\"ccIdentificationType\":\"DNI\",\"ccIdentificationNumber\":\"344444\"}";
+            const string expectedContent = "{\"ccHolderFullName\":\"TEST\",\"ccNumber\":\"TEST\",\"ccVerification\":\"****\",\"ccExpMonth\":\"2\",\"ccExpYear\":\"2130\",\"ccType\":\"Visa\",\"paymentMethodName\":\"CC\",\"renewalMonth\":\"6\",\"razonSocial\":\"Company\",\"idConsumerType\":\"9\",\"identificationType\":\"DNI\",\"identificationNumber\":\"344444\"}";
             var paymentMethod = new PaymentMethod
             {
                 PaymentMethodName = "CC",
@@ -75,11 +75,10 @@ namespace Doppler.BillingUser.Test
                 CCExpMonth = "2",
                 CCExpYear = "2130",
                 CCHolderFullName = "Test holder Name",
-                CCIdentificationNumber = "344444",
-                CCIdentificationType = "DNI",
+                IdentificationNumber = "344444",
+                IdentificationType = "DNI",
                 CCType = "Visa",
                 CCVerification = "213",
-                Cuit = "39404521",
                 IdConsumerType = "9",
                 RazonSocial = "Company",
                 RenewalMonth = "6"

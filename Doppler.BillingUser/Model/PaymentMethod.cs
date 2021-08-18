@@ -10,10 +10,9 @@ namespace Doppler.BillingUser.Model
         public string CCType { get; set; }
         public string PaymentMethodName { get; set; }
         public string RenewalMonth { get; set; }
-        public string Cuit { get; set; }
         public string RazonSocial { get; set; }
         public string IdConsumerType { get; set; }
-        public string CCIdentificationType { get; set; }
-        public string CCIdentificationNumber { get; set; }
+        public string IdentificationType { get; set; }
+        public string IdentificationNumber { get; set; }
     }
 }

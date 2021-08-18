@@ -85,11 +85,10 @@ SELECT
     C.[Description] AS CCType,
     P.PaymentMethodName AS PaymentMethodName,
     D.MonthPlan AS RenewalMonth,
-    B.CUIT,
     B.RazonSocial,
     B.IdConsumerType,
-    B.CCIdentificationType,
-    B.CCIdentificationNumber
+    B.CCIdentificationType AS IdentificationType,
+    ISNULL(B.CUIT, B.CCIdentificationNumber) AS IdentificationNumber
 FROM
     [BillingCredits] B
 LEFT JOIN
