@@ -3,15 +3,20 @@ using Doppler.BillingUser.Model;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Doppler.BillingUser.Encryption;
+using Doppler.BillingUser.Utils;
 
 namespace Doppler.BillingUser.Infrastructure
 {
     public class BillingRepository : IBillingRepository
     {
         private readonly IDatabaseConnectionFactory _connectionFactory;
-        public BillingRepository(IDatabaseConnectionFactory connectionFactory)
+        private readonly IEncryptionService _encryptionService;
+
+        public BillingRepository(IDatabaseConnectionFactory connectionFactory, IEncryptionService encryptionService)
         {
             _connectionFactory = connectionFactory;
+            _encryptionService = encryptionService;
         }
         public async Task<BillingInformation> GetBillingInformation(string email)
         {
@@ -64,6 +69,49 @@ WHERE
                     @zipCode = billingInformation.ZipCode,
                     @email = accountName
                 });
+        }
+
+        public async Task<PaymentMethod> GetCurrentPaymentMethod(string username)
+        {
+            using var connection = await _connectionFactory.GetConnection();
+
+            var result = await connection.QueryFirstOrDefaultAsync<PaymentMethod>(@"
+SELECT
+    B.CCHolderFullName,
+    B.CCNumber,
+    B.CCExpMonth,
+    B.CCExpYear,
+    B.CCVerification,
+    C.[Description] AS CCType,
+    P.PaymentMethodName AS PaymentMethodName,
+    D.MonthPlan AS RenewalMonth,
+    B.RazonSocial,
+    B.IdConsumerType,
+    B.CCIdentificationType AS IdentificationType,
+    ISNULL(B.CUIT, B.CCIdentificationNumber) AS IdentificationNumber
+FROM
+    [BillingCredits] B
+LEFT JOIN
+    [PaymentMethods] P ON P.IdPaymentMethod = B.IdPaymentMethod
+LEFT JOIN
+    [CreditCardTypes] C ON C.IdCCType = B.IdCCType
+LEFT JOIN
+    [DiscountXPlan] D ON D.IdDiscountPlan = B.IdDiscountPlan
+WHERE
+    B.IdUser = (SELECT IdUser FROM [User] WHERE Email = @email) ORDER BY [Date] DESC;",
+                new
+                {
+                    @email = username
+                });
+
+            if (result is not { PaymentMethodName: "CC" or "MP" })
+                return result;
+
+            result.CCHolderFullName = _encryptionService.DecryptAES256(result.CCHolderFullName);
+            result.CCNumber = CreditCardHelper.ObfuscateNumber(_encryptionService.DecryptAES256(result.CCNumber));
+            result.CCVerification = CreditCardHelper.ObfuscateVerificationCode(_encryptionService.DecryptAES256(result.CCVerification));
+
+            return result;
         }
     }
 }

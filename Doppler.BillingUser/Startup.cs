@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Doppler.BillingUser.Encryption;
 using Doppler.BillingUser.Infrastructure;
 using Doppler.BillingUser.Model;
 using Doppler.BillingUser.Validators;
@@ -67,6 +68,8 @@ namespace Doppler.BillingUser
                 };
             });
 
+            services.Configure<EncryptionSettings>(Configuration.GetSection(nameof(EncryptionSettings)));
+            services.AddScoped<IEncryptionService, EncryptionService>();
             services.AddScoped<IValidator<BillingInformation>, BillingInformationValidator>();
         }
 
