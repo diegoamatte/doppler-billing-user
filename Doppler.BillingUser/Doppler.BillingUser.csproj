@@ -6,6 +6,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Connected Services\E4\**" />
+    <Content Remove="Connected Services\E4\**" />
+    <EmbeddedResource Remove="Connected Services\E4\**" />
+    <None Remove="Connected Services\E4\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Connected Services\E4\Reference.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Connected Services\E4\ConnectedService.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Dapper" Version="2.0.90" />
     <PackageReference Include="FluentValidation" Version="10.3.0" />
     <PackageReference Include="FluentValidator" Version="2.0.4" />
@@ -21,6 +36,15 @@
     <PackageReference Include="Serilog.Sinks.Loggly" Version="5.4.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.1.4" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
+    <PackageReference Include="System.ServiceModel.Http" Version="4.9.0-rc1.21431.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.ServiceModel" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services" />
   </ItemGroup>
 
 </Project>

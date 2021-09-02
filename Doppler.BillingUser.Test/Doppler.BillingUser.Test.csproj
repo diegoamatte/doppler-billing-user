@@ -25,4 +25,10 @@
     <ProjectReference Include="..\Doppler.BillingUser\Doppler.BillingUser.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Resources\Jwt\key.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

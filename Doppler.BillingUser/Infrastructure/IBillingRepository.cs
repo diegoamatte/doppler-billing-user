@@ -10,5 +10,7 @@ namespace Doppler.BillingUser.Infrastructure
         Task UpdateBillingInformation(string accountName, BillingInformation billingInformation);
 
         Task<PaymentMethod> GetCurrentPaymentMethod(string username);
+
+        Task<bool> UpdateCurrentPaymentMethod(string accountName, PaymentMethod paymentMethod);
     }
 }
