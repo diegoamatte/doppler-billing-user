@@ -104,6 +104,8 @@ WHERE
                     @email = username
                 });
 
+            result.IdConsumerType = ConsumerTypeHelper.GetConsumerType(result.IdConsumerType);
+
             if (result is not { PaymentMethodName: "CC" or "MP" })
                 return result;
 
