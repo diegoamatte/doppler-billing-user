@@ -8,7 +8,9 @@ using Doppler.BillingUser.Utils;
 using Newtonsoft.Json;
 using System;
 using System.Data;
+using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Doppler.BillingUser.Infrastructure
@@ -142,15 +144,21 @@ WHERE Email = @email;",
 
                 var creditCard = new CreditCard()
                 {
-                    Number = _encryptionService.EncryptAES256(paymentMethod.CCNumber.Trim()),
+                    Number = _encryptionService.EncryptAES256(paymentMethod.CCNumber.Replace(" ", "")),
                     HolderName = _encryptionService.EncryptAES256(paymentMethod.CCHolderFullName),
                     ExpirationMonth = int.Parse(paymentMethod.CCExpMonth),
                     ExpirationYear = int.Parse(paymentMethod.CCExpYear),
                     Code = _encryptionService.EncryptAES256(paymentMethod.CCVerification)
                 };
 
+
+                CultureInfo cultureInfo = Thread.CurrentThread.CurrentCulture;
+                TextInfo textInfo = cultureInfo.TextInfo;
+
+                paymentMethod.CCType = textInfo.ToTitleCase(paymentMethod.CCType);
+
                 //Validate CC
-                var validCC = await _paymentGateway.IsValidCreditCard(creditCard, userId);
+                var validCC = Enum.Parse<CardTypeEnum>(paymentMethod.CCType) != CardTypeEnum.Unknown && await _paymentGateway.IsValidCreditCard(creditCard, userId);
                 if (!validCC)
                 {
                     return false;
@@ -189,7 +197,7 @@ SET
     CCExpMonth = @ccExpMonth,
     CCExpYear = @ccExpYear,
     CCVerification = @ccVerification,
-    IdCCType = (SELECT IdCCType FROM [CreditCardTypes] WHERE Description = @idCCType),
+    IdCCType = @idCCType,
     PaymentMethod = (SELECT IdPaymentMethod FROM [PaymentMethods] WHERE PaymentMethodName = @paymentMethodName),
     RazonSocial = @razonSocial,
     IdConsumerType = @idConsumerType,
@@ -200,11 +208,11 @@ WHERE
             {
                 @userId = userId,
                 @ccHolderFullName = _encryptionService.EncryptAES256(paymentMethod.CCHolderFullName),
-                @ccNumber = _encryptionService.EncryptAES256(paymentMethod.CCNumber),
+                @ccNumber = _encryptionService.EncryptAES256(paymentMethod.CCNumber.Replace(" ", "")),
                 @ccExpMonth = paymentMethod.CCExpMonth,
                 @ccExpYear = paymentMethod.CCExpYear,
                 @ccVerification = _encryptionService.EncryptAES256(paymentMethod.CCVerification),
-                @idCCType = paymentMethod.CCType,
+                @idCCType = Enum.Parse<CardTypeEnum>(paymentMethod.CCType),
                 @paymentMethodName = paymentMethod.PaymentMethodName,
                 @razonSocial = paymentMethod.RazonSocial,
                 @idConsumerType = paymentMethod.IdConsumerType,
