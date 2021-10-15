@@ -88,29 +88,25 @@ WHERE
             using var connection = await _connectionFactory.GetConnection();
 
             var result = await connection.QueryFirstOrDefaultAsync<PaymentMethod>(@"
+
 SELECT
-    B.CCHolderFullName,
-    B.CCNumber,
-    B.CCExpMonth,
-    B.CCExpYear,
-    B.CCVerification,
+    U.CCHolderFullName,
+    U.CCNumber,
+    U.CCExpMonth,
+    U.CCExpYear,
+    U.CCVerification,
     C.[Description] AS CCType,
     P.PaymentMethodName AS PaymentMethodName,
-    D.MonthPlan AS RenewalMonth,
-    B.RazonSocial,
-    B.IdConsumerType,
-    B.CCIdentificationType AS IdentificationType,
-    ISNULL(B.CUIT, B.CCIdentificationNumber) AS IdentificationNumber
+    U.RazonSocial,
+    U.IdConsumerType
 FROM
-    [BillingCredits] B
+    [User] U
 LEFT JOIN
-    [PaymentMethods] P ON P.IdPaymentMethod = B.IdPaymentMethod
+    [CreditCardTypes] C ON C.IdCCType = U.IdCCType
 LEFT JOIN
-    [CreditCardTypes] C ON C.IdCCType = B.IdCCType
-LEFT JOIN
-    [DiscountXPlan] D ON D.IdDiscountPlan = B.IdDiscountPlan
+    [PaymentMethods] P ON P.IdPaymentMethod = U.PaymentMethod
 WHERE
-    B.IdUser = (SELECT IdUser FROM [User] WHERE Email = @email) ORDER BY [Date] DESC;",
+    U.Email = @email;",
                 new
                 {
                     @email = username
@@ -146,7 +142,7 @@ WHERE Email = @email;",
 
                 var creditCard = new CreditCard()
                 {
-                    Number = _encryptionService.EncryptAES256(paymentMethod.CCNumber),
+                    Number = _encryptionService.EncryptAES256(paymentMethod.CCNumber.Trim()),
                     HolderName = _encryptionService.EncryptAES256(paymentMethod.CCHolderFullName),
                     ExpirationMonth = int.Parse(paymentMethod.CCExpMonth),
                     ExpirationYear = int.Parse(paymentMethod.CCExpYear),
