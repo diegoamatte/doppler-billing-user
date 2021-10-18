@@ -100,7 +100,8 @@ SELECT
     C.[Description] AS CCType,
     P.PaymentMethodName AS PaymentMethodName,
     U.RazonSocial,
-    U.IdConsumerType
+    U.IdConsumerType,
+    U.CUIT as IdentificationNumber
 FROM
     [User] U
 LEFT JOIN
