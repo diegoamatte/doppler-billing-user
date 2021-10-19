@@ -64,7 +64,7 @@ namespace Doppler.BillingUser
                 if (!string.IsNullOrEmpty(baseUrl))
                 {
                     c.AddServer(new OpenApiServer() { Url = baseUrl });
-                };
+                }
             });
 
             services.Configure<EncryptionSettings>(Configuration.GetSection(nameof(EncryptionSettings)));

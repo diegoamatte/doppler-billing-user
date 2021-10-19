@@ -14,7 +14,9 @@ using System.Data.Common;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using Moq.Protected;
 using Xunit;
 
 namespace Doppler.BillingUser.Test
@@ -137,6 +139,153 @@ namespace Doppler.BillingUser.Test
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task PUT_Current_payment_Transfer_method_should_update_right_value_based_on_body_information()
+        {
+            // Arrange
+            const int userId = 1;
+            const int expectedRows = 1;
+
+            var currentPaymentMethod = new PaymentMethod
+            {
+                PaymentMethodName = "TRANSF",
+                IdSelectedPlan = 13,
+                RazonSocial = "test",
+                IdConsumerType = "RI",
+                IdentificationNumber = "2334345566"
+            };
+
+            var user = new User
+            {
+                SapProperties = "{\"ContractCurrency\" : false,\"GovernmentAccount\" : false,\"Premium\" : false,\"Plus\" : false,\"ComercialPartner\" : false,\"MarketingPartner\" : false,\"OnBoarding\" : false,\"Layout\" : false,\"Datahub\" : false,\"PushNotification\" : false,\"ExclusiveIp\" : false,\"Advisory\" : false,\"Reports\" : false,\"SMS\" : false}"
+            };
+
+            var requestContent = new StringContent(JsonConvert.SerializeObject(currentPaymentMethod), Encoding.UTF8, "application/json");
+
+            var mockConnection = new Mock<DbConnection>();
+
+            mockConnection.SetupDapperAsync(c => c.QueryFirstOrDefaultAsync<int>(null, null, null, null, null)).ReturnsAsync(userId);
+            mockConnection.SetupDapperAsync(c => c.ExecuteAsync(null, null, null, null, null)).ReturnsAsync(expectedRows);
+            mockConnection.SetupDapperAsync(c => c.QueryFirstOrDefaultAsync<User>(null, null, null, null, null)).ReturnsAsync(user);
+
+            var sapServiceMock = new Mock<ISapService>();
+            sapServiceMock.Setup(x => x.SendUserDataToSap(It.IsAny<SapBusinessPartner>(), null));
+
+            var encryptedMock = new Mock<IEncryptionService>();
+            encryptedMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("TEST");
+
+            var client = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    services.SetupConnectionFactory(mockConnection.Object);
+                    services.AddSingleton(encryptedMock.Object);
+                    services.AddSingleton(sapServiceMock.Object);
+                });
+
+            }).CreateClient(new WebApplicationFactoryClientOptions());
+
+            var request = new HttpRequestMessage(HttpMethod.Put, "accounts/test1@test.com/payment-methods/current")
+            {
+                Headers =
+                {
+                    {
+                        "Authorization", $"Bearer {TokenAccount123Test1AtTestDotComExpire20330518}"
+                    }
+                },
+                Content = requestContent
+            };
+
+            // Act
+            var response = await client.SendAsync(request);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task PUT_Current_payment_Transfer_method_should_sent_to_sap_with_right_value_based_on_body_information()
+        {
+            // Arrange
+            const int userId = 1;
+            const int expectedRows = 1;
+
+            var currentPaymentMethod = new PaymentMethod
+            {
+                PaymentMethodName = "TRANSF",
+                IdSelectedPlan = 13,
+                RazonSocial = "test",
+                IdConsumerType = "RI",
+                IdentificationNumber = "2334345566"
+            };
+
+            var user = new User
+            {
+                SapProperties = "{\"ContractCurrency\" : false,\"GovernmentAccount\" : false,\"Premium\" : false,\"Plus\" : false,\"ComercialPartner\" : false,\"MarketingPartner\" : false,\"OnBoarding\" : false,\"Layout\" : false,\"Datahub\" : false,\"PushNotification\" : false,\"ExclusiveIp\" : false,\"Advisory\" : false,\"Reports\" : false,\"SMS\" : false}",
+                CUIT = "2334345566",
+                IdConsumerType = 2
+            };
+
+            var requestContent = new StringContent(JsonConvert.SerializeObject(currentPaymentMethod), Encoding.UTF8, "application/json");
+
+            var mockConnection = new Mock<DbConnection>();
+
+            mockConnection.SetupDapperAsync(c => c.QueryFirstOrDefaultAsync<int>(null, null, null, null, null)).ReturnsAsync(userId);
+            mockConnection.SetupDapperAsync(c => c.ExecuteAsync(null, null, null, null, null)).ReturnsAsync(expectedRows);
+            mockConnection.SetupDapperAsync(c => c.QueryFirstOrDefaultAsync<User>(null, null, null, null, null)).ReturnsAsync(user);
+
+            var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+            var httpMessageHandlerMock = new Mock<HttpMessageHandler>();
+
+            httpMessageHandlerMock.Protected()
+                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Content = new StringContent("")
+                });
+            var httpClient = new HttpClient(httpMessageHandlerMock.Object);
+            httpClientFactoryMock.Setup(_ => _.CreateClient(It.IsAny<string>()))
+                .Returns(httpClient);
+
+            var encryptedMock = new Mock<IEncryptionService>();
+            encryptedMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("TEST");
+
+            var client = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    services.SetupConnectionFactory(mockConnection.Object);
+                    services.AddSingleton(encryptedMock.Object);
+                    services.AddSingleton(httpClientFactoryMock.Object);
+                });
+
+            }).CreateClient(new WebApplicationFactoryClientOptions());
+
+            var request = new HttpRequestMessage(HttpMethod.Put, "accounts/test1@test.com/payment-methods/current")
+            {
+                Headers =
+                {
+                    {
+                        "Authorization", $"Bearer {TokenAccount123Test1AtTestDotComExpire20330518}"
+                    }
+                },
+                Content = requestContent
+            };
+
+            // Act
+            var response = await client.SendAsync(request);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            httpMessageHandlerMock.Protected().Verify<Task<HttpResponseMessage>>("SendAsync", Times.Exactly(1),
+                ItExpr.Is<HttpRequestMessage>(
+                    req => req.Method == HttpMethod.Post
+                    && req.Content.ReadAsStringAsync().Result.Contains("\"FederalTaxId\":\"2334345566\"")),
+                ItExpr.IsAny<CancellationToken>());
         }
 
         [Fact]
