@@ -79,6 +79,7 @@ namespace Doppler.BillingUser
             services.Configure<JwtOptions>(Configuration.GetSection(nameof(JwtOptions)));
             services.AddJwtToken();
             services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+            services.AddHttpClient();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

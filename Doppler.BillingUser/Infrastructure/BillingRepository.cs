@@ -305,7 +305,7 @@ WHERE
             sapDto.County = user.BillingStateName ?? "";
             sapDto.BillingCity = user.BillingCity ?? "";
 
-            _sapService.SendUserDataToSap(sapDto);
+            await _sapService.SendUserDataToSap(sapDto);
         }
     }
 }

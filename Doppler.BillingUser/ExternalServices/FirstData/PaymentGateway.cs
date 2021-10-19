@@ -57,7 +57,7 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
             _logger = logger;
         }
 
-        private async Task<string> PostRequest(Transaction txn, int clientId, string typePlan)
+        private async Task<string> PostRequest(Transaction txn, int clientId)
         {
             PaymentErrorCode errorCode;
             try
@@ -143,7 +143,7 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
             try
             {
                 var paymentRequest = CreateDirectPaymentRequest(TransactionTypes.PRE_AUTH, _amountToValidateCreditCard, creditCard, clientId);
-                await PostRequest(paymentRequest, clientId, null);
+                await PostRequest(paymentRequest, clientId);
                 return true;
             }
             catch (DopplerApplicationException ex)

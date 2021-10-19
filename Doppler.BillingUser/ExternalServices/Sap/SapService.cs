@@ -6,6 +6,7 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Doppler.BillingUser.ExternalServices.Sap
 {
@@ -14,21 +15,24 @@ namespace Doppler.BillingUser.ExternalServices.Sap
         IJwtTokenGenerator _jwtTokenGenerator;
         private readonly IOptions<SapSettings> _options;
         private readonly ILogger _logger;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         public SapService(IJwtTokenGenerator jwtTokenGenerator,
             IOptions<SapSettings> options,
-            ILogger<SapService> logger)
+            ILogger<SapService> logger,
+            IHttpClientFactory httpClientFactory)
         {
             _jwtTokenGenerator = jwtTokenGenerator;
             _options = options;
             _logger = logger;
+            _httpClientFactory = httpClientFactory;
         }
 
-        public void SendUserDataToSap(SapBusinessPartner sapBusinessPartner, string resultMessage = null)
+        public async Task SendUserDataToSap(SapBusinessPartner sapBusinessPartner, string resultMessage = null)
         {
             try
             {
-                var response = SendToSap(
+                var response = await SendToSap(
                     new StringContent(JsonConvert.SerializeObject(sapBusinessPartner), Encoding.UTF8, "application/json"),
                     Convert.ToString(_options.Value.SapCreateBusinessPartnerEndpoint));
 
@@ -47,17 +51,22 @@ namespace Doppler.BillingUser.ExternalServices.Sap
             }
         }
 
-        private HttpResponseMessage SendToSap(StringContent data, string endpoint)
+        private async Task<HttpResponseMessage> SendToSap(StringContent data, string endpoint)
         {
-            using var httpClient = new HttpClient();
             string accessToken = _jwtTokenGenerator.GenerateSuperUserJwtToken();
 
-            httpClient.DefaultRequestHeaders.Accept.Clear();
-            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            var client = _httpClientFactory.CreateClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            var uri = new Uri(Convert.ToString(_options.Value.SapBaseUrl) + endpoint);
 
-            var url = Convert.ToString(_options.Value.SapBaseUrl) + endpoint;
-            return httpClient.PostAsync(url, data).Result;
+            var httpRequest = new HttpRequestMessage
+            {
+                RequestUri = uri,
+                Method = new HttpMethod("POST"),
+                Content = data
+            };
+
+            return await client.SendAsync(httpRequest).ConfigureAwait(false);
         }
     }
 }
