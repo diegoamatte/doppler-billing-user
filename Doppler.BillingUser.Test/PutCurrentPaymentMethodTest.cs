@@ -18,6 +18,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Moq.Protected;
 using Xunit;
+using Doppler.BillingUser.Enums;
 
 namespace Doppler.BillingUser.Test
 {
@@ -88,7 +89,8 @@ namespace Doppler.BillingUser.Test
 
             var user = new User
             {
-                SapProperties = "{\"ContractCurrency\" : false,\"GovernmentAccount\" : false,\"Premium\" : false,\"Plus\" : false,\"ComercialPartner\" : false,\"MarketingPartner\" : false,\"OnBoarding\" : false,\"Layout\" : false,\"Datahub\" : false,\"PushNotification\" : false,\"ExclusiveIp\" : false,\"Advisory\" : false,\"Reports\" : false,\"SMS\" : false}"
+                SapProperties = "{\"ContractCurrency\" : false,\"GovernmentAccount\" : false,\"Premium\" : false,\"Plus\" : false,\"ComercialPartner\" : false,\"MarketingPartner\" : false,\"OnBoarding\" : false,\"Layout\" : false,\"Datahub\" : false,\"PushNotification\" : false,\"ExclusiveIp\" : false,\"Advisory\" : false,\"Reports\" : false,\"SMS\" : false}",
+                PaymentMethod = (int)PaymentMethodEnum.TRANSF
             };
 
             var requestContent = new StringContent(JsonConvert.SerializeObject(currentPaymentMethod), Encoding.UTF8, "application/json");
@@ -153,7 +155,8 @@ namespace Doppler.BillingUser.Test
 
             var user = new User
             {
-                SapProperties = "{\"ContractCurrency\" : false,\"GovernmentAccount\" : false,\"Premium\" : false,\"Plus\" : false,\"ComercialPartner\" : false,\"MarketingPartner\" : false,\"OnBoarding\" : false,\"Layout\" : false,\"Datahub\" : false,\"PushNotification\" : false,\"ExclusiveIp\" : false,\"Advisory\" : false,\"Reports\" : false,\"SMS\" : false}"
+                SapProperties = "{\"ContractCurrency\" : false,\"GovernmentAccount\" : false,\"Premium\" : false,\"Plus\" : false,\"ComercialPartner\" : false,\"MarketingPartner\" : false,\"OnBoarding\" : false,\"Layout\" : false,\"Datahub\" : false,\"PushNotification\" : false,\"ExclusiveIp\" : false,\"Advisory\" : false,\"Reports\" : false,\"SMS\" : false}",
+                PaymentMethod = (int)PaymentMethodEnum.TRANSF
             };
 
             var requestContent = new StringContent(JsonConvert.SerializeObject(currentPaymentMethod), Encoding.UTF8, "application/json");
@@ -221,7 +224,8 @@ namespace Doppler.BillingUser.Test
                 CUIT = "2334345566",
                 IdConsumerType = 2,
                 IdResponsabileBilling = 9,
-                FirstName = "firstName"
+                FirstName = "firstName",
+                PaymentMethod = (int)PaymentMethodEnum.TRANSF
             };
 
             var requestContent = new StringContent(JsonConvert.SerializeObject(currentPaymentMethod), Encoding.UTF8, "application/json");

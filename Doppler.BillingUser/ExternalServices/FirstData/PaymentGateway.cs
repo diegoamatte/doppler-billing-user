@@ -59,7 +59,7 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
 
         private async Task<string> PostRequest(Transaction txn, int clientId)
         {
-            PaymentErrorCode errorCode;
+            ApplicationErrorCode errorCode;
             try
             {
                 txn.ExactID = _gatewayId;
@@ -79,22 +79,22 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
                         switch (approvalCode)
                         {
                             case ResponseTypes.DUPLICATE:
-                                errorCode = PaymentErrorCode.DuplicatedPaymentTransaction;
+                                errorCode = ApplicationErrorCode.DuplicatedPaymentTransaction;
                                 break;
                             default:
-                                errorCode = PaymentErrorCode.DeclinedPaymentTransaction;
+                                errorCode = ApplicationErrorCode.DeclinedPaymentTransaction;
                                 break;
                         }
                     }
                     else if (apiResponse.Bank_Resp_Code != null && _doNotHonorCodes.Contains(apiResponse.Bank_Resp_Code))
                     {
                         errorMessage = apiResponse.Bank_Message + " [Bank]";
-                        errorCode = PaymentErrorCode.DoNotHonorPaymentResponse;
+                        errorCode = ApplicationErrorCode.DoNotHonorPaymentResponse;
                     }
                     else
                     {
                         errorMessage = apiResponse.Bank_Message + " [Bank]";
-                        errorCode = PaymentErrorCode.DeclinedPaymentTransaction;
+                        errorCode = ApplicationErrorCode.DeclinedPaymentTransaction;
                     }
 
                     _logger.LogError(String.Format("First Data Error: Client Id: {0}, CVDCode: {1}, CVD_Presence_Ind: {2}", clientId, txn.CVDCode, txn.CVD_Presence_Ind));
@@ -112,7 +112,7 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
             catch (Exception ex)
             {
                 _logger.LogError(ex.Message);
-                throw new DopplerApplicationException(PaymentErrorCode.ClientPaymentTransactionError, ex.Message, ex);
+                throw new DopplerApplicationException(ApplicationErrorCode.ClientPaymentTransactionError, ex.Message, ex);
             }
         }
 
@@ -150,11 +150,33 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
             {
                 switch (ex.ErrorCode)
                 {
-                    case PaymentErrorCode.DeclinedPaymentTransaction:
-                    case PaymentErrorCode.DuplicatedPaymentTransaction:
-                    case PaymentErrorCode.FraudPaymentTransaction:
-                    case PaymentErrorCode.DoNotHonorPaymentResponse:
+                    case ApplicationErrorCode.DeclinedPaymentTransaction:
+                    case ApplicationErrorCode.DuplicatedPaymentTransaction:
+                    case ApplicationErrorCode.FraudPaymentTransaction:
+                    case ApplicationErrorCode.DoNotHonorPaymentResponse:
                         return false;
+                    default:
+                        throw;
+                }
+            }
+        }
+
+        public Task<string> CreateCreditCardPayment(CreditCard creditCard, double? chargeTotal, int clientId)
+        {
+            try
+            {
+                var paymentRequest = CreateDirectPaymentRequest(TransactionTypes.PURCHASE, (decimal)chargeTotal, creditCard, clientId);
+                return PostRequest(paymentRequest, clientId);
+            }
+            catch (DopplerApplicationException ex)
+            {
+                switch (ex.ErrorCode)
+                {
+                    case ApplicationErrorCode.DeclinedPaymentTransaction:
+                    case ApplicationErrorCode.DuplicatedPaymentTransaction:
+                    case ApplicationErrorCode.FraudPaymentTransaction:
+                    case ApplicationErrorCode.DoNotHonorPaymentResponse:
+                        return null;
                     default:
                         throw;
                 }

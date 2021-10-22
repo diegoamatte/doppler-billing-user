@@ -21,7 +21,7 @@ namespace Doppler.BillingUser.Model
         public bool IsCancelated { get; set; }
         public string SapProperties { get; set; }
         public bool BlockedAccountNotPayed { get; set; }
-        public int PaymentMethod { get; set; }
+        public int? PaymentMethod { get; set; }
         public int IdBillingState { get; set; }
         public string BillingCity { get; set; }
         //State
@@ -37,5 +37,18 @@ namespace Doppler.BillingUser.Model
         //BillingState
         public string BillingStateCountryCode { get; set; }
         public string BillingStateName { get; set; }
+
+        public bool ResponsableIVA { get; set; }
+        public string PaymentWay { get; set; }
+        public string PaymentType { get; set; }
+        public string CFDIUse { get; set; }
+        public string BankName { get; set; }
+        public string BankAccount { get; set; }
+        public string UTCFirstPayment { get; set; }
+        public bool IsClientManagerResellerUser { get; set; }
+        public int IdCurrentBillingCredit { get; set; }
+        public int IdCountry { get; set; }
+        public UserTypePlan CurrentUserTypePlan { get; set; }
+        public UserTypePlan NewUserTypePlan { get; set; }
     }
 }

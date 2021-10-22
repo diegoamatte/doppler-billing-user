@@ -1,6 +1,6 @@
 namespace Doppler.BillingUser.Enums
 {
-    public enum PaymentErrorCode
+    public enum ApplicationErrorCode
     {
         /// <summary>
         /// The payment transaction is duplicated, the OrderId has been used previously.
@@ -23,6 +23,13 @@ namespace Doppler.BillingUser.Enums
         /// <summary>
         /// Fraud detected in the transaction by the payment gateway.
         /// </summary>
-        FraudPaymentTransaction
+        FraudPaymentTransaction,
+
+        InexistentUser,
+        InexistentBillingCredit,
+        InvalidBilling,
+        InexistentPromotion,
+
+        CreateAgreementUserUpdateError
     }
 }

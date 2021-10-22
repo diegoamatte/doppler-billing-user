@@ -16,5 +16,6 @@ namespace Doppler.BillingUser.Model
         public string IdentificationNumber { get; set; }
         public int IdSelectedPlan { get; set; }
         public bool ResponsableIVA { get; set; }
+        public int IdCCType { get; set; }
     }
 }

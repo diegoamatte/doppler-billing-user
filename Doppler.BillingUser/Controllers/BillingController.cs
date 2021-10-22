@@ -14,12 +14,12 @@ namespace Doppler.BillingUser.Controllers
     public class BillingController
     {
         private readonly ILogger _logger;
-        private readonly BillingRepository _billingRepository;
+        private readonly IBillingRepository _billingRepository;
         private readonly IValidator<BillingInformation> _validator;
 
         public BillingController(
             ILogger<BillingController> logger,
-            BillingRepository billingRepository,
+            IBillingRepository billingRepository,
             IValidator<BillingInformation> validator)
         {
             _logger = logger;
@@ -104,9 +104,18 @@ namespace Doppler.BillingUser.Controllers
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
         [HttpPost("/accounts/{accountname}/agreements")]
-        public string CreateAgreement(string accountname)
+        public async Task<IActionResult> CreateAgreement(string accountname, [FromBody] AgreementInformation agreementInformation)
         {
-            return $"Hello! \"you\" that have access to Upgrade with accountname '{accountname}'";
+            _logger.LogDebug("Create agreement method.");
+
+            var isSuccess = await _billingRepository.CreateAgreement(accountname, agreementInformation);
+
+            if (!isSuccess)
+            {
+                return new ForbidResult();
+            }
+
+            return new OkObjectResult("Successfully");
         }
     }
 }
