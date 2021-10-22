@@ -1,20 +1,19 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Doppler.BillingUser.Authorization;
 using Doppler.BillingUser.Encryption;
+using Doppler.BillingUser.ExternalServices.FirstData;
+using Doppler.BillingUser.ExternalServices.Sap;
 using Doppler.BillingUser.Infrastructure;
 using Doppler.BillingUser.Model;
 using Doppler.BillingUser.Validators;
 using FluentValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using System;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Doppler.BillingUser
 {
@@ -70,7 +69,17 @@ namespace Doppler.BillingUser
 
             services.Configure<EncryptionSettings>(Configuration.GetSection(nameof(EncryptionSettings)));
             services.AddScoped<IEncryptionService, EncryptionService>();
+            services.Configure<FirstDataSettings>(Configuration.GetSection(nameof(FirstDataSettings)));
+            services.AddScoped<IFirstDataService, FirstDataService>();
+            services.AddScoped<IPaymentGateway, PaymentGateway>();
             services.AddScoped<IValidator<BillingInformation>, BillingInformationValidator>();
+            services.Configure<SapSettings>(Configuration.GetSection(nameof(SapSettings)));
+            services.AddScoped<ISapService, SapService>();
+            services.AddTransient<JwtSecurityTokenHandler>();
+            services.Configure<JwtOptions>(Configuration.GetSection(nameof(JwtOptions)));
+            services.AddJwtToken();
+            services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+            services.AddHttpClient();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

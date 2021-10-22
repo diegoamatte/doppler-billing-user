@@ -1,8 +1,10 @@
 using Dapper;
+using Doppler.BillingUser.Encryption;
 using Doppler.BillingUser.Model;
 using Doppler.BillingUser.Test.Utils;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Moq.Dapper;
 using System.Data.Common;
@@ -39,12 +41,15 @@ namespace Doppler.BillingUser.Test
 
             // TODO: validate input
             mockConnection.SetupDapperAsync(c => c.QueryAsync<BillingInformation>(null, null, null, null, null)).ReturnsAsync(Enumerable.Empty<BillingInformation>());
+            var encryptedMock = new Mock<IEncryptionService>();
+            encryptedMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("TEST");
 
             var client = _factory.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureTestServices(services =>
                 {
                     services.SetupConnectionFactory(mockConnection.Object);
+                    services.AddSingleton(encryptedMock.Object);
                 });
 
             }).CreateClient(new WebApplicationFactoryClientOptions());
@@ -103,12 +108,15 @@ namespace Doppler.BillingUser.Test
             var mockConnection = new Mock<DbConnection>();
 
             mockConnection.SetupDapperAsync(c => c.QueryAsync<BillingInformation>(null, null, null, null, null)).ReturnsAsync(dbResponse);
+            var encryptedMock = new Mock<IEncryptionService>();
+            encryptedMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("TEST");
 
             var client = _factory.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureTestServices(services =>
                 {
                     services.SetupConnectionFactory(mockConnection.Object);
+                    services.AddSingleton(encryptedMock.Object);
                 });
 
             }).CreateClient(new WebApplicationFactoryClientOptions());
@@ -146,12 +154,15 @@ namespace Doppler.BillingUser.Test
             var mockConnection = new Mock<DbConnection>();
 
             mockConnection.SetupDapperAsync(c => c.QueryAsync<BillingInformation>(null, null, null, null, null)).ReturnsAsync(dbResponse);
+            var encryptedMock = new Mock<IEncryptionService>();
+            encryptedMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("TEST");
 
             var client = _factory.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureTestServices(services =>
                 {
                     services.SetupConnectionFactory(mockConnection.Object);
+                    services.AddSingleton(encryptedMock.Object);
                 });
 
             }).CreateClient(new WebApplicationFactoryClientOptions());

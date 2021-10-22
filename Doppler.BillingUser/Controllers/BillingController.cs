@@ -73,6 +73,22 @@ namespace Doppler.BillingUser.Controllers
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
+        [HttpPut("/accounts/{accountname}/payment-methods/current")]
+        public async Task<IActionResult> UpdateCurrentPaymentMethod(string accountname, [FromBody] PaymentMethod paymentMethod)
+        {
+            _logger.LogDebug("Update current payment method.");
+
+            var isSuccess = await _billingRepository.UpdateCurrentPaymentMethod(accountname, paymentMethod);
+
+            if (!isSuccess)
+            {
+                return new BadRequestObjectResult("Invalid Credit Card");
+            }
+
+            return new OkObjectResult("Successfully");
+        }
+
+        [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
         [HttpPost("/accounts/{accountname}/agreements")]
         public string CreateAgreement(string accountname)
         {
