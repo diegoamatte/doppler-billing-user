@@ -32,13 +32,11 @@ namespace Doppler.BillingUser.ExternalServices.Sap
         {
             try
             {
-                var response = await SendToSap(
-                    new StringContent(JsonConvert.SerializeObject(sapBusinessPartner), Encoding.UTF8, "application/json"),
-                    Convert.ToString(_options.Value.SapCreateBusinessPartnerEndpoint));
+                var response = await SendToSap(new StringContent(JsonConvert.SerializeObject(sapBusinessPartner), Encoding.UTF8));
 
                 if (response.IsSuccessStatusCode)
                 {
-                    _logger.LogInformation(string.Format($"User data succesfully sent to DopplerSap. Iduser: {sapBusinessPartner.Id} - ClientManager: {sapBusinessPartner.IsClientManager}"));
+                    _logger.LogInformation(string.Format($"User data successfully sent to DopplerSap. Iduser: {sapBusinessPartner.Id} - ClientManager: {sapBusinessPartner.IsClientManager}"));
                 }
                 else
                 {
@@ -51,20 +49,21 @@ namespace Doppler.BillingUser.ExternalServices.Sap
             }
         }
 
-        private async Task<HttpResponseMessage> SendToSap(StringContent data, string endpoint)
+        private async Task<HttpResponseMessage> SendToSap(StringContent data)
         {
-            string accessToken = _jwtTokenGenerator.GenerateSuperUserJwtToken();
-
-            var client = _httpClientFactory.CreateClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-            var uri = new Uri(Convert.ToString(_options.Value.SapBaseUrl) + endpoint);
-
+            var uri = new Uri(Convert.ToString(_options.Value.SapBaseUrl) + _options.Value.SapCreateBusinessPartnerEndpoint);
             var httpRequest = new HttpRequestMessage
             {
                 RequestUri = uri,
                 Method = new HttpMethod("POST"),
                 Content = data
             };
+            httpRequest.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json; charset=utf-8");
+
+            var accessToken = _jwtTokenGenerator.GenerateSuperUserJwtToken();
+            var client = _httpClientFactory.CreateClient();
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
             return await client.SendAsync(httpRequest).ConfigureAwait(false);
         }
