@@ -38,16 +38,16 @@ namespace Doppler.BillingUser.ExternalServices.Sap
 
                 if (response.IsSuccessStatusCode)
                 {
-                    _logger.LogInformation(string.Format("User data succesfully sent to DopplerSap. Iduser: {0} - ClientManager: {1}", sapBusinessPartner.Id, sapBusinessPartner.IsClientManager.ToString()));
+                    _logger.LogInformation(string.Format($"User data succesfully sent to DopplerSap. Iduser: {sapBusinessPartner.Id} - ClientManager: {sapBusinessPartner.IsClientManager}"));
                 }
                 else
                 {
-                    _logger.LogError(string.Format("Sending user data to DopplerSap failed. - status : {0} - message: {1} - Iduser: {2} - ClientManager: {3}", response.StatusCode, response.ReasonPhrase, sapBusinessPartner.Id, sapBusinessPartner.IsClientManager.ToString()));
+                    _logger.LogError(string.Format($"Sending user data to DopplerSap failed. - status : {response.StatusCode} - message: {response.ReasonPhrase} - Iduser: {sapBusinessPartner.Id} - ClientManager: {sapBusinessPartner.IsClientManager}"));
                 }
             }
             catch (Exception e)
             {
-                _logger.LogError(string.Format("Unexpected error sending data to DopplerSap, Exception:{0}", e.ToString()));
+                _logger.LogError(string.Format($"Unexpected error sending data to DopplerSap, Exception:{e}"));
             }
         }
 
