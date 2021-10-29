@@ -225,7 +225,8 @@ namespace Doppler.BillingUser.Test
             {
                 SapProperties = "{\"ContractCurrency\" : false,\"GovernmentAccount\" : false,\"Premium\" : false,\"Plus\" : false,\"ComercialPartner\" : false,\"MarketingPartner\" : false,\"OnBoarding\" : false,\"Layout\" : false,\"Datahub\" : false,\"PushNotification\" : false,\"ExclusiveIp\" : false,\"Advisory\" : false,\"Reports\" : false,\"SMS\" : false}",
                 CUIT = "2334345566",
-                IdConsumerType = 2
+                IdConsumerType = 2,
+                IdResponsabileBilling = 9
             };
 
             var requestContent = new StringContent(JsonConvert.SerializeObject(currentPaymentMethod), Encoding.UTF8, "application/json");
@@ -284,7 +285,8 @@ namespace Doppler.BillingUser.Test
             httpMessageHandlerMock.Protected().Verify<Task<HttpResponseMessage>>("SendAsync", Times.Exactly(1),
                 ItExpr.Is<HttpRequestMessage>(
                     req => req.Method == HttpMethod.Post
-                    && req.Content.ReadAsStringAsync().Result.Contains("\"FederalTaxId\":\"2334345566\"")),
+                    && req.Content.ReadAsStringAsync().Result.Contains("\"FederalTaxId\":\"2334345566\"")
+                    && req.Content.ReadAsStringAsync().Result.Contains("\"BillingSystemId\":9")),
                 ItExpr.IsAny<CancellationToken>());
         }
 
