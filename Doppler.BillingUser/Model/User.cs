@@ -1,12 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
 namespace Doppler.BillingUser.Model
 {
     public class User
     {
+        public string FirstName { get; set; }
         public int IdUser { get; set; }
         public string BillingEmails { get; set; }
         public string RazonSocial { get; set; }

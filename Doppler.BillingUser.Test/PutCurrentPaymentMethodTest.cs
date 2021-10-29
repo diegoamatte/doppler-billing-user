@@ -74,9 +74,6 @@ namespace Doppler.BillingUser.Test
         public async Task PUT_Current_payment_CC_method_should_update_right_value_based_on_body_information()
         {
             // Arrange
-            const int userId = 1;
-            const int expectedRows = 1;
-
             var currentPaymentMethod = new PaymentMethod
             {
                 CCHolderFullName = "Test Holder Name",
@@ -97,9 +94,6 @@ namespace Doppler.BillingUser.Test
             var requestContent = new StringContent(JsonConvert.SerializeObject(currentPaymentMethod), Encoding.UTF8, "application/json");
 
             var mockConnection = new Mock<DbConnection>();
-
-            mockConnection.SetupDapperAsync(c => c.QueryFirstOrDefaultAsync<int>(null, null, null, null, null)).ReturnsAsync(userId);
-            mockConnection.SetupDapperAsync(c => c.ExecuteAsync(null, null, null, null, null)).ReturnsAsync(expectedRows);
             mockConnection.SetupDapperAsync(c => c.QueryFirstOrDefaultAsync<User>(null, null, null, null, null)).ReturnsAsync(user);
 
             var encryptedMock = new Mock<IEncryptionService>();
@@ -226,7 +220,8 @@ namespace Doppler.BillingUser.Test
                 SapProperties = "{\"ContractCurrency\" : false,\"GovernmentAccount\" : false,\"Premium\" : false,\"Plus\" : false,\"ComercialPartner\" : false,\"MarketingPartner\" : false,\"OnBoarding\" : false,\"Layout\" : false,\"Datahub\" : false,\"PushNotification\" : false,\"ExclusiveIp\" : false,\"Advisory\" : false,\"Reports\" : false,\"SMS\" : false}",
                 CUIT = "2334345566",
                 IdConsumerType = 2,
-                IdResponsabileBilling = 9
+                IdResponsabileBilling = 9,
+                FirstName = "firstName"
             };
 
             var requestContent = new StringContent(JsonConvert.SerializeObject(currentPaymentMethod), Encoding.UTF8, "application/json");
@@ -286,6 +281,7 @@ namespace Doppler.BillingUser.Test
                 ItExpr.Is<HttpRequestMessage>(
                     req => req.Method == HttpMethod.Post
                     && req.Content.ReadAsStringAsync().Result.Contains("\"FederalTaxId\":\"2334345566\"")
+                    && req.Content.ReadAsStringAsync().Result.Contains("\"FirstName\":\"firstName\"")
                     && req.Content.ReadAsStringAsync().Result.Contains("\"BillingSystemId\":9")),
                 ItExpr.IsAny<CancellationToken>());
         }
@@ -295,7 +291,6 @@ namespace Doppler.BillingUser.Test
         {
             // Arrange
             const int userId = 1;
-            const int expectedRows = 1;
 
             var currentPaymentMethod = new PaymentMethod
             {
@@ -309,18 +304,12 @@ namespace Doppler.BillingUser.Test
                 IdSelectedPlan = 13
             };
 
-            var user = new User
-            {
-                SapProperties = "{\"ContractCurrency\" : false,\"GovernmentAccount\" : false,\"Premium\" : false,\"Plus\" : false,\"ComercialPartner\" : false,\"MarketingPartner\" : false,\"OnBoarding\" : false,\"Layout\" : false,\"Datahub\" : false,\"PushNotification\" : false,\"ExclusiveIp\" : false,\"Advisory\" : false,\"Reports\" : false,\"SMS\" : false}"
-            };
-
             var requestContent = new StringContent(JsonConvert.SerializeObject(currentPaymentMethod), Encoding.UTF8, "application/json");
 
             var mockConnection = new Mock<DbConnection>();
 
-            mockConnection.SetupDapperAsync(c => c.QueryFirstOrDefaultAsync<int>(null, null, null, null, null)).ReturnsAsync(userId);
-            mockConnection.SetupDapperAsync(c => c.ExecuteAsync(null, null, null, null, null)).ReturnsAsync(expectedRows);
-            mockConnection.SetupDapperAsync(c => c.QueryFirstOrDefaultAsync<User>(null, null, null, null, null)).ReturnsAsync(user);
+            mockConnection.SetupDapperAsync(c => c.QueryFirstOrDefaultAsync<int>(null, null, null, null, null))
+                .ReturnsAsync(userId);
 
             var encryptedMock = new Mock<IEncryptionService>();
             encryptedMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("TEST");

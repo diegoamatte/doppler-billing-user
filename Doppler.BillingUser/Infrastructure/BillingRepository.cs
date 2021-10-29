@@ -130,7 +130,7 @@ WHERE
         {
             using var connection = await _connectionFactory.GetConnection();
 
-            var userId = await connection.QueryFirstOrDefaultAsync<int>(@"
+            var user = await connection.QueryFirstOrDefaultAsync<User>(@"
 SELECT IdUser
 FROM [User]
 WHERE Email = @email;",
@@ -156,14 +156,14 @@ WHERE Email = @email;",
                 paymentMethod.CCType = textInfo.ToTitleCase(paymentMethod.CCType);
 
                 //Validate CC
-                var validCc = Enum.Parse<CardTypeEnum>(paymentMethod.CCType) != CardTypeEnum.Unknown && await _paymentGateway.IsValidCreditCard(creditCard, userId);
+                var validCc = Enum.Parse<CardTypeEnum>(paymentMethod.CCType) != CardTypeEnum.Unknown && await _paymentGateway.IsValidCreditCard(creditCard, user.IdUser);
                 if (!validCc)
                 {
                     return false;
                 }
 
                 //Update user payment method in DB
-                await UpdateUserPaymentMethod(userId, paymentMethod);
+                await UpdateUserPaymentMethod(user, paymentMethod);
             }
             else if (paymentMethod.PaymentMethodName == PaymentMethodEnum.MP.ToString())
             {
@@ -171,16 +171,16 @@ WHERE Email = @email;",
             }
             else if (paymentMethod.PaymentMethodName == PaymentMethodEnum.TRANSF.ToString())
             {
-                await UpdateUserPaymentMethodByTransfer(userId, paymentMethod);
+                await UpdateUserPaymentMethodByTransfer(user, paymentMethod);
             }
 
             //Send BP to SAP
-            await SendUserDataToSap(userId, paymentMethod);
+            await SendUserDataToSap(user, paymentMethod);
 
             return true;
         }
 
-        private async Task UpdateUserPaymentMethodByTransfer(int userId, PaymentMethod paymentMethod)
+        private async Task UpdateUserPaymentMethodByTransfer(User user, PaymentMethod paymentMethod)
         {
             using var connection = await _connectionFactory.GetConnection();
 
@@ -194,10 +194,10 @@ SET
     IdResponsabileBilling = @idResponsabileBilling,
     CUIT = @cuit
 WHERE
-    IdUser = @userId;",
+    IdUser = @IdUser;",
                 new
                 {
-                    userId,
+                    user.IdUser,
                     @paymentMethodName = paymentMethod.PaymentMethodName,
                     @razonSocial = paymentMethod.RazonSocial,
                     @idConsumerType = paymentMethod.IdConsumerType,
@@ -206,7 +206,7 @@ WHERE
                 });
         }
 
-        private async Task UpdateUserPaymentMethod(int userId, PaymentMethod paymentMethod)
+        private async Task UpdateUserPaymentMethod(User user, PaymentMethod paymentMethod)
         {
             using var connection = await _connectionFactory.GetConnection();
 
@@ -225,10 +225,10 @@ SET
     IdConsumerType = (SELECT IdConsumerType FROM [ConsumerTypes] WHERE Name = @idConsumerType),
     IdResponsabileBilling = @idResponsabileBilling
 WHERE
-    IdUser = @userId;",
+    IdUser = @IdUser;",
             new
             {
-                userId,
+                user.IdUser,
                 @ccHolderFullName = _encryptionService.EncryptAES256(paymentMethod.CCHolderFullName),
                 @ccNumber = _encryptionService.EncryptAES256(paymentMethod.CCNumber.Replace(" ", "")),
                 @ccExpMonth = paymentMethod.CCExpMonth,
@@ -242,12 +242,13 @@ WHERE
             });
         }
 
-        private async Task SendUserDataToSap(int userId, PaymentMethod paymentMethod)
+        private async Task SendUserDataToSap(User user, PaymentMethod paymentMethod)
         {
             using var connection = await _connectionFactory.GetConnection();
 
-            var user = await connection.QueryFirstOrDefaultAsync<User>(@"
+            var userData = await connection.QueryFirstOrDefaultAsync<User>(@"
 SELECT
+    U.FirstName,
     U.IdUser,
     U.BillingEmails,
     U.RazonSocial,
@@ -284,10 +285,10 @@ LEFT JOIN
 LEFT JOIN
     [State] BS ON BS.IdState = U.IdBillingState
 WHERE
-    U.IdUser = @userId;",
+    U.IdUser = @IdUser;",
                 new
                 {
-                    userId,
+                    user.IdUser,
                     @idUserTypePlan = paymentMethod.IdSelectedPlan
                 });
 
@@ -297,34 +298,34 @@ WHERE
                 IsClientManager = false
             };
 
-            sapDto.BillingEmails = (user.BillingEmails ?? string.Empty).Replace(" ", string.Empty).Split(',');
-            sapDto.FirstName = user.RazonSocial ?? user.BillingFirstName ?? "";
-            sapDto.LastName = user.RazonSocial == null ? user.BillingLastName ?? "" : "";
-            sapDto.BillingAddress = user.BillingAddress ?? "";
-            sapDto.CityName = user.CityName ?? "";
-            sapDto.StateId = user.IdState;
-            sapDto.CountryCode = user.StateCountryCode ?? "";
-            sapDto.Address = user.Address ?? "";
-            sapDto.ZipCode = user.ZipCode ?? "";
-            sapDto.BillingZip = user.BillingZip ?? "";
-            sapDto.Email = user.Email;
-            sapDto.PhoneNumber = user.PhoneNumber ?? "";
-            sapDto.FederalTaxId = user.IdConsumerType == (int)ConsumerTypeEnum.CF ? (paymentMethod.IdentificationNumber ?? user.CUIT) : user.CUIT;
-            sapDto.FederalTaxType = user.IdConsumerType == (int)ConsumerTypeEnum.CF ? paymentMethod.IdentificationType : sapDto.FederalTaxType;
-            sapDto.IdConsumerType = user.IdConsumerType;
-            sapDto.Cancelated = user.IsCancelated;
-            sapDto.SapProperties = JsonConvert.DeserializeObject(user.SapProperties);
-            sapDto.Blocked = user.BlockedAccountNotPayed;
-            sapDto.IsInbound = user.IsInbound;
-            sapDto.BillingCountryCode = user.BillingStateCountryCode ?? "";
-            sapDto.PaymentMethod = user.PaymentMethod;
-            sapDto.PlanType = user.IdUserType;
-            sapDto.BillingSystemId = user.IdResponsabileBilling;
+            sapDto.BillingEmails = (userData.BillingEmails ?? string.Empty).Replace(" ", string.Empty).Split(',');
+            sapDto.FirstName = SapHelper.GetFirstName(userData);
+            sapDto.LastName = string.IsNullOrEmpty(userData.RazonSocial) ? userData.BillingLastName ?? "" : "";
+            sapDto.BillingAddress = userData.BillingAddress ?? "";
+            sapDto.CityName = userData.CityName ?? "";
+            sapDto.StateId = userData.IdState;
+            sapDto.CountryCode = userData.StateCountryCode ?? "";
+            sapDto.Address = userData.Address ?? "";
+            sapDto.ZipCode = userData.ZipCode ?? "";
+            sapDto.BillingZip = userData.BillingZip ?? "";
+            sapDto.Email = userData.Email;
+            sapDto.PhoneNumber = userData.PhoneNumber ?? "";
+            sapDto.FederalTaxId = userData.IdConsumerType == (int)ConsumerTypeEnum.CF ? (paymentMethod.IdentificationNumber ?? userData.CUIT) : userData.CUIT;
+            sapDto.FederalTaxType = userData.IdConsumerType == (int)ConsumerTypeEnum.CF ? paymentMethod.IdentificationType : sapDto.FederalTaxType;
+            sapDto.IdConsumerType = userData.IdConsumerType;
+            sapDto.Cancelated = userData.IsCancelated;
+            sapDto.SapProperties = JsonConvert.DeserializeObject(userData.SapProperties);
+            sapDto.Blocked = userData.BlockedAccountNotPayed;
+            sapDto.IsInbound = userData.IsInbound;
+            sapDto.BillingCountryCode = userData.BillingStateCountryCode ?? "";
+            sapDto.PaymentMethod = userData.PaymentMethod;
+            sapDto.PlanType = userData.IdUserType;
+            sapDto.BillingSystemId = userData.IdResponsabileBilling;
             sapDto.BillingStateId = ((sapDto.BillingSystemId == (int)ResponsabileBillingEnum.QBL || sapDto.BillingSystemId == (int)ResponsabileBillingEnum.QuickBookUSA) && sapDto.BillingCountryCode != "US") ? string.Empty
-                : (sapDto.BillingCountryCode == "US") ? (SapDictionary.StatesDictionary.TryGetValue(user.IdBillingState, out string stateIdUs) ? stateIdUs : string.Empty)
-                : (SapDictionary.StatesDictionary.TryGetValue(user.IdBillingState, out string stateId) ? stateId : "99");
-            sapDto.County = user.BillingStateName ?? "";
-            sapDto.BillingCity = user.BillingCity ?? "";
+                : (sapDto.BillingCountryCode == "US") ? (SapDictionary.StatesDictionary.TryGetValue(userData.IdBillingState, out string stateIdUs) ? stateIdUs : string.Empty)
+                : (SapDictionary.StatesDictionary.TryGetValue(userData.IdBillingState, out string stateId) ? stateId : "99");
+            sapDto.County = userData.BillingStateName ?? "";
+            sapDto.BillingCity = userData.BillingCity ?? "";
 
             await _sapService.SendUserDataToSap(sapDto);
         }
