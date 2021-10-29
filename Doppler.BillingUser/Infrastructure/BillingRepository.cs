@@ -201,7 +201,7 @@ WHERE
                     @paymentMethodName = paymentMethod.PaymentMethodName,
                     @razonSocial = paymentMethod.RazonSocial,
                     @idConsumerType = paymentMethod.IdConsumerType,
-                    @idResponsabileBilling = (int)Enum.Parse<PaymentMethodEnum>(paymentMethod.PaymentMethodName),
+                    @idResponsabileBilling = (int)ResponsabileBillingEnum.GBBISIDE,
                     @cuit = paymentMethod.IdentificationNumber
                 });
         }
