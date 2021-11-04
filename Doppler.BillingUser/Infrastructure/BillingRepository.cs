@@ -100,7 +100,8 @@ SELECT
     P.PaymentMethodName AS PaymentMethodName,
     U.RazonSocial,
     U.IdConsumerType,
-    U.CUIT as IdentificationNumber
+    U.CUIT as IdentificationNumber,
+    U.ResponsableIVA
 FROM
     [User] U
 LEFT JOIN
@@ -192,7 +193,8 @@ SET
     RazonSocial = @razonSocial,
     IdConsumerType = (SELECT IdConsumerType FROM [ConsumerTypes] WHERE Name = @idConsumerType),
     IdResponsabileBilling = @idResponsabileBilling,
-    CUIT = @cuit
+    CUIT = @cuit,
+    ResponsableIVA = @responsableIVA
 WHERE
     IdUser = @IdUser;",
                 new
@@ -202,7 +204,8 @@ WHERE
                     @razonSocial = paymentMethod.RazonSocial,
                     @idConsumerType = paymentMethod.IdConsumerType,
                     @idResponsabileBilling = (int)ResponsabileBillingEnum.GBBISIDE,
-                    @cuit = paymentMethod.IdentificationNumber
+                    @cuit = paymentMethod.IdentificationNumber,
+                    @responsableIVA = paymentMethod.ResponsableIVA
                 });
         }
 
