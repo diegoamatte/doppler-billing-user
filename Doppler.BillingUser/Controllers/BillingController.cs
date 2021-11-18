@@ -16,18 +16,18 @@ namespace Doppler.BillingUser.Controllers
     {
         private readonly ILogger _logger;
         private readonly IBillingRepository _billingRepository;
-        private readonly IValidator<BillingInformation> _validator;
+        private readonly IValidator<BillingInformation> _billingInformationValidator;
         private readonly IAccountPlansService _accountPlansService;
 
         public BillingController(
             ILogger<BillingController> logger,
             IBillingRepository billingRepository,
-            IValidator<BillingInformation> validator,
+            IValidator<BillingInformation> billingInformationValidator)
             IAccountPlansService accountPlansService)
         {
             _logger = logger;
             _billingRepository = billingRepository;
-            _validator = validator;
+            _billingInformationValidator = billingInformationValidator;
             _accountPlansService = accountPlansService;
         }
 
@@ -49,7 +49,7 @@ namespace Doppler.BillingUser.Controllers
         [HttpPut("/accounts/{accountname}/billing-information")]
         public async Task<IActionResult> UpdateBillingInformation(string accountname, [FromBody] BillingInformation billingInformation)
         {
-            var results = await _validator.ValidateAsync(billingInformation);
+            var results = await _billingInformationValidator.ValidateAsync(billingInformation);
             if (!results.IsValid)
             {
                 return new BadRequestObjectResult(results.ToString("-"));
