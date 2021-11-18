@@ -77,6 +77,7 @@ namespace Doppler.BillingUser
             services.AddScoped<IFirstDataService, FirstDataService>();
             services.AddScoped<IPaymentGateway, PaymentGateway>();
             services.AddScoped<IValidator<BillingInformation>, BillingInformationValidator>();
+            services.AddScoped<IValidator<AgreementInformation>, AgreementInformationValidator>();
             services.Configure<SapSettings>(Configuration.GetSection(nameof(SapSettings)));
             services.AddScoped<ISapService, SapService>();
             services.AddTransient<JwtSecurityTokenHandler>();

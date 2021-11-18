@@ -18,17 +18,20 @@ namespace Doppler.BillingUser.Controllers
         private readonly IBillingRepository _billingRepository;
         private readonly IValidator<BillingInformation> _billingInformationValidator;
         private readonly IAccountPlansService _accountPlansService;
+        private readonly IValidator<AgreementInformation> _agreementInformationValidator;
 
         public BillingController(
             ILogger<BillingController> logger,
             IBillingRepository billingRepository,
-            IValidator<BillingInformation> billingInformationValidator)
-            IAccountPlansService accountPlansService)
+            IValidator<BillingInformation> billingInformationValidator,
+            IAccountPlansService accountPlansService,
+            IValidator<AgreementInformation> agreementInformationValidator)
         {
             _logger = logger;
             _billingRepository = billingRepository;
             _billingInformationValidator = billingInformationValidator;
             _accountPlansService = accountPlansService;
+            _agreementInformationValidator = agreementInformationValidator;
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
@@ -119,12 +122,27 @@ namespace Doppler.BillingUser.Controllers
         [HttpPost("/accounts/{accountname}/agreements")]
         public async Task<IActionResult> CreateAgreement([FromRoute] string accountname, [FromBody] AgreementInformation agreementInformation)
         {
+            var results = await _agreementInformationValidator.ValidateAsync(agreementInformation);
+            if (!results.IsValid)
+            {
+                return new BadRequestObjectResult(results.ToString("-"));
+            }
+
             var isValidTotal = await _accountPlansService.IsValidTotal(accountname, agreementInformation);
 
             if (!isValidTotal)
             {
                 return new BadRequestObjectResult("Total of agreement is not valid");
             }
+
+            // TODO: verify if user exists
+            // TODO: accept free users only
+            // TODO: accept prepaid plan only
+            // TODO: accept users with credit card payment method only
+
+            // TODO: purchase with first data
+            // TODO: update database (invoice, payment, billing credit)
+            // TODO: create invoice in SAP
 
             return new OkObjectResult("Successfully");
         }
