@@ -57,6 +57,20 @@ namespace Doppler.BillingUser.Controllers
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
+        [HttpGet("/accounts/{accountname}/billing-information/invoice-recipients")]
+        public async Task<IActionResult> GetInvoiceRecipients(string accountname)
+        {
+            var result = await _billingRepository.GetInvoiceRecipients(accountname);
+
+            if (result == null)
+            {
+                return new NotFoundResult();
+            }
+
+            return new OkObjectResult(result);
+        }
+
+        [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
         [HttpGet("/accounts/{accountname}/payment-methods/current")]
         public async Task<IActionResult> GetCurrentPaymentMethod(string accountname)
         {

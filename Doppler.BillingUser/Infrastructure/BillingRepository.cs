@@ -127,6 +127,28 @@ WHERE
             return result;
         }
 
+        public async Task<EmailRecipients> GetInvoiceRecipients(string accountName)
+        {
+            using var connection = await _connectionFactory.GetConnection();
+
+            var user = await connection.QueryFirstOrDefaultAsync<User>(@"
+SELECT
+    U.BillingEmails
+FROM [User] U
+WHERE U.Email = @email;",
+                new
+                {
+                    @email = accountName
+                });
+
+            if (user is null) return null;
+
+            return new EmailRecipients
+            {
+                Recipients = (user.BillingEmails ?? string.Empty).Replace(" ", string.Empty).Split(',')
+            };
+        }
+
         public async Task<bool> UpdateCurrentPaymentMethod(string accountName, PaymentMethod paymentMethod)
         {
             using var connection = await _connectionFactory.GetConnection();
