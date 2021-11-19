@@ -71,7 +71,7 @@ namespace Doppler.BillingUser.Test
             {
                 BillingEmails = null
             };
-            const string expectedContent = "{\"recipients\":[\"\"]}";
+            const string expectedContent = "{\"recipients\":[]}";
 
             var mockConnection = new Mock<DbConnection>();
             mockConnection.SetupDapperAsync(c => c.QueryFirstOrDefaultAsync<User>(null, null, null, null, null))

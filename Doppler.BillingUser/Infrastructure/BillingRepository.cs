@@ -145,7 +145,7 @@ WHERE U.Email = @email;",
 
             return new EmailRecipients
             {
-                Recipients = (user.BillingEmails ?? string.Empty).Replace(" ", string.Empty).Split(',')
+                Recipients = string.IsNullOrEmpty(user.BillingEmails) ? Array.Empty<string>() : user.BillingEmails.Replace(" ", string.Empty).Split(',')
             };
         }
 
