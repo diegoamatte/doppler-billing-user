@@ -1,3 +1,4 @@
+using Doppler.BillingUser.Enums;
 using Doppler.BillingUser.Model;
 
 namespace Doppler.BillingUser.ExternalServices.Sap
@@ -13,6 +14,16 @@ namespace Doppler.BillingUser.ExternalServices.Sap
                 return user.BillingFirstName;
 
             return user.FirstName ?? string.Empty;
+        }
+
+        public static string GetBillingStateId(User user)
+        {
+            if (user.BillingStateCountryCode != "US")
+                return string.Empty;
+
+            SapDictionary.StatesDictionary.TryGetValue(user.IdBillingState, out var stateIdUs);
+
+            return !string.IsNullOrEmpty(stateIdUs) ? stateIdUs : "99";
         }
     }
 }
