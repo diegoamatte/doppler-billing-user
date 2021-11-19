@@ -14,12 +14,12 @@ namespace Doppler.BillingUser.Controllers
     public class BillingController
     {
         private readonly ILogger _logger;
-        private readonly BillingRepository _billingRepository;
+        private readonly IBillingRepository _billingRepository;
         private readonly IValidator<BillingInformation> _validator;
 
         public BillingController(
             ILogger<BillingController> logger,
-            BillingRepository billingRepository,
+            IBillingRepository billingRepository,
             IValidator<BillingInformation> validator)
         {
             _logger = logger;
