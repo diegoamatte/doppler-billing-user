@@ -134,8 +134,10 @@ WHERE
             var user = await connection.QueryFirstOrDefaultAsync<User>(@"
 SELECT
     U.BillingEmails
-FROM [User] U
-WHERE U.Email = @email;",
+FROM
+    [User] U
+WHERE
+    U.Email = @email;",
                 new
                 {
                     @email = accountName
@@ -166,7 +168,7 @@ WHERE
                     @emailRecipients = string.Join(",", emailRecipients)
                 });
 
-                await SendUserDataToSap(accountName, planId);
+            await SendUserDataToSap(accountName, planId);
         }
 
         public async Task<bool> UpdateCurrentPaymentMethod(string accountName, PaymentMethod paymentMethod)
@@ -375,7 +377,6 @@ WHERE
 
                 await _sapService.SendUserDataToSap(sapDto);
             }
-          
         }
     }
 }
