@@ -14,12 +14,12 @@ namespace Doppler.BillingUser.Controllers
     public class BillingController
     {
         private readonly ILogger _logger;
-        private readonly BillingRepository _billingRepository;
+        private readonly IBillingRepository _billingRepository;
         private readonly IValidator<BillingInformation> _validator;
 
         public BillingController(
             ILogger<BillingController> logger,
-            BillingRepository billingRepository,
+            IBillingRepository billingRepository,
             IValidator<BillingInformation> validator)
         {
             _logger = logger;
@@ -68,6 +68,15 @@ namespace Doppler.BillingUser.Controllers
             }
 
             return new OkObjectResult(result);
+        }
+
+        [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
+        [HttpPut("/accounts/{accountname}/billing-information/invoice-recipients")]
+        public async Task<IActionResult> UpdateInvoiceRecipients(string accountname, [FromBody] InvoiceRecipients invoiceRecipients)
+        {
+            await _billingRepository.UpdateInvoiceRecipients(accountname, invoiceRecipients.Recipients, invoiceRecipients.PlanId);
+
+            return new OkObjectResult("Successfully");
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]

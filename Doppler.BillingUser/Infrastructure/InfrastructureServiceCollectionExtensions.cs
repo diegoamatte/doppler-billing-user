@@ -6,7 +6,7 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddRepositories(this IServiceCollection services)
         {
-            services.AddScoped<BillingRepository, BillingRepository>();
+            services.AddScoped<IBillingRepository, BillingRepository>();
             services.AddScoped<IDatabaseConnectionFactory, DatabaseConnectionFactory>();
             return services;
         }
