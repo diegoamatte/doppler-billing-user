@@ -16,6 +16,7 @@ namespace Doppler.BillingUser.Controllers
     {
         private readonly ILogger _logger;
         private readonly IBillingRepository _billingRepository;
+        private readonly IUserRepository _userRepository;
         private readonly IValidator<BillingInformation> _billingInformationValidator;
         private readonly IAccountPlansService _accountPlansService;
         private readonly IValidator<AgreementInformation> _agreementInformationValidator;
@@ -23,12 +24,14 @@ namespace Doppler.BillingUser.Controllers
         public BillingController(
             ILogger<BillingController> logger,
             IBillingRepository billingRepository,
+            IUserRepository userRepository,
             IValidator<BillingInformation> billingInformationValidator,
             IAccountPlansService accountPlansService,
             IValidator<AgreementInformation> agreementInformationValidator)
         {
             _logger = logger;
             _billingRepository = billingRepository;
+            _userRepository = userRepository;
             _billingInformationValidator = billingInformationValidator;
             _accountPlansService = accountPlansService;
             _agreementInformationValidator = agreementInformationValidator;
@@ -128,6 +131,12 @@ namespace Doppler.BillingUser.Controllers
                 return new BadRequestObjectResult(results.ToString("-"));
             }
 
+            var user = await _userRepository.GetUserBillingInformation(accountname);
+            if (user == null)
+            {
+                return new NotFoundObjectResult("Invalid user");
+            }
+
             var isValidTotal = await _accountPlansService.IsValidTotal(accountname, agreementInformation);
 
             if (!isValidTotal)
@@ -135,8 +144,7 @@ namespace Doppler.BillingUser.Controllers
                 return new BadRequestObjectResult("Total of agreement is not valid");
             }
 
-            // TODO: verify if user exists
-            // TODO: accept free users only
+			// TODO: accept free users only
             // TODO: accept prepaid plan only
             // TODO: accept users with credit card payment method only
 

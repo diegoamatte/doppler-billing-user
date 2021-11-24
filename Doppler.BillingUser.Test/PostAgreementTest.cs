@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Dapper;
 using Doppler.BillingUser.Encryption;
 using Doppler.BillingUser.ExternalServices.AccountPlansApi;
+using Doppler.BillingUser.Infrastructure;
 using Doppler.BillingUser.Model;
 using Doppler.BillingUser.Test.Utils;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -69,9 +70,18 @@ namespace Doppler.BillingUser.Test
                 Total = 10,
                 PlanId = 2
             };
+
+            var accountName = "test1@test.com";
             var accountPlansServiceMock = new Mock<IAccountPlansService>();
-            accountPlansServiceMock.Setup(x => x.IsValidTotal(It.IsAny<string>(), It.IsAny<AgreementInformation>()))
+            accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
                 .ReturnsAsync(true);
+
+            var userRepositoryMock = new Mock<IUserRepository>();
+            userRepositoryMock.Setup(x => x.GetUserBillingInformation(accountName))
+                .ReturnsAsync(new UserBillingInformation()
+                {
+                    IdUser = 1
+                });
 
             var client = _factory.WithWebHostBuilder(builder =>
             {
@@ -79,12 +89,13 @@ namespace Doppler.BillingUser.Test
                 {
                     services.AddSingleton(Mock.Of<IEncryptionService>());
                     services.AddSingleton(accountPlansServiceMock.Object);
+                    services.AddSingleton(userRepositoryMock.Object);
                 });
             }).CreateClient(new WebApplicationFactoryClientOptions());
             client.DefaultRequestHeaders.Add("Authorization", $"Bearer {TOKEN_ACCOUNT123_TEST1_AT_TEST_DOT_COM_EXPIRE20330518}");
 
             // Act
-            var response = await client.PostAsJsonAsync("accounts/test1@test.com/agreements", agreement);
+            var response = await client.PostAsJsonAsync($"accounts/{accountName}/agreements", agreement);
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -142,6 +153,33 @@ namespace Doppler.BillingUser.Test
 
             // Assert
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task POST_agreement_information_should_return_not_found_when_user_not_exists()
+        {
+            // Arrange
+            var planId = 1;
+
+            var userRepositoryMock = new Mock<IUserRepository>();
+            userRepositoryMock.Setup(x => x.GetUserBillingInformation(It.IsAny<string>())).ReturnsAsync(null as UserBillingInformation);
+
+            var client = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    services.AddSingleton(userRepositoryMock.Object);
+                });
+
+            }).CreateClient(new WebApplicationFactoryClientOptions());
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TOKEN_ACCOUNT123_TEST1_AT_TEST_DOT_COM_EXPIRE20330518);
+
+            // Act
+            var response = await client.PostAsync("accounts/test1@test.com/agreements", JsonContent.Create(new { planId }));
+
+            // Assert
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
     }
 }
