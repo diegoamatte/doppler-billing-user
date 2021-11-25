@@ -18,7 +18,8 @@ namespace Doppler.BillingUser.Infrastructure
             using var connection = await _connectionFactory.GetConnection();
             var user = await connection.QueryFirstOrDefaultAsync<UserBillingInformation>(@"
 SELECT
-    U.IdUser
+    U.IdUser,
+    U.PaymentMethod
 FROM
     [User] U
 WHERE

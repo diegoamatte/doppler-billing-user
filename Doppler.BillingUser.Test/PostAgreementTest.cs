@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Dapper;
 using Doppler.BillingUser.Encryption;
 using Doppler.BillingUser.ExternalServices.AccountPlansApi;
+using Doppler.BillingUser.Enums;
 using Doppler.BillingUser.Infrastructure;
 using Doppler.BillingUser.Model;
 using Doppler.BillingUser.Test.Utils;
@@ -40,9 +41,19 @@ namespace Doppler.BillingUser.Test
                 DiscountId = 2,
                 PlanId = 3
             };
+
+            var accountName = "test1@test.com";
             var accountPlansServiceMock = new Mock<IAccountPlansService>();
             accountPlansServiceMock.Setup(x => x.IsValidTotal(It.IsAny<string>(), It.IsAny<AgreementInformation>()))
                 .ReturnsAsync(false);
+
+            var userRepositoryMock = new Mock<IUserRepository>();
+            userRepositoryMock.Setup(x => x.GetUserBillingInformation(accountName))
+                .ReturnsAsync(new UserBillingInformation()
+                {
+                    IdUser = 1,
+                    PaymentMethod = PaymentMethodEnum.CC
+                });
 
             var client = _factory.WithWebHostBuilder(builder =>
             {
@@ -50,12 +61,13 @@ namespace Doppler.BillingUser.Test
                 {
                     services.AddSingleton(Mock.Of<IEncryptionService>());
                     services.AddSingleton(accountPlansServiceMock.Object);
+                    services.AddSingleton(userRepositoryMock.Object);
                 });
             }).CreateClient(new WebApplicationFactoryClientOptions());
             client.DefaultRequestHeaders.Add("Authorization", $"Bearer {TOKEN_ACCOUNT123_TEST1_AT_TEST_DOT_COM_EXPIRE20330518}");
 
             // Act
-            var response = await client.PostAsJsonAsync("accounts/test1@test.com/agreements", agreement);
+            var response = await client.PostAsJsonAsync($"accounts/{accountName}/agreements", agreement);
 
             // Assert
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -80,7 +92,8 @@ namespace Doppler.BillingUser.Test
             userRepositoryMock.Setup(x => x.GetUserBillingInformation(accountName))
                 .ReturnsAsync(new UserBillingInformation()
                 {
-                    IdUser = 1
+                    IdUser = 1,
+                    PaymentMethod = PaymentMethodEnum.CC
                 });
 
             var client = _factory.WithWebHostBuilder(builder =>
@@ -95,7 +108,7 @@ namespace Doppler.BillingUser.Test
             client.DefaultRequestHeaders.Add("Authorization", $"Bearer {TOKEN_ACCOUNT123_TEST1_AT_TEST_DOT_COM_EXPIRE20330518}");
 
             // Act
-            var response = await client.PostAsJsonAsync($"accounts/{accountName}/agreements", agreement);
+            var response = await client.PostAsync($"accounts/{accountName}/agreements", JsonContent.Create(agreement));
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -156,6 +169,49 @@ namespace Doppler.BillingUser.Test
         }
 
         [Fact]
+        public async Task POST_agreement_should_return_ok_when_planId_is_a_valid_prepaid_plan_and_user_exists_and_have_cc_as_payment_method()
+        {
+            // Arrange
+            var agreement = new
+            {
+                Total = 10,
+                PlanId = 3
+            };
+
+            var accountName = "test1@test.com";
+            var accountPlansServiceMock = new Mock<IAccountPlansService>();
+            accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
+                .ReturnsAsync(true);
+
+            var userRepositoryMock = new Mock<IUserRepository>();
+            userRepositoryMock.Setup(x => x.GetUserBillingInformation(accountName))
+                .ReturnsAsync(new UserBillingInformation()
+                {
+                    IdUser = 1,
+                    PaymentMethod = PaymentMethodEnum.CC
+                });
+
+            var client = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    services.AddSingleton(Mock.Of<IEncryptionService>());
+                    services.AddSingleton(accountPlansServiceMock.Object);
+                    services.AddSingleton(userRepositoryMock.Object);
+                });
+
+            }).CreateClient(new WebApplicationFactoryClientOptions());
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TOKEN_ACCOUNT123_TEST1_AT_TEST_DOT_COM_EXPIRE20330518);
+
+            // Act
+            var response = await client.PostAsync($"accounts/{accountName}/agreements", JsonContent.Create(agreement));
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
         public async Task POST_agreement_information_should_return_not_found_when_user_not_exists()
         {
             // Arrange
@@ -180,6 +236,38 @@ namespace Doppler.BillingUser.Test
 
             // Assert
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task POST_agreement_information_should_return_bad_request_when_user_payment_method_is_not_cc()
+        {
+            // Arrange
+            var planId = 2;
+
+            var userRepositoryMock = new Mock<IUserRepository>();
+            userRepositoryMock.Setup(x => x.GetUserBillingInformation(It.IsAny<string>()))
+                .ReturnsAsync(new UserBillingInformation()
+                {
+                    IdUser = 1,
+                    PaymentMethod = PaymentMethodEnum.MP
+                });
+
+            var client = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    services.AddSingleton(userRepositoryMock.Object);
+                });
+
+            }).CreateClient(new WebApplicationFactoryClientOptions());
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TOKEN_ACCOUNT123_TEST1_AT_TEST_DOT_COM_EXPIRE20330518);
+
+            // Act
+            var response = await client.PostAsync("accounts/test1@test.com/agreements", JsonContent.Create(new { planId }));
+
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
     }
 }

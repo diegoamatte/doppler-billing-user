@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using Doppler.BillingUser.ExternalServices.AccountPlansApi;
 using FluentValidation;
+using Doppler.BillingUser.Enums;
 
 namespace Doppler.BillingUser.Controllers
 {
@@ -136,6 +137,11 @@ namespace Doppler.BillingUser.Controllers
             {
                 return new NotFoundObjectResult("Invalid user");
             }
+            
+            if (user.PaymentMethod != PaymentMethodEnum.CC)
+            {
+                return new BadRequestObjectResult("Invalid payment method");
+            }
 
             var isValidTotal = await _accountPlansService.IsValidTotal(accountname, agreementInformation);
 
@@ -146,7 +152,6 @@ namespace Doppler.BillingUser.Controllers
 
 			// TODO: accept free users only
             // TODO: accept prepaid plan only
-            // TODO: accept users with credit card payment method only
 
             // TODO: purchase with first data
             // TODO: update database (invoice, payment, billing credit)
