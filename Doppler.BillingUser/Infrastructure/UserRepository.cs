@@ -31,5 +31,29 @@ WHERE
 
             return user;
         }
+
+        public async Task<UserTypePlanInformation> GetUserCurrentTypePlan(int idUser)
+        {
+            using var connection = await _connectionFactory.GetConnection();
+            var userTypePlan = await connection.QueryFirstOrDefaultAsync<UserTypePlanInformation>(@"
+SELECT TOP 1
+    UTP.[IdUserType]
+FROM
+    [dbo].[BillingCredits] BC
+    INNER JOIN
+    [dbo].[UserTypesPlans] UTP
+    ON
+    BC.IdUserTypePlan = UTP.IdUserTypePlan
+WHERE
+    BC.[IdUser] = @idUser
+ORDER BY
+    BC.[Date] DESC;",
+                new
+                {
+                    idUser
+                });
+
+            return userTypePlan;
+        }
     }
 }

@@ -6,5 +6,6 @@ namespace Doppler.BillingUser.Infrastructure
     public interface IUserRepository
     {
         Task<UserBillingInformation> GetUserBillingInformation(string accountName);
+        Task<UserTypePlanInformation> GetUserCurrentTypePlan(int idUser);
     }
 }

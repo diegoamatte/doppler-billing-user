@@ -150,7 +150,12 @@ namespace Doppler.BillingUser.Controllers
                 return new BadRequestObjectResult("Total of agreement is not valid");
             }
 
-			// TODO: accept free users only
+            var currentPlan = await _userRepository.GetUserCurrentTypePlan(user.IdUser);
+            if (currentPlan != null)
+            {
+                return new BadRequestObjectResult("Invalid user type (only free users)");
+            }
+
             // TODO: accept prepaid plan only
 
             // TODO: purchase with first data
