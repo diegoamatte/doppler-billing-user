@@ -10,6 +10,9 @@ namespace Doppler.BillingUser.Validators
             RuleFor(x => x.PlanId)
                 .NotEmpty()
                 .GreaterThan(0);
+
+            RuleFor(x => x.Total)
+                .NotEmpty();
         }
     }
 }
