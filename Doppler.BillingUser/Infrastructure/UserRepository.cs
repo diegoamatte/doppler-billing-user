@@ -1,4 +1,5 @@
 using Dapper;
+using Doppler.BillingUser.ExternalServices.FirstData;
 using Doppler.BillingUser.Model;
 using System.Threading.Tasks;
 
@@ -54,6 +55,29 @@ ORDER BY
                 });
 
             return userTypePlan;
+        }
+
+        public async Task<CreditCard> GetEncryptedCreditCard(string accountName)
+        {
+            using var connection = await _connectionFactory.GetConnection();
+            var encryptedCreditCard = await connection.QueryFirstOrDefaultAsync<CreditCard>(@"
+SELECT
+    CCHolderFullName as HolderName,
+    CCNumber as Number,
+    CCExpMonth as ExpirationMonth,
+    CCExpYear as ExpirationYear,
+    CCVerification as Code,
+    IdCCType as CardType
+FROM
+    [User]
+WHERE
+    Email = @email;",
+                new
+                {
+                    @email = accountName
+                });
+
+            return encryptedCreditCard;
         }
     }
 }

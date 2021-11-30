@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using Doppler.BillingUser.ExternalServices.AccountPlansApi;
 using FluentValidation;
 using Doppler.BillingUser.Enums;
+using Doppler.BillingUser.ExternalServices.FirstData;
+using System;
 
 namespace Doppler.BillingUser.Controllers
 {
@@ -21,21 +23,24 @@ namespace Doppler.BillingUser.Controllers
         private readonly IValidator<BillingInformation> _billingInformationValidator;
         private readonly IAccountPlansService _accountPlansService;
         private readonly IValidator<AgreementInformation> _agreementInformationValidator;
+        private readonly IPaymentGateway _paymentGateway;
 
         public BillingController(
             ILogger<BillingController> logger,
             IBillingRepository billingRepository,
             IUserRepository userRepository,
             IValidator<BillingInformation> billingInformationValidator,
+            IValidator<AgreementInformation> agreementInformationValidator,
             IAccountPlansService accountPlansService,
-            IValidator<AgreementInformation> agreementInformationValidator)
+            IPaymentGateway paymentGateway)
         {
             _logger = logger;
             _billingRepository = billingRepository;
             _userRepository = userRepository;
             _billingInformationValidator = billingInformationValidator;
-            _accountPlansService = accountPlansService;
             _agreementInformationValidator = agreementInformationValidator;
+            _accountPlansService = accountPlansService;
+            _paymentGateway = paymentGateway;
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
@@ -137,7 +142,7 @@ namespace Doppler.BillingUser.Controllers
             {
                 return new NotFoundObjectResult("Invalid user");
             }
-            
+
             if (user.PaymentMethod != PaymentMethodEnum.CC)
             {
                 return new BadRequestObjectResult("Invalid payment method");
@@ -156,9 +161,21 @@ namespace Doppler.BillingUser.Controllers
                 return new BadRequestObjectResult("Invalid user type (only free users)");
             }
 
-            // TODO: accept prepaid plan only
+            if (agreementInformation.Total.GetValueOrDefault() > 0)
+            {
+                var encryptedCreditCard = await _userRepository.GetEncryptedCreditCard(accountname);
+                if (encryptedCreditCard == null)
+                {
+                    return new ObjectResult("User credit card missing")
+                    {
+                        StatusCode = 500
+                    };
+                }
 
-            // TODO: purchase with first data
+                // TODO: Deal with first data exceptions.
+                await _paymentGateway.CreateCreditCardPayment(agreementInformation.Total.GetValueOrDefault(), encryptedCreditCard, user.IdUser); // TODO: use authnumber to create invoice and payments
+            }
+
             // TODO: update database (invoice, payment, billing credit)
             // TODO: create invoice in SAP
 

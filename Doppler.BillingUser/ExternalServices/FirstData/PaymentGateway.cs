@@ -160,5 +160,11 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
                 }
             }
         }
+
+        public async Task<string> CreateCreditCardPayment(decimal chargeTotal, CreditCard creditCard, int clientId)
+        {
+            var paymentRequest = CreateDirectPaymentRequest(TransactionTypes.PURCHASE, chargeTotal, creditCard, clientId);
+            return await PostRequest(paymentRequest, clientId);
+        }
     }
 }
