@@ -79,5 +79,29 @@ WHERE
 
             return encryptedCreditCard;
         }
+
+        public async Task<UserTypePlanInformation> GetUserNewTypePlan(int idUserTypePlan)
+        {
+            using var connection = await _connectionFactory.GetConnection();
+            var userTypePlan = await connection.QueryFirstOrDefaultAsync<UserTypePlanInformation>(@"
+SELECT
+    [IdUserTypePlan],
+    [IdUserType],
+    [Description],
+    [EmailQty],
+    [Fee],
+    [ExtraEmailCost],
+    [SubscribersQty]
+FROM
+    [dbo].[UserTypesPlans]
+WHERE
+    [IdUserTypePlan] = @idUserTypePlan;",
+                new
+                {
+                    @idUserTypePlan = idUserTypePlan
+                });
+
+            return userTypePlan;
+        }
     }
 }

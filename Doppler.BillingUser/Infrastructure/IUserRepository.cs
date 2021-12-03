@@ -9,5 +9,6 @@ namespace Doppler.BillingUser.Infrastructure
         Task<UserBillingInformation> GetUserBillingInformation(string accountName);
         Task<UserTypePlanInformation> GetUserCurrentTypePlan(int idUser);
         Task<CreditCard> GetEncryptedCreditCard(string accountName);
+        Task<UserTypePlanInformation> GetUserNewTypePlan(int idUserTypePlan);
     }
 }

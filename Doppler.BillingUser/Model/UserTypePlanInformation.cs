@@ -4,6 +4,6 @@ namespace Doppler.BillingUser.Model
 {
     public class UserTypePlanInformation
     {
-        public int IdUserType { get; set; }
+        public UserTypeEnum IdUserType { get; set; }
     }
 }

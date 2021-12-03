@@ -161,6 +161,17 @@ namespace Doppler.BillingUser.Controllers
                 return new BadRequestObjectResult("Invalid user type (only free users)");
             }
 
+            var newPlan = await _userRepository.GetUserNewTypePlan(agreementInformation.PlanId);
+            if (newPlan == null)
+            {
+                return new BadRequestObjectResult("Invalid selected plan");
+            }
+
+            if (newPlan.IdUserType != UserTypeEnum.INDIVIDUAL)
+            {
+                return new BadRequestObjectResult("Invalid selected plan type");
+            }
+
             if (agreementInformation.Total.GetValueOrDefault() > 0)
             {
                 var encryptedCreditCard = await _userRepository.GetEncryptedCreditCard(accountname);
@@ -173,10 +184,11 @@ namespace Doppler.BillingUser.Controllers
                 }
 
                 // TODO: Deal with first data exceptions.
-                await _paymentGateway.CreateCreditCardPayment(agreementInformation.Total.GetValueOrDefault(), encryptedCreditCard, user.IdUser); // TODO: use authnumber to create invoice and payments
+                var authorizationNumber = await _paymentGateway.CreateCreditCardPayment(agreementInformation.Total.GetValueOrDefault(), encryptedCreditCard, user.IdUser);
+                await _billingRepository.CreateAccountingEntriesAsync(agreementInformation, encryptedCreditCard, user.IdUser, authorizationNumber);
             }
 
-            // TODO: update database (invoice, payment, billing credit)
+            // TODO: save agreement
             // TODO: create invoice in SAP
 
             return new OkObjectResult("Successfully");

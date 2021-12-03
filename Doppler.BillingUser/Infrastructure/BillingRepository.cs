@@ -21,6 +21,16 @@ namespace Doppler.BillingUser.Infrastructure
         private readonly IPaymentGateway _paymentGateway;
         private readonly ISapService _sapService;
 
+        private const int InvoiceBillingTypeQBL = 1;
+        private const int UserAccountType = 1;
+        private const string AccountingEntryStatusApproved = "Approved";
+        private const string AccountingEntryTypeDescriptionInvoice = "Invoice";
+        private const string AccountingEntryTypeDescriptionCCPayment = "CC Payment";
+        private const string AccountEntryTypeInvoice = "I";
+        private const string AccountEntryTypePayment = "P";
+        private const string PaymentEntryTypePayment = "P";
+        private const int SourceTypeBuyCreditsId = 3;
+
         public BillingRepository(IDatabaseConnectionFactory connectionFactory,
             IEncryptionService encryptionService,
             IPaymentGateway paymentGateway,
@@ -377,6 +387,106 @@ WHERE
 
                 await _sapService.SendUserDataToSap(sapDto);
             }
+        }
+
+        public async Task<int> CreateAccountingEntriesAsync(AgreementInformation agreementInformation, CreditCard encryptedCreditCard, int userId, string authorizationNumber)
+        {
+            var connection = await _connectionFactory.GetConnection();
+            var invoiceId = await connection.QueryFirstOrDefaultAsync<int>(@"
+INSERT INTO [dbo].[AccountingEntry]
+    ([Date],
+    [Amount],
+    [Status],
+    [Source],
+    [AuthorizationNumber],
+    [InvoiceNumber],
+    [AccountEntryType],
+    [AccountingTypeDescription],
+    [IdClient],
+    [IdAccountType],
+    [IdInvoiceBillingType])
+VALUES
+    (@date,
+    @amount,
+    @status,
+    @source,
+    @authorizationNumber,
+    @invoiceNumber,
+    @accountEntryType,
+    @accountingTypeDescription,
+    @idClient,
+    @idAccountType,
+    @idInvoiceBillingType);
+SELECT CAST(SCOPE_IDENTITY() AS INT)",
+            new
+            {
+                @idClient = userId,
+                @amount = agreementInformation.Total,
+                @date = DateTime.UtcNow,
+                @status = AccountingEntryStatusApproved,
+                @source = SourceTypeBuyCreditsId,
+                @accountingTypeDescription = AccountingEntryTypeDescriptionInvoice,
+                @invoiceNumber = 0,
+                @idAccountType = UserAccountType,
+                @idInvoiceBillingType = InvoiceBillingTypeQBL,
+                @authorizationNumber = authorizationNumber,
+                @accountEntryType = AccountEntryTypeInvoice
+            });
+
+            await connection.QueryFirstOrDefaultAsync<int>(@"
+INSERT INTO [dbo].[AccountingEntry]
+    ([IdClient],
+    [IdInvoice],
+    [Amount],
+    [CCNumber],
+    [CCExpMonth],
+    [CCExpYear],
+    [CCHolderName],
+    [Date],
+    [Source],
+    [AccountingTypeDescription],
+    [IdAccountType],
+    [IdInvoiceBillingType],
+    [AccountEntryType],
+    [AuthorizationNumber],
+    [PaymentEntryType])
+VALUES
+    (@idClient,
+    @idInvoice,
+    @amount,
+    @ccCNumber,
+    @ccExpMonth,
+    @ccExpYear,
+    @ccHolderName,
+    @date,
+    @source,
+    @accountingTypeDescription,
+    @idAccountType,
+    @idInvoiceBillingType,
+    @accountEntryType,
+    @authorizationNumber,
+    @paymentEntryType);
+SELECT CAST(SCOPE_IDENTITY() AS INT)",
+            new
+            {
+                @idClient = userId,
+                @idInvoice = invoiceId,
+                @amount = agreementInformation.Total,
+                @ccCNumber = encryptedCreditCard.Number,
+                @ccExpMonth = encryptedCreditCard.ExpirationMonth,
+                @ccExpYear = encryptedCreditCard.ExpirationYear,
+                @ccHolderName = encryptedCreditCard.HolderName,
+                @date = DateTime.UtcNow,
+                @source = SourceTypeBuyCreditsId,
+                @accountingTypeDescription = AccountingEntryTypeDescriptionCCPayment,
+                @idAccountType = UserAccountType,
+                @idInvoiceBillingType = InvoiceBillingTypeQBL,
+                @accountEntryType = AccountEntryTypePayment,
+                @authorizationNumber = authorizationNumber,
+                @paymentEntryType = PaymentEntryTypePayment
+            });
+
+            return invoiceId;
         }
     }
 }
