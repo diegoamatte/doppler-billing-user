@@ -29,7 +29,7 @@ namespace Doppler.BillingUser.Test
             var bccEmail = "copy@copy.com";
             var expectedUrl = $"https://api.dopplerrelay.com/accounts/{relayAccountId}/templates/{templateId}/message";
 
-            var configuration = new RelayEmailSenderConfiguration()
+            var configuration = new RelayEmailSenderSettings()
             {
                 SendTemplateUrlTemplate = SendTemplateUrl,
                 ApiKey = apiKey,

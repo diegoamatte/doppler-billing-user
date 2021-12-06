@@ -31,7 +31,7 @@ namespace Doppler.BillingUser
         public void ConfigureServices(IServiceCollection services)
         {
             services.Configure<DopplerDatabaseSettings>(Configuration.GetSection(nameof(DopplerDatabaseSettings)));
-            services.Configure<RelayEmailSenderConfiguration>(Configuration.GetSection(nameof(RelayEmailSenderConfiguration)));
+            services.Configure<RelayEmailSenderSettings>(Configuration.GetSection(nameof(RelayEmailSenderSettings)));
             services.AddDopplerSecurity();
             services.AddRepositories();
             services.AddControllers();

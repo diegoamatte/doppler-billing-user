@@ -14,10 +14,10 @@ namespace Doppler.BillingUser.ExternalServices.EmailSender
     public class RelayEmailSender : IEmailSender
     {
         private readonly ILogger<RelayEmailSender> _logger;
-        private readonly RelayEmailSenderConfiguration _config;
+        private readonly RelayEmailSenderSettings _config;
         private readonly IFlurlClient _flurlClient;
 
-        public RelayEmailSender(IOptions<RelayEmailSenderConfiguration> config, ILogger<RelayEmailSender> logger, IFlurlClientFactory flurlClientFac)
+        public RelayEmailSender(IOptions<RelayEmailSenderSettings> config, ILogger<RelayEmailSender> logger, IFlurlClientFactory flurlClientFac)
         {
             _config = config.Value;
             _logger = logger;
