@@ -15,13 +15,13 @@ namespace Doppler.BillingUser.ExternalServices.AccountPlansApi
         private readonly IOptions<AccountPlansSettings> _options;
         private readonly ILogger _logger;
         private readonly IFlurlClient _flurlClient;
-        private readonly IAccountPlansApiTokenGetter _usersApiTokenGetter;
+        private readonly ICurrentRequestApiTokenGetter _usersApiTokenGetter;
 
         public AccountPlansService(
             IOptions<AccountPlansSettings> options,
             ILogger<AccountPlansService> logger,
             IFlurlClientFactory flurlClientFac,
-            IAccountPlansApiTokenGetter usersApiTokenGetter)
+            ICurrentRequestApiTokenGetter usersApiTokenGetter)
         {
             _options = options;
             _logger = logger;

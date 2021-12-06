@@ -66,7 +66,7 @@ namespace Doppler.BillingUser.Test
         public async Task Create_agreement_return_Ok_when_total_amount_validation_is_true()
         {
             // Arrange
-            var agreement = new AgreementInformation
+            var agreement = new
             {
                 Total = 10
             };

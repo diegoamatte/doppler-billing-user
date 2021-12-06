@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 
 namespace Doppler.BillingUser.Authorization
 {
-    public interface IAccountPlansApiTokenGetter
+    public interface ICurrentRequestApiTokenGetter
     {
         public Task<string> GetTokenAsync();
     }

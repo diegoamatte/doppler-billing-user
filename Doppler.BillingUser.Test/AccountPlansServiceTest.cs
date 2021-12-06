@@ -44,7 +44,7 @@ namespace Doppler.BillingUser.Test
                 _accountPlansSettingsMock.Object,
                 Mock.Of<ILogger<AccountPlansService>>(),
                 factory,
-                Mock.Of<IAccountPlansApiTokenGetter>());
+                Mock.Of<ICurrentRequestApiTokenGetter>());
 
             // Act
             using var httpTest = new HttpTest();
@@ -78,13 +78,11 @@ namespace Doppler.BillingUser.Test
                 _accountPlansSettingsMock.Object,
                 Mock.Of<ILogger<AccountPlansService>>(),
                 factory,
-                Mock.Of<IAccountPlansApiTokenGetter>());
-
-
-            // Act
+                Mock.Of<ICurrentRequestApiTokenGetter>());
             using var httpTest = new HttpTest();
             httpTest.RespondWithJson(new { Total = 3 });
 
+            // Act
             var isValid = await service.IsValidTotal(accountname, agreement);
             const string url = "https://localhost:5000/accounts/test%40mail.com/newplan/1/calculate?discountId=3";
 
@@ -114,7 +112,7 @@ namespace Doppler.BillingUser.Test
                 _accountPlansSettingsMock.Object,
                 Mock.Of<ILogger<AccountPlansService>>(),
                 factory,
-                Mock.Of<IAccountPlansApiTokenGetter>());
+                Mock.Of<ICurrentRequestApiTokenGetter>());
 
 
             // Act
@@ -122,7 +120,9 @@ namespace Doppler.BillingUser.Test
             httpTest.RespondWith(status: 500);
 
             // Assert
-            await Assert.ThrowsAsync<FlurlHttpException>(async () => await service.IsValidTotal(accountname, agreement));
+            await Assert.ThrowsAsync<FlurlHttpException>(async () =>
+                // Act
+                await service.IsValidTotal(accountname, agreement));
         }
     }
 }
