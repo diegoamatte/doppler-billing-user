@@ -4,11 +4,11 @@ using Microsoft.AspNetCore.Http;
 
 namespace Doppler.BillingUser.Authorization
 {
-    public class UsersApiTokenGetter : IUsersApiTokenGetter
+    public class AccountPlansApiTokenGetter : IAccountPlansApiTokenGetter
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public UsersApiTokenGetter(IHttpContextAccessor httpContextAccessor) => _httpContextAccessor = httpContextAccessor;
+        public AccountPlansApiTokenGetter(IHttpContextAccessor httpContextAccessor) => _httpContextAccessor = httpContextAccessor;
 
         public async Task<string> GetTokenAsync() => await _httpContextAccessor.HttpContext?.GetTokenAsync("Bearer", "access_token");
     }

@@ -43,7 +43,7 @@ namespace Doppler.BillingUser.Test
                 _accountPlansSettingsMock.Object,
                 Mock.Of<ILogger<AccountPlansService>>(),
                 factory,
-                Mock.Of<IUsersApiTokenGetter>());
+                Mock.Of<IAccountPlansApiTokenGetter>());
 
             // Act
             using var httpTest = new HttpTest();
@@ -77,7 +77,7 @@ namespace Doppler.BillingUser.Test
                 _accountPlansSettingsMock.Object,
                 Mock.Of<ILogger<AccountPlansService>>(),
                 factory,
-                Mock.Of<IUsersApiTokenGetter>());
+                Mock.Of<IAccountPlansApiTokenGetter>());
 
 
             // Act

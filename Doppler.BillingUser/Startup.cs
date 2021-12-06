@@ -87,7 +87,7 @@ namespace Doppler.BillingUser
             services.AddScoped<IAccountPlansService, AccountPlansService>();
             services.Configure<AccountPlansSettings>(Configuration.GetSection(nameof(AccountPlansSettings)));
             services.AddHttpContextAccessor();
-            services.AddScoped<IUsersApiTokenGetter, UsersApiTokenGetter>();
+            services.AddScoped<IAccountPlansApiTokenGetter, AccountPlansApiTokenGetter>();
             services.AddSingleton<IFlurlClientFactory, PerBaseUrlFlurlClientFactory>();
         }
 
