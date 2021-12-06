@@ -59,7 +59,7 @@ namespace Doppler.BillingUser.Test
                 .Returns(_httpClient);
 
             var service = new AccountPlansService(
-                Mock.Of<IJwtTokenGenerator>(),
+                Mock.Of<IUsersApiTokenGetter>(),
                 _accountPlansSettingsMock.Object,
                 Mock.Of<ILogger<AccountPlansService>>(),
                 _httpClientFactoryMock.Object);
@@ -102,7 +102,7 @@ namespace Doppler.BillingUser.Test
                 .Returns(_httpClient);
 
             var service = new AccountPlansService(
-                Mock.Of<IJwtTokenGenerator>(),
+                Mock.Of<IUsersApiTokenGetter>(),
                 _accountPlansSettingsMock.Object,
                 Mock.Of<ILogger<AccountPlansService>>(),
                 _httpClientFactoryMock.Object);

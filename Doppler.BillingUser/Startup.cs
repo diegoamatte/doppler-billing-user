@@ -85,6 +85,8 @@ namespace Doppler.BillingUser
             services.AddHttpClient();
             services.AddScoped<IAccountPlansService, AccountPlansService>();
             services.Configure<AccountPlansSettings>(Configuration.GetSection(nameof(AccountPlansSettings)));
+            services.AddHttpContextAccessor();
+            services.AddScoped<IUsersApiTokenGetter, UsersApiTokenGetter>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

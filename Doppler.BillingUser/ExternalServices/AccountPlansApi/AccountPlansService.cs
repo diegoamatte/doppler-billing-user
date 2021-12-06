@@ -14,18 +14,18 @@ namespace Doppler.BillingUser.ExternalServices.AccountPlansApi
 {
     public class AccountPlansService : IAccountPlansService
     {
-        private readonly IJwtTokenGenerator _jwtTokenGenerator;
+        private readonly IUsersApiTokenGetter _usersApiTokenGetter;
         private readonly IOptions<AccountPlansSettings> _options;
         private readonly ILogger _logger;
         private readonly IHttpClientFactory _httpClientFactory;
 
         public AccountPlansService(
-            IJwtTokenGenerator jwtTokenGenerator,
+            IUsersApiTokenGetter usersApiTokenGetter,
             IOptions<AccountPlansSettings> options,
             ILogger<AccountPlansService> logger,
             IHttpClientFactory httpClientFactory)
         {
-            _jwtTokenGenerator = jwtTokenGenerator;
+            _usersApiTokenGetter = usersApiTokenGetter;
             _options = options;
             _logger = logger;
             _httpClientFactory = httpClientFactory;
@@ -64,7 +64,7 @@ namespace Doppler.BillingUser.ExternalServices.AccountPlansApi
             };
 
             _logger.LogInformation($"Sending request with url: {uri}");
-            var accessToken = _jwtTokenGenerator.GenerateSuperUserJwtToken();
+            var accessToken = await _usersApiTokenGetter.GetTokenAsync();
             var client = _httpClientFactory.CreateClient();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
