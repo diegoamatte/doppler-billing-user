@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
+using Doppler.BillingUser.ExternalServices.AccountPlansApi;
 using FluentValidation;
 
 namespace Doppler.BillingUser.Controllers
@@ -16,15 +17,18 @@ namespace Doppler.BillingUser.Controllers
         private readonly ILogger _logger;
         private readonly IBillingRepository _billingRepository;
         private readonly IValidator<BillingInformation> _validator;
+        private readonly IAccountPlansService _accountPlansService;
 
         public BillingController(
             ILogger<BillingController> logger,
             IBillingRepository billingRepository,
-            IValidator<BillingInformation> validator)
+            IValidator<BillingInformation> validator,
+            IAccountPlansService accountPlansService)
         {
             _logger = logger;
             _billingRepository = billingRepository;
             _validator = validator;
+            _accountPlansService = accountPlansService;
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
@@ -113,9 +117,16 @@ namespace Doppler.BillingUser.Controllers
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
         [HttpPost("/accounts/{accountname}/agreements")]
-        public string CreateAgreement(string accountname)
+        public async Task<IActionResult> CreateAgreement([FromRoute] string accountname, [FromBody] AgreementInformation agreementInformation)
         {
-            return $"Hello! \"you\" that have access to Upgrade with accountname '{accountname}'";
+            var isValidTotal = await _accountPlansService.IsValidTotal(accountname, agreementInformation);
+
+            if (!isValidTotal)
+            {
+                return new BadRequestObjectResult("Total of agreement is not valid");
+            }
+
+            return new OkObjectResult("Successfully");
         }
     }
 }

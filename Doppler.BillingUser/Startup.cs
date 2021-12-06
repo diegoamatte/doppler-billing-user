@@ -1,6 +1,5 @@
 using Doppler.BillingUser.Authorization;
 using Doppler.BillingUser.Encryption;
-using Doppler.BillingUser.ExternalServices.EmailSender;
 using Doppler.BillingUser.ExternalServices.FirstData;
 using Doppler.BillingUser.ExternalServices.Sap;
 using Doppler.BillingUser.Infrastructure;
@@ -15,6 +14,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using System;
 using System.IdentityModel.Tokens.Jwt;
+using Doppler.BillingUser.ExternalServices.AccountPlansApi;
+using Doppler.BillingUser.ExternalServices.EmailSender;
 
 namespace Doppler.BillingUser
 {
@@ -82,6 +83,8 @@ namespace Doppler.BillingUser
             services.AddJwtToken();
             services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
             services.AddHttpClient();
+            services.AddScoped<IAccountPlansService, AccountPlansService>();
+            services.Configure<AccountPlansSettings>(Configuration.GetSection(nameof(AccountPlansSettings)));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
