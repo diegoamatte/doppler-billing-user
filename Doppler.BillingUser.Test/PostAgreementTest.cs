@@ -1,6 +1,5 @@
 using System.Net;
-using System.Net.Http;
-using System.Text;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Doppler.BillingUser.Encryption;
 using Doppler.BillingUser.ExternalServices.AccountPlansApi;
@@ -9,7 +8,6 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using Newtonsoft.Json;
 using Xunit;
 
 namespace Doppler.BillingUser.Test
@@ -47,16 +45,10 @@ namespace Doppler.BillingUser.Test
                 });
 
             }).CreateClient(new WebApplicationFactoryClientOptions());
-
-            var requestContent = new StringContent(JsonConvert.SerializeObject(agreement), Encoding.UTF8, "application/json");
-            var request = new HttpRequestMessage(HttpMethod.Post, "accounts/test1@test.com/agreements")
-            {
-                Headers = { { "Authorization", $"Bearer {TOKEN_ACCOUNT123_TEST1_AT_TEST_DOT_COM_EXPIRE20330518}" } },
-                Content = requestContent
-            };
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {TOKEN_ACCOUNT123_TEST1_AT_TEST_DOT_COM_EXPIRE20330518}");
 
             // Act
-            var response = await client.SendAsync(request);
+            var response = await client.PostAsJsonAsync("accounts/test1@test.com/agreements", agreement);
 
             // Assert
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -83,16 +75,10 @@ namespace Doppler.BillingUser.Test
                 });
 
             }).CreateClient(new WebApplicationFactoryClientOptions());
-
-            var requestContent = new StringContent(JsonConvert.SerializeObject(agreement), Encoding.UTF8, "application/json");
-            var request = new HttpRequestMessage(HttpMethod.Post, "accounts/test1@test.com/agreements")
-            {
-                Headers = { { "Authorization", $"Bearer {TOKEN_ACCOUNT123_TEST1_AT_TEST_DOT_COM_EXPIRE20330518}" } },
-                Content = requestContent
-            };
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {TOKEN_ACCOUNT123_TEST1_AT_TEST_DOT_COM_EXPIRE20330518}");
 
             // Act
-            var response = await client.SendAsync(request);
+            var response = await client.PostAsJsonAsync("accounts/test1@test.com/agreements", agreement);
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
