@@ -43,7 +43,6 @@ namespace Doppler.BillingUser.Test
                     services.AddSingleton(Mock.Of<IEncryptionService>());
                     services.AddSingleton(accountPlansServiceMock.Object);
                 });
-
             }).CreateClient(new WebApplicationFactoryClientOptions());
             client.DefaultRequestHeaders.Add("Authorization", $"Bearer {TOKEN_ACCOUNT123_TEST1_AT_TEST_DOT_COM_EXPIRE20330518}");
 
@@ -73,7 +72,6 @@ namespace Doppler.BillingUser.Test
                     services.AddSingleton(Mock.Of<IEncryptionService>());
                     services.AddSingleton(accountPlansServiceMock.Object);
                 });
-
             }).CreateClient(new WebApplicationFactoryClientOptions());
             client.DefaultRequestHeaders.Add("Authorization", $"Bearer {TOKEN_ACCOUNT123_TEST1_AT_TEST_DOT_COM_EXPIRE20330518}");
 
