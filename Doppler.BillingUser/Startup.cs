@@ -1,5 +1,6 @@
 using Doppler.BillingUser.Authorization;
 using Doppler.BillingUser.Encryption;
+using Doppler.BillingUser.ExternalServices.EmailSender;
 using Doppler.BillingUser.ExternalServices.FirstData;
 using Doppler.BillingUser.ExternalServices.Sap;
 using Doppler.BillingUser.Infrastructure;
@@ -30,6 +31,7 @@ namespace Doppler.BillingUser
         public void ConfigureServices(IServiceCollection services)
         {
             services.Configure<DopplerDatabaseSettings>(Configuration.GetSection(nameof(DopplerDatabaseSettings)));
+            services.Configure<RelayEmailSenderConfiguration>(Configuration.GetSection(nameof(RelayEmailSenderConfiguration)));
             services.AddDopplerSecurity();
             services.AddRepositories();
             services.AddControllers();
