@@ -16,6 +16,7 @@ using System;
 using System.IdentityModel.Tokens.Jwt;
 using Doppler.BillingUser.ExternalServices.AccountPlansApi;
 using Doppler.BillingUser.ExternalServices.EmailSender;
+using Flurl.Http.Configuration;
 
 namespace Doppler.BillingUser
 {
@@ -87,6 +88,7 @@ namespace Doppler.BillingUser
             services.Configure<AccountPlansSettings>(Configuration.GetSection(nameof(AccountPlansSettings)));
             services.AddHttpContextAccessor();
             services.AddScoped<IUsersApiTokenGetter, UsersApiTokenGetter>();
+            services.AddSingleton<IFlurlClientFactory, PerBaseUrlFlurlClientFactory>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

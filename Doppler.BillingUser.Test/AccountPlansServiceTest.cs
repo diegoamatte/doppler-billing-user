@@ -1,24 +1,19 @@
-using System;
-using System.Net;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using Doppler.BillingUser.Authorization;
 using Doppler.BillingUser.ExternalServices.AccountPlansApi;
 using Doppler.BillingUser.Model;
+using Flurl.Http.Configuration;
+using Flurl.Http.Testing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Moq.Protected;
 using Xunit;
 
 namespace Doppler.BillingUser.Test
 {
     public class AccountPlansServiceTest
     {
-        private readonly Mock<HttpMessageHandler> _httpMessageHandlerMock;
-        private readonly HttpClient _httpClient;
-        private readonly Mock<IHttpClientFactory> _httpClientFactoryMock;
         private readonly Mock<IOptions<AccountPlansSettings>> _accountPlansSettingsMock;
 
         public AccountPlansServiceTest()
@@ -27,11 +22,8 @@ namespace Doppler.BillingUser.Test
             _accountPlansSettingsMock.Setup(x => x.Value)
                 .Returns(new AccountPlansSettings
                 {
-                    BaseUrl = "https://localhost:5000"
+                    CalculateUrlTemplate = "https://localhost:5000/accounts/{accountname}/newplan/{planId}/calculate?discountId={discountId}"
                 });
-            _httpClientFactoryMock = new Mock<IHttpClientFactory>();
-            _httpMessageHandlerMock = new Mock<HttpMessageHandler>();
-            _httpClient = new HttpClient(_httpMessageHandlerMock.Object);
         }
 
         [Fact]
@@ -44,37 +36,28 @@ namespace Doppler.BillingUser.Test
                 PlanId = 1,
                 DiscountId = 3
             };
-
             var accountname = "test@mail.com";
 
-            _httpMessageHandlerMock.Protected()
-                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage
-                {
-                    StatusCode = HttpStatusCode.OK,
-                    Content = new StringContent("{\"Total\":2}")
-                });
-
-            _httpClientFactoryMock.Setup(_ => _.CreateClient(It.IsAny<string>()))
-                .Returns(_httpClient);
-
+            var factory = new PerBaseUrlFlurlClientFactory();
             var service = new AccountPlansService(
-                Mock.Of<IUsersApiTokenGetter>(),
                 _accountPlansSettingsMock.Object,
                 Mock.Of<ILogger<AccountPlansService>>(),
-                _httpClientFactoryMock.Object);
+                factory,
+                Mock.Of<IUsersApiTokenGetter>());
 
             // Act
+            using var httpTest = new HttpTest();
+            httpTest.RespondWithJson(new { total = 2 });
+
             var isValid = await service.IsValidTotal(accountname, agreement);
-            var uri = $"https://localhost:5000/{accountname}/newplan/{agreement.PlanId}/calculate?discountId={agreement.DiscountId}";
+            const string url = "https://localhost:5000/accounts/test%40mail.com/newplan/1/calculate?discountId=3";
 
             // Assert
             Assert.True(isValid);
-            _httpMessageHandlerMock.Protected().Verify<Task<HttpResponseMessage>>(
-                "SendAsync",
-                Times.Exactly(1),
-                ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Get && req.RequestUri == new Uri(uri)),
-            ItExpr.IsAny<CancellationToken>());
+
+            httpTest
+                .ShouldHaveCalled(url)
+                .WithVerb(HttpMethod.Get);
         }
 
         [Fact]
@@ -87,37 +70,30 @@ namespace Doppler.BillingUser.Test
                 PlanId = 1,
                 DiscountId = 3
             };
-
             var accountname = "test@mail.com";
 
-            _httpMessageHandlerMock.Protected()
-                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage
-                {
-                    StatusCode = HttpStatusCode.OK,
-                    Content = new StringContent("{\"Total\":10}")
-                });
-
-            _httpClientFactoryMock.Setup(_ => _.CreateClient(It.IsAny<string>()))
-                .Returns(_httpClient);
-
+            var factory = new PerBaseUrlFlurlClientFactory();
             var service = new AccountPlansService(
-                Mock.Of<IUsersApiTokenGetter>(),
                 _accountPlansSettingsMock.Object,
                 Mock.Of<ILogger<AccountPlansService>>(),
-                _httpClientFactoryMock.Object);
+                factory,
+                Mock.Of<IUsersApiTokenGetter>());
+
 
             // Act
+            using var httpTest = new HttpTest();
+            httpTest.RespondWithJson(new { Total = 3 });
+
             var isValid = await service.IsValidTotal(accountname, agreement);
-            var uri = $"https://localhost:5000/{accountname}/newplan/{agreement.PlanId}/calculate?discountId={agreement.DiscountId}";
+            const string url = "https://localhost:5000/accounts/test%40mail.com/newplan/1/calculate?discountId=3";
 
             // Assert
             Assert.False(isValid);
-            _httpMessageHandlerMock.Protected().Verify<Task<HttpResponseMessage>>(
-                "SendAsync",
-                Times.Exactly(1),
-                ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Get && req.RequestUri == new Uri(uri)),
-                ItExpr.IsAny<CancellationToken>());
+
+            httpTest
+                .ShouldHaveCalled(url)
+                .WithVerb(HttpMethod.Get)
+                .Times(1);
         }
     }
 }

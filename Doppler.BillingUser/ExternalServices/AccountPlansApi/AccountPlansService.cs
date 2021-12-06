@@ -1,34 +1,33 @@
-using System;
-using System.Collections.Generic;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Doppler.BillingUser.Authorization;
 using Doppler.BillingUser.Model;
-using Microsoft.AspNetCore.WebUtilities;
+using Flurl.Http;
+using Flurl.Http.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Tavis.UriTemplates;
 
 namespace Doppler.BillingUser.ExternalServices.AccountPlansApi
 {
     public class AccountPlansService : IAccountPlansService
     {
-        private readonly IUsersApiTokenGetter _usersApiTokenGetter;
         private readonly IOptions<AccountPlansSettings> _options;
         private readonly ILogger _logger;
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IFlurlClient _flurlClient;
+        private readonly IUsersApiTokenGetter _usersApiTokenGetter;
 
         public AccountPlansService(
-            IUsersApiTokenGetter usersApiTokenGetter,
             IOptions<AccountPlansSettings> options,
             ILogger<AccountPlansService> logger,
-            IHttpClientFactory httpClientFactory)
+            IFlurlClientFactory flurlClientFac,
+            IUsersApiTokenGetter usersApiTokenGetter)
         {
-            _usersApiTokenGetter = usersApiTokenGetter;
             _options = options;
             _logger = logger;
-            _httpClientFactory = httpClientFactory;
+            _flurlClient = flurlClientFac.Get(_options.Value.CalculateUrlTemplate);
+            _usersApiTokenGetter = usersApiTokenGetter;
         }
 
         public async Task<bool> IsValidTotal(string accountname, AgreementInformation agreementInformation)
@@ -48,28 +47,18 @@ namespace Doppler.BillingUser.ExternalServices.AccountPlansApi
 
         private async Task<HttpResponseMessage> SendRequest(string accountname, AgreementInformation agreement)
         {
-            var url = $"{_options.Value.BaseUrl}/{accountname}/newplan/{agreement.PlanId}/calculate";
-            var param = new Dictionary<string, string> {
-            {
-                "discountId", agreement.DiscountId.ToString()
-            },
-            {
-                "promocode", agreement.Promocode
-            } };
-            var uri = new Uri(QueryHelpers.AddQueryString(url, param));
-            var httpRequest = new HttpRequestMessage
-            {
-                RequestUri = uri,
-                Method = new HttpMethod("GET")
-            };
+            var token = await _usersApiTokenGetter.GetTokenAsync();
 
-            _logger.LogInformation($"Sending request with url: {uri}");
-            var accessToken = await _usersApiTokenGetter.GetTokenAsync();
-            var client = _httpClientFactory.CreateClient();
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            var response = await _flurlClient.Request(new UriTemplate(_options.Value.CalculateUrlTemplate)
+                    .AddParameter("accountname", accountname)
+                    .AddParameter("planId", agreement.PlanId)
+                    .AddParameter("discountId", agreement.DiscountId)
+                    .AddParameter("promocode", agreement.Promocode)
+                    .Resolve())
+                .WithHeader("Authorization", $"Bearer {token}")
+                .GetAsync();
 
-            return await client.SendAsync(httpRequest);
+            return response.ResponseMessage;
         }
     }
 }
