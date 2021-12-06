@@ -28,7 +28,7 @@ namespace Doppler.BillingUser.Test
         public async Task Create_agreement_return_ForbidResult_when_total_amount_validation_is_false()
         {
             // Arrange
-            var agreement = new AgreementInformation
+            var agreement = new
             {
                 Total = 10,
                 DiscountId = 2,

@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Doppler.BillingUser.Authorization;
 using Doppler.BillingUser.ExternalServices.AccountPlansApi;
 using Doppler.BillingUser.Model;
+using Flurl.Http;
 using Flurl.Http.Configuration;
 using Flurl.Http.Testing;
 using Microsoft.Extensions.Logging;
@@ -94,6 +95,34 @@ namespace Doppler.BillingUser.Test
                 .ShouldHaveCalled(url)
                 .WithVerb(HttpMethod.Get)
                 .Times(1);
+        }
+
+        [Fact]
+        public async Task Get_account_plans_total_return_http_500_when_can_not_connect_with_account_plans_api()
+        {
+            // Arrange
+            var agreement = new AgreementInformation
+            {
+                Total = 2,
+                PlanId = 1,
+                DiscountId = 3
+            };
+            var accountname = "test@mail.com";
+
+            var factory = new PerBaseUrlFlurlClientFactory();
+            var service = new AccountPlansService(
+                _accountPlansSettingsMock.Object,
+                Mock.Of<ILogger<AccountPlansService>>(),
+                factory,
+                Mock.Of<IAccountPlansApiTokenGetter>());
+
+
+            // Act
+            using var httpTest = new HttpTest();
+            httpTest.RespondWith(status: 500);
+
+            // Assert
+            await Assert.ThrowsAsync<FlurlHttpException>(async () => await service.IsValidTotal(accountname, agreement));
         }
     }
 }
