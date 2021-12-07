@@ -1,21 +1,21 @@
 using System.Data.Common;
 using System.Net;
-using System.Net.Http;
-using System.Text;
-using System.Threading;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Dapper;
+using Doppler.BillingUser.Authorization;
 using Doppler.BillingUser.Encryption;
 using Doppler.BillingUser.Enums;
+using Doppler.BillingUser.ExternalServices.Sap;
 using Doppler.BillingUser.Model;
 using Doppler.BillingUser.Test.Utils;
+using Flurl.Http.Testing;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Dapper;
-using Moq.Protected;
-using Newtonsoft.Json;
 using Xunit;
 
 namespace Doppler.BillingUser.Test
@@ -50,9 +50,8 @@ namespace Doppler.BillingUser.Test
                     services.SetupConnectionFactory(mockConnection.Object);
                     services.AddSingleton(Mock.Of<IEncryptionService>());
                 });
-
             }).CreateClient(new WebApplicationFactoryClientOptions());
-            var billingEmailRecipients = new EmailRecipients
+            var billingEmailRecipients = new
             {
                 Recipients = new[]
                 {
@@ -60,15 +59,10 @@ namespace Doppler.BillingUser.Test
                     "test2@mail.com"
                 }
             };
-            var requestContent = new StringContent(JsonConvert.SerializeObject(billingEmailRecipients), Encoding.UTF8, "application/json");
-            var request = new HttpRequestMessage(HttpMethod.Put, "accounts/test1@test.com/billing-information/invoice-recipients")
-            {
-                Headers = { { "Authorization", $"Bearer {TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518}" } },
-                Content = requestContent
-            };
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518}");
 
             // Act
-            var response = await client.SendAsync(request);
+            var response = await client.PutAsJsonAsync("accounts/test1@test.com/billing-information/invoice-recipients", billingEmailRecipients);
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -84,37 +78,22 @@ namespace Doppler.BillingUser.Test
                 SapProperties = "{\"ContractCurrency\" : false,\"GovernmentAccount\" : false,\"Premium\" : false,\"Plus\" : false,\"ComercialPartner\" : false,\"MarketingPartner\" : false,\"OnBoarding\" : false,\"Layout\" : false,\"Datahub\" : false,\"PushNotification\" : false,\"ExclusiveIp\" : false,\"Advisory\" : false,\"Reports\" : false,\"SMS\" : false}",
                 IdResponsabileBilling = (int)ResponsabileBillingEnum.QBL
             };
-
-            var httpClientFactoryMock = new Mock<IHttpClientFactory>();
-            var httpMessageHandlerMock = new Mock<HttpMessageHandler>();
-
-            httpMessageHandlerMock.Protected()
-                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage
-                {
-                    StatusCode = HttpStatusCode.OK,
-                    Content = new StringContent("")
-                });
-            var httpClient = new HttpClient(httpMessageHandlerMock.Object);
-            httpClientFactoryMock.Setup(_ => _.CreateClient(It.IsAny<string>()))
-                .Returns(httpClient);
-
             var mockConnection = new Mock<DbConnection>();
             mockConnection.SetupDapperAsync(c => c.QueryFirstOrDefaultAsync<User>(null, null, null, null, null))
                 .ReturnsAsync(user);
 
-            var client = _factory.WithWebHostBuilder(builder =>
+            var factory = _factory.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureTestServices(services =>
                 {
                     services.SetupConnectionFactory(mockConnection.Object);
                     services.AddSingleton(Mock.Of<IEncryptionService>());
-                    services.AddSingleton(httpClientFactoryMock.Object);
                 });
 
-            }).CreateClient(new WebApplicationFactoryClientOptions());
-            var billingEmailRecipients = new EmailRecipients
+            });
+            factory.Server.PreserveExecutionContext = true;
+            var client = factory.CreateClient(new WebApplicationFactoryClientOptions());
+            var billingEmailRecipients = new
             {
                 Recipients = new[]
                 {
@@ -122,24 +101,15 @@ namespace Doppler.BillingUser.Test
                     "test2@mail.com"
                 }
             };
-            var requestContent = new StringContent(JsonConvert.SerializeObject(billingEmailRecipients), Encoding.UTF8, "application/json");
-            var request = new HttpRequestMessage(HttpMethod.Put, "accounts/test1@test.com/billing-information/invoice-recipients")
-            {
-                Headers = { { "Authorization", $"Bearer {TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518}" } },
-                Content = requestContent
-            };
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518}");
+            var httpTest = new HttpTest();
 
             // Act
-            var response = await client.SendAsync(request);
+            var response = await client.PutAsJsonAsync("accounts/test1@test.com/billing-information/invoice-recipients", billingEmailRecipients);
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            httpMessageHandlerMock.Protected().Verify<Task<HttpResponseMessage>>("SendAsync", Times.Exactly(1),
-                ItExpr.Is<HttpRequestMessage>(
-                    req => req.Method == HttpMethod.Post
-                            && req.Content.ReadAsStringAsync().Result.Contains("\"BillingEmails\":[\"test@mail.com\",\"test2@mail.com\"]")
-                            && req.Content.ReadAsStringAsync().Result.Contains("\"BillingSystemId\":2")),
-                ItExpr.IsAny<CancellationToken>());
+            httpTest.ShouldHaveMadeACall();
         }
 
         [Fact]
@@ -149,40 +119,28 @@ namespace Doppler.BillingUser.Test
             var user = new User
             {
                 BillingEmails = "test@mail.com, test2@mail.com",
-                SapProperties = "{\"ContractCurrency\" : false,\"GovernmentAccount\" : false,\"Premium\" : false,\"Plus\" : false,\"ComercialPartner\" : false,\"MarketingPartner\" : false,\"OnBoarding\" : false,\"Layout\" : false,\"Datahub\" : false,\"PushNotification\" : false,\"ExclusiveIp\" : false,\"Advisory\" : false,\"Reports\" : false,\"SMS\" : false}",
+                SapProperties =
+                    "{\"ContractCurrency\" : false,\"GovernmentAccount\" : false,\"Premium\" : false,\"Plus\" : false,\"ComercialPartner\" : false,\"MarketingPartner\" : false,\"OnBoarding\" : false,\"Layout\" : false,\"Datahub\" : false,\"PushNotification\" : false,\"ExclusiveIp\" : false,\"Advisory\" : false,\"Reports\" : false,\"SMS\" : false}",
                 IdResponsabileBilling = (int)ResponsabileBillingEnum.GBBISIDE
             };
-
-            var httpClientFactoryMock = new Mock<IHttpClientFactory>();
-            var httpMessageHandlerMock = new Mock<HttpMessageHandler>();
-
-            httpMessageHandlerMock.Protected()
-                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage
-                {
-                    StatusCode = HttpStatusCode.OK,
-                    Content = new StringContent("")
-                });
-            var httpClient = new HttpClient(httpMessageHandlerMock.Object);
-            httpClientFactoryMock.Setup(_ => _.CreateClient(It.IsAny<string>()))
-                .Returns(httpClient);
 
             var mockConnection = new Mock<DbConnection>();
             mockConnection.SetupDapperAsync(c => c.QueryFirstOrDefaultAsync<User>(null, null, null, null, null))
                 .ReturnsAsync(user);
-
-            var client = _factory.WithWebHostBuilder(builder =>
+            var factory = _factory.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureTestServices(services =>
                 {
                     services.SetupConnectionFactory(mockConnection.Object);
                     services.AddSingleton(Mock.Of<IEncryptionService>());
-                    services.AddSingleton(httpClientFactoryMock.Object);
+                    services.AddSingleton(GetSapSettingsMock().Object);
+                    services.AddSingleton(Mock.Of<ICurrentRequestApiTokenGetter>());
                 });
+            });
+            factory.Server.PreserveExecutionContext = true;
+            var client = factory.CreateClient(new WebApplicationFactoryClientOptions());
 
-            }).CreateClient(new WebApplicationFactoryClientOptions());
-            var billingEmailRecipients = new EmailRecipients
+            var billingEmailRecipients = new
             {
                 Recipients = new[]
                 {
@@ -190,24 +148,16 @@ namespace Doppler.BillingUser.Test
                     "test2@mail.com"
                 }
             };
-            var requestContent = new StringContent(JsonConvert.SerializeObject(billingEmailRecipients), Encoding.UTF8, "application/json");
-            var request = new HttpRequestMessage(HttpMethod.Put, "accounts/test1@test.com/billing-information/invoice-recipients")
-            {
-                Headers = { { "Authorization", $"Bearer {TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518}" } },
-                Content = requestContent
-            };
+            client.DefaultRequestHeaders.Add("Authorization",
+                $"Bearer {TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518}");
 
             // Act
-            var response = await client.SendAsync(request);
+            using var httpTest = new HttpTest();
+            var response = await client.PutAsJsonAsync("accounts/test1@test.com/billing-information/invoice-recipients", billingEmailRecipients);
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            httpMessageHandlerMock.Protected().Verify<Task<HttpResponseMessage>>("SendAsync", Times.Exactly(1),
-                ItExpr.Is<HttpRequestMessage>(
-                    req => req.Method == HttpMethod.Post
-                            && req.Content.ReadAsStringAsync().Result.Contains("\"BillingEmails\":[\"test@mail.com\",\"test2@mail.com\"]")
-                            && req.Content.ReadAsStringAsync().Result.Contains("\"BillingSystemId\":9")),
-                ItExpr.IsAny<CancellationToken>());
+            httpTest.ShouldHaveMadeACall();
         }
 
         [Fact]
@@ -221,21 +171,6 @@ namespace Doppler.BillingUser.Test
                 IdResponsabileBilling = (int)ResponsabileBillingEnum.GB
             };
 
-            var httpClientFactoryMock = new Mock<IHttpClientFactory>();
-            var httpMessageHandlerMock = new Mock<HttpMessageHandler>();
-
-            httpMessageHandlerMock.Protected()
-                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage
-                {
-                    StatusCode = HttpStatusCode.OK,
-                    Content = new StringContent("")
-                });
-            var httpClient = new HttpClient(httpMessageHandlerMock.Object);
-            httpClientFactoryMock.Setup(_ => _.CreateClient(It.IsAny<string>()))
-                .Returns(httpClient);
-
             var mockConnection = new Mock<DbConnection>();
             mockConnection.SetupDapperAsync(c => c.QueryFirstOrDefaultAsync<User>(null, null, null, null, null))
                 .ReturnsAsync(user);
@@ -246,32 +181,36 @@ namespace Doppler.BillingUser.Test
                 {
                     services.SetupConnectionFactory(mockConnection.Object);
                     services.AddSingleton(Mock.Of<IEncryptionService>());
-                    services.AddSingleton(httpClientFactoryMock.Object);
                 });
-
             }).CreateClient(new WebApplicationFactoryClientOptions());
-            var billingEmailRecipients = new EmailRecipients
+
+            var billingEmailRecipients = new
             {
                 Recipients = new[] { "test@mail.com", "test2@mail.com" }
             };
-            var requestContent = new StringContent(JsonConvert.SerializeObject(billingEmailRecipients), Encoding.UTF8, "application/json");
-            var request = new HttpRequestMessage(HttpMethod.Put, "accounts/test1@test.com/billing-information/invoice-recipients")
-            {
-                Headers = { { "Authorization", $"Bearer {TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518}" } },
-                Content = requestContent
-            };
+
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {TOKEN_ACCOUNT_123_TEST1_AT_TEST_DOT_COM_EXPIRE_20330518}");
+            using var httpTest = new HttpTest();
 
             // Act
-            var response = await client.SendAsync(request);
+            var response = await client.PutAsJsonAsync("accounts/test1@test.com/billing-information/invoice-recipients", billingEmailRecipients);
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            httpMessageHandlerMock.Protected().Verify<Task<HttpResponseMessage>>("SendAsync", Times.Exactly(0),
-                ItExpr.Is<HttpRequestMessage>(
-                    req => req.Method == HttpMethod.Post
-                            && req.Content.ReadAsStringAsync().Result.Contains("\"BillingEmails\":[\"test@mail.com\",\"test2@mail.com\"]")
-                            && req.Content.ReadAsStringAsync().Result.Contains("\"BillingSystemId\":9")),
-                ItExpr.IsAny<CancellationToken>());
+            httpTest.ShouldNotHaveCalled("https://localhost:5000/businesspartner/createorupdatebusinesspartner");
+        }
+
+        private static Mock<IOptions<SapSettings>> GetSapSettingsMock()
+        {
+            var accountPlansSettingsMock = new Mock<IOptions<SapSettings>>();
+            accountPlansSettingsMock.Setup(x => x.Value)
+                .Returns(new SapSettings
+                {
+                    SapBaseUrl = "https://localhost:5000/",
+                    SapCreateBusinessPartnerEndpoint = "businesspartner/createorupdatebusinesspartner"
+                });
+
+            return accountPlansSettingsMock;
         }
     }
 }

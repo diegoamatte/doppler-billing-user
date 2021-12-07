@@ -13,10 +13,11 @@ using Newtonsoft.Json;
 using System.Data.Common;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using Moq.Protected;
+using Flurl.Http.Testing;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace Doppler.BillingUser.Test
@@ -206,7 +207,7 @@ namespace Doppler.BillingUser.Test
             const int userId = 1;
             const int expectedRows = 1;
 
-            var currentPaymentMethod = new PaymentMethod
+            var currentPaymentMethod = new
             {
                 PaymentMethodName = "TRANSF",
                 IdSelectedPlan = 13,
@@ -224,66 +225,37 @@ namespace Doppler.BillingUser.Test
                 FirstName = "firstName"
             };
 
-            var requestContent = new StringContent(JsonConvert.SerializeObject(currentPaymentMethod), Encoding.UTF8, "application/json");
-
             var mockConnection = new Mock<DbConnection>();
-
             mockConnection.SetupDapperAsync(c => c.QueryFirstOrDefaultAsync<int>(null, null, null, null, null)).ReturnsAsync(userId);
             mockConnection.SetupDapperAsync(c => c.ExecuteAsync(null, null, null, null, null)).ReturnsAsync(expectedRows);
             mockConnection.SetupDapperAsync(c => c.QueryFirstOrDefaultAsync<User>(null, null, null, null, null)).ReturnsAsync(user);
 
-            var httpClientFactoryMock = new Mock<IHttpClientFactory>();
-            var httpMessageHandlerMock = new Mock<HttpMessageHandler>();
-
-            httpMessageHandlerMock.Protected()
-                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage
-                {
-                    StatusCode = HttpStatusCode.OK,
-                    Content = new StringContent("")
-                });
-            var httpClient = new HttpClient(httpMessageHandlerMock.Object);
-            httpClientFactoryMock.Setup(_ => _.CreateClient(It.IsAny<string>()))
-                .Returns(httpClient);
-
             var encryptedMock = new Mock<IEncryptionService>();
             encryptedMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("TEST");
 
-            var client = _factory.WithWebHostBuilder(builder =>
+            var factory = _factory.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureTestServices(services =>
                 {
                     services.SetupConnectionFactory(mockConnection.Object);
                     services.AddSingleton(encryptedMock.Object);
-                    services.AddSingleton(httpClientFactoryMock.Object);
+                    services.AddSingleton(GetSapSettingsMock().Object);
                 });
 
-            }).CreateClient(new WebApplicationFactoryClientOptions());
-
-            var request = new HttpRequestMessage(HttpMethod.Put, "accounts/test1@test.com/payment-methods/current")
-            {
-                Headers =
-                {
-                    {
-                        "Authorization", $"Bearer {TokenAccount123Test1AtTestDotComExpire20330518}"
-                    }
-                },
-                Content = requestContent
-            };
+            });
+            factory.Server.PreserveExecutionContext = true;
+            var client = factory.CreateClient(new WebApplicationFactoryClientOptions());
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {TokenAccount123Test1AtTestDotComExpire20330518}");
+            var httpTest = new HttpTest();
+            const string url = "https://localhost:5000/businesspartner/createorupdatebusinesspartner";
 
             // Act
-            var response = await client.SendAsync(request);
+            var response = await client.PutAsJsonAsync("accounts/test1@test.com/payment-methods/current", currentPaymentMethod);
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            httpMessageHandlerMock.Protected().Verify<Task<HttpResponseMessage>>("SendAsync", Times.Exactly(1),
-                ItExpr.Is<HttpRequestMessage>(
-                    req => req.Method == HttpMethod.Post
-                    && req.Content.ReadAsStringAsync().Result.Contains("\"FederalTaxId\":\"2334345566\"")
-                    && req.Content.ReadAsStringAsync().Result.Contains("\"FirstName\":\"firstName\"")
-                    && req.Content.ReadAsStringAsync().Result.Contains("\"BillingSystemId\":9")),
-                ItExpr.IsAny<CancellationToken>());
+            httpTest.ShouldHaveCalled(url)
+                .WithVerb(HttpMethod.Post);
         }
 
         [Fact]
@@ -317,9 +289,6 @@ namespace Doppler.BillingUser.Test
             var paymentGatewayMock = new Mock<IPaymentGateway>();
             paymentGatewayMock.Setup(x => x.IsValidCreditCard(It.IsAny<CreditCard>(), It.IsAny<int>())).ReturnsAsync(false);
 
-            var sapServiceMock = new Mock<ISapService>();
-            sapServiceMock.Setup(x => x.SendUserDataToSap(It.IsAny<SapBusinessPartner>(), null));
-
             var client = _factory.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureTestServices(services =>
@@ -327,7 +296,7 @@ namespace Doppler.BillingUser.Test
                     services.SetupConnectionFactory(mockConnection.Object);
                     services.AddSingleton(encryptedMock.Object);
                     services.AddSingleton(paymentGatewayMock.Object);
-                    services.AddSingleton(sapServiceMock.Object);
+                    services.AddSingleton(GetSapSettingsMock().Object);
                 });
 
             }).CreateClient(new WebApplicationFactoryClientOptions());
@@ -348,6 +317,19 @@ namespace Doppler.BillingUser.Test
 
             // Assert
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        private static Mock<IOptions<SapSettings>> GetSapSettingsMock()
+        {
+            var accountPlansSettingsMock = new Mock<IOptions<SapSettings>>();
+            accountPlansSettingsMock.Setup(x => x.Value)
+                .Returns(new SapSettings
+                {
+                    SapBaseUrl = "https://localhost:5000/",
+                    SapCreateBusinessPartnerEndpoint = "businesspartner/createorupdatebusinesspartner"
+                });
+
+            return accountPlansSettingsMock;
         }
     }
 }
