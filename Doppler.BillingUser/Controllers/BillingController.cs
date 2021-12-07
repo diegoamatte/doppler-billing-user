@@ -188,7 +188,18 @@ namespace Doppler.BillingUser.Controllers
                 await _billingRepository.CreateAccountingEntriesAsync(agreementInformation, encryptedCreditCard, user.IdUser, authorizationNumber);
             }
 
-            // TODO: save agreement
+            var billingCreditId = await _billingRepository.CreateBillingCreditAsync(agreementInformation, user, newPlan);
+
+            user.IdCurrentBillingCredit = billingCreditId;
+            await _userRepository.UpdateUserBillingCredit(user);
+
+            if (agreementInformation.Total.GetValueOrDefault() > 0)
+            {
+                var partialBalance = await _userRepository.GetAvailableCredit(user.IdUser);
+                await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan);
+            }
+
+            // TODO: SEND NOTIFICATIONS
             // TODO: create invoice in SAP
 
             return new OkObjectResult("Successfully");

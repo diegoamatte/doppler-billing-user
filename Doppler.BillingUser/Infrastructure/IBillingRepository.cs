@@ -19,5 +19,9 @@ namespace Doppler.BillingUser.Infrastructure
         Task UpdateInvoiceRecipients(string accountName, string[] emailRecipients, int planId);
 
         Task<int> CreateAccountingEntriesAsync(AgreementInformation agreementInformation, CreditCard encryptedCreditCard, int userId, string authorizationNumber);
+
+        Task<int> CreateBillingCreditAsync(AgreementInformation agreementInformation, UserBillingInformation user, UserTypePlanInformation newUserTypePlan);
+
+        Task<int> CreateMovementCreditAsync(int idBillingCredit, int partialBalance, UserBillingInformation user, UserTypePlanInformation newUserTypePlan);
     }
 }

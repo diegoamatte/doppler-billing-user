@@ -1,6 +1,7 @@
 using Dapper;
 using Doppler.BillingUser.ExternalServices.FirstData;
 using Doppler.BillingUser.Model;
+using System;
 using System.Threading.Tasks;
 
 namespace Doppler.BillingUser.Infrastructure
@@ -20,9 +21,20 @@ namespace Doppler.BillingUser.Infrastructure
             var user = await connection.QueryFirstOrDefaultAsync<UserBillingInformation>(@"
 SELECT
     U.IdUser,
-    U.PaymentMethod
+    U.PaymentMethod,
+    U.ResponsableIVA,
+    U.PaymentType,
+    U.PaymentWay,
+    U.BankName,
+    U.BankAccount,
+    U.CFDIUse,
+    U.Email,
+    S.IdCountry,
+    U.UTCFirstPayment
 FROM
     [User] U
+    INNER JOIN
+        State S ON U.IdState = S.IdState
 WHERE
     U.Email = @email;",
                 new
@@ -87,7 +99,6 @@ WHERE
 SELECT
     [IdUserTypePlan],
     [IdUserType],
-    [Description],
     [EmailQty],
     [Fee],
     [ExtraEmailCost],
@@ -102,6 +113,50 @@ WHERE
                 });
 
             return userTypePlan;
+        }
+
+        public async Task<int> UpdateUserBillingCredit(UserBillingInformation user)
+        {
+            var connection = await _connectionFactory.GetConnection();
+            var result = await connection.ExecuteAsync(@"
+UPDATE
+    [dbo].[User]
+SET
+    CUIT = @cuit,
+    UTCFirstPayment = @utfFirstPayment,
+    IdCurrentBillingCredit = @idCurrentBillingCredit
+WHERE
+    IdUser = @idUser;",
+            new
+            {
+                @idUser = user.IdUser,
+                @IdCurrentBillingCredit = user.IdCurrentBillingCredit,
+                @cuit = user.Cuit,
+                @utfFirstPayment = user.UTCFirstPayment ?? DateTime.UtcNow.ToShortDateString(),
+            });
+
+            return result;
+        }
+
+        public async Task<int> GetAvailableCredit(int idUser)
+        {
+            using var connection = await _connectionFactory.GetConnection();
+            var partialBalance = await connection.QueryFirstOrDefaultAsync<int>(@"
+SELECT
+    PartialBalance
+FROM
+    [dbo].[MovementsCredits]
+WHERE
+    IdUser = @idUser
+ORDER BY
+    IdMovementCredit
+DESC",
+                new
+                {
+                    @idUser = idUser
+                });
+
+            return partialBalance;
         }
     }
 }
