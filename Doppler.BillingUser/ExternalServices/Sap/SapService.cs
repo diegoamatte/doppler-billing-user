@@ -42,5 +42,23 @@ namespace Doppler.BillingUser.ExternalServices.Sap
                 _logger.LogError(e, "Unexpected error sending data to DopplerSap");
             }
         }
+        public async Task SendBillingToSap(SapBillingDto sapBilling, string email)
+        {
+            if (!SapHelper.IsMakingSenseAccount(email))
+            {
+                try
+                {
+                    await _flurlClient.Request(_options.Value.SapBaseUrl + _options.Value.SapCreateBillingRequestEndpoint)
+                        .WithHeader("Authorization", $"Bearer {await _usersApiTokenGetter.GetTokenAsync()}")
+                        .PostJsonAsync(sapBilling);
+
+                    _logger.LogInformation($"User billing data successfully sent to Sap. User: {email}");
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Unexpected error sending invoice data to Sap");
+                }
+            }
+        }
     }
 }
