@@ -7,6 +7,9 @@ using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using Doppler.BillingUser.ExternalServices.AccountPlansApi;
 using FluentValidation;
+using Doppler.BillingUser.Enums;
+using Doppler.BillingUser.ExternalServices.FirstData;
+using System;
 
 namespace Doppler.BillingUser.Controllers
 {
@@ -16,19 +19,28 @@ namespace Doppler.BillingUser.Controllers
     {
         private readonly ILogger _logger;
         private readonly IBillingRepository _billingRepository;
-        private readonly IValidator<BillingInformation> _validator;
+        private readonly IUserRepository _userRepository;
+        private readonly IValidator<BillingInformation> _billingInformationValidator;
         private readonly IAccountPlansService _accountPlansService;
+        private readonly IValidator<AgreementInformation> _agreementInformationValidator;
+        private readonly IPaymentGateway _paymentGateway;
 
         public BillingController(
             ILogger<BillingController> logger,
             IBillingRepository billingRepository,
-            IValidator<BillingInformation> validator,
-            IAccountPlansService accountPlansService)
+            IUserRepository userRepository,
+            IValidator<BillingInformation> billingInformationValidator,
+            IValidator<AgreementInformation> agreementInformationValidator,
+            IAccountPlansService accountPlansService,
+            IPaymentGateway paymentGateway)
         {
             _logger = logger;
             _billingRepository = billingRepository;
-            _validator = validator;
+            _userRepository = userRepository;
+            _billingInformationValidator = billingInformationValidator;
+            _agreementInformationValidator = agreementInformationValidator;
             _accountPlansService = accountPlansService;
+            _paymentGateway = paymentGateway;
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
@@ -49,7 +61,7 @@ namespace Doppler.BillingUser.Controllers
         [HttpPut("/accounts/{accountname}/billing-information")]
         public async Task<IActionResult> UpdateBillingInformation(string accountname, [FromBody] BillingInformation billingInformation)
         {
-            var results = await _validator.ValidateAsync(billingInformation);
+            var results = await _billingInformationValidator.ValidateAsync(billingInformation);
             if (!results.IsValid)
             {
                 return new BadRequestObjectResult(results.ToString("-"));
@@ -119,12 +131,76 @@ namespace Doppler.BillingUser.Controllers
         [HttpPost("/accounts/{accountname}/agreements")]
         public async Task<IActionResult> CreateAgreement([FromRoute] string accountname, [FromBody] AgreementInformation agreementInformation)
         {
+            var results = await _agreementInformationValidator.ValidateAsync(agreementInformation);
+            if (!results.IsValid)
+            {
+                return new BadRequestObjectResult(results.ToString("-"));
+            }
+
+            var user = await _userRepository.GetUserBillingInformation(accountname);
+            if (user == null)
+            {
+                return new NotFoundObjectResult("Invalid user");
+            }
+
+            if (user.PaymentMethod != PaymentMethodEnum.CC)
+            {
+                return new BadRequestObjectResult("Invalid payment method");
+            }
+
             var isValidTotal = await _accountPlansService.IsValidTotal(accountname, agreementInformation);
 
             if (!isValidTotal)
             {
                 return new BadRequestObjectResult("Total of agreement is not valid");
             }
+
+            var currentPlan = await _userRepository.GetUserCurrentTypePlan(user.IdUser);
+            if (currentPlan != null)
+            {
+                return new BadRequestObjectResult("Invalid user type (only free users)");
+            }
+
+            var newPlan = await _userRepository.GetUserNewTypePlan(agreementInformation.PlanId);
+            if (newPlan == null)
+            {
+                return new BadRequestObjectResult("Invalid selected plan");
+            }
+
+            if (newPlan.IdUserType != UserTypeEnum.INDIVIDUAL)
+            {
+                return new BadRequestObjectResult("Invalid selected plan type");
+            }
+
+            if (agreementInformation.Total.GetValueOrDefault() > 0)
+            {
+                var encryptedCreditCard = await _userRepository.GetEncryptedCreditCard(accountname);
+                if (encryptedCreditCard == null)
+                {
+                    return new ObjectResult("User credit card missing")
+                    {
+                        StatusCode = 500
+                    };
+                }
+
+                // TODO: Deal with first data exceptions.
+                var authorizationNumber = await _paymentGateway.CreateCreditCardPayment(agreementInformation.Total.GetValueOrDefault(), encryptedCreditCard, user.IdUser);
+                await _billingRepository.CreateAccountingEntriesAsync(agreementInformation, encryptedCreditCard, user.IdUser, authorizationNumber);
+            }
+
+            var billingCreditId = await _billingRepository.CreateBillingCreditAsync(agreementInformation, user, newPlan);
+
+            user.IdCurrentBillingCredit = billingCreditId;
+            await _userRepository.UpdateUserBillingCredit(user);
+
+            if (agreementInformation.Total.GetValueOrDefault() > 0)
+            {
+                var partialBalance = await _userRepository.GetAvailableCredit(user.IdUser);
+                await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan);
+            }
+
+            // TODO: SEND NOTIFICATIONS
+            // TODO: create invoice in SAP
 
             return new OkObjectResult("Successfully");
         }

@@ -67,7 +67,7 @@ namespace Doppler.BillingUser.Test
         public async Task GET_current_payment_method_should_get_right_values_when_username_is_valid()
         {
             // Arrange
-            const string expectedContent = "{\"ccHolderFullName\":\"TEST\",\"ccNumber\":\"TEST\",\"ccVerification\":\"****\",\"ccExpMonth\":\"2\",\"ccExpYear\":\"2130\",\"ccType\":\"Visa\",\"paymentMethodName\":\"CC\",\"renewalMonth\":\"6\",\"razonSocial\":\"Company\",\"idConsumerType\":\"NC\",\"identificationType\":\"DNI\",\"identificationNumber\":\"344444\",\"idSelectedPlan\":1,\"responsableIVA\":true}";
+            const string expectedContent = "{\"ccHolderFullName\":\"TEST\",\"ccNumber\":\"TEST\",\"ccVerification\":\"****\",\"ccExpMonth\":\"2\",\"ccExpYear\":\"2130\",\"ccType\":\"Visa\",\"paymentMethodName\":\"CC\",\"renewalMonth\":\"6\",\"razonSocial\":\"Company\",\"idConsumerType\":\"NC\",\"identificationType\":\"DNI\",\"identificationNumber\":\"344444\",\"idSelectedPlan\":1,\"responsableIVA\":true,\"idCCType\":0}";
             var paymentMethod = new PaymentMethod
             {
                 PaymentMethodName = "CC",

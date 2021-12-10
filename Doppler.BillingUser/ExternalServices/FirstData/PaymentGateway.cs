@@ -104,14 +104,9 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
                 }
                 return authNumber;
             }
-            catch (DopplerApplicationException ex)
+            catch (Exception ex) when (ex is not DopplerApplicationException)
             {
-                _logger.LogError(ex.Message);
-                throw ex;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
+                _logger.LogError(ex, "Unexpected error");
                 throw new DopplerApplicationException(PaymentErrorCode.ClientPaymentTransactionError, ex.Message, ex);
             }
         }
@@ -159,6 +154,12 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
                         throw;
                 }
             }
+        }
+
+        public async Task<string> CreateCreditCardPayment(decimal chargeTotal, CreditCard creditCard, int clientId)
+        {
+            var paymentRequest = CreateDirectPaymentRequest(TransactionTypes.PURCHASE, chargeTotal, creditCard, clientId);
+            return await PostRequest(paymentRequest, clientId);
         }
     }
 }

@@ -21,6 +21,19 @@ namespace Doppler.BillingUser.Infrastructure
         private readonly IPaymentGateway _paymentGateway;
         private readonly ISapService _sapService;
 
+        private const int InvoiceBillingTypeQBL = 1;
+        private const int UserAccountType = 1;
+        private const string AccountingEntryStatusApproved = "Approved";
+        private const string AccountingEntryTypeDescriptionInvoice = "Invoice";
+        private const string AccountingEntryTypeDescriptionCCPayment = "CC Payment";
+        private const string AccountEntryTypeInvoice = "I";
+        private const string AccountEntryTypePayment = "P";
+        private const string PaymentEntryTypePayment = "P";
+        private const int SourceTypeBuyCreditsId = 3;
+        private const int CountryEnumArgentina = 10;
+        private const int CurrencyTypeUsd = 0;
+        private const int BillingCreditTypeFreeToIndividual = 4;
+
         public BillingRepository(IDatabaseConnectionFactory connectionFactory,
             IEncryptionService encryptionService,
             IPaymentGateway paymentGateway,
@@ -101,7 +114,8 @@ SELECT
     U.RazonSocial,
     U.IdConsumerType,
     U.CUIT as IdentificationNumber,
-    U.ResponsableIVA
+    U.ResponsableIVA,
+    U.IdCCType
 FROM
     [User] U
 LEFT JOIN
@@ -377,6 +391,375 @@ WHERE
 
                 await _sapService.SendUserDataToSap(sapDto);
             }
+        }
+
+        public async Task<int> CreateAccountingEntriesAsync(AgreementInformation agreementInformation, CreditCard encryptedCreditCard, int userId, string authorizationNumber)
+        {
+            var connection = await _connectionFactory.GetConnection();
+            var invoiceId = await connection.QueryFirstOrDefaultAsync<int>(@"
+INSERT INTO [dbo].[AccountingEntry]
+    ([Date],
+    [Amount],
+    [Status],
+    [Source],
+    [AuthorizationNumber],
+    [InvoiceNumber],
+    [AccountEntryType],
+    [AccountingTypeDescription],
+    [IdClient],
+    [IdAccountType],
+    [IdInvoiceBillingType])
+VALUES
+    (@date,
+    @amount,
+    @status,
+    @source,
+    @authorizationNumber,
+    @invoiceNumber,
+    @accountEntryType,
+    @accountingTypeDescription,
+    @idClient,
+    @idAccountType,
+    @idInvoiceBillingType);
+SELECT CAST(SCOPE_IDENTITY() AS INT)",
+            new
+            {
+                @idClient = userId,
+                @amount = agreementInformation.Total,
+                @date = DateTime.UtcNow,
+                @status = AccountingEntryStatusApproved,
+                @source = SourceTypeBuyCreditsId,
+                @accountingTypeDescription = AccountingEntryTypeDescriptionInvoice,
+                @invoiceNumber = 0,
+                @idAccountType = UserAccountType,
+                @idInvoiceBillingType = InvoiceBillingTypeQBL,
+                @authorizationNumber = authorizationNumber,
+                @accountEntryType = AccountEntryTypeInvoice
+            });
+
+            await connection.QueryFirstOrDefaultAsync<int>(@"
+INSERT INTO [dbo].[AccountingEntry]
+    ([IdClient],
+    [IdInvoice],
+    [Amount],
+    [CCNumber],
+    [CCExpMonth],
+    [CCExpYear],
+    [CCHolderName],
+    [Date],
+    [Source],
+    [AccountingTypeDescription],
+    [IdAccountType],
+    [IdInvoiceBillingType],
+    [AccountEntryType],
+    [AuthorizationNumber],
+    [PaymentEntryType])
+VALUES
+    (@idClient,
+    @idInvoice,
+    @amount,
+    @ccCNumber,
+    @ccExpMonth,
+    @ccExpYear,
+    @ccHolderName,
+    @date,
+    @source,
+    @accountingTypeDescription,
+    @idAccountType,
+    @idInvoiceBillingType,
+    @accountEntryType,
+    @authorizationNumber,
+    @paymentEntryType);
+SELECT CAST(SCOPE_IDENTITY() AS INT)",
+            new
+            {
+                @idClient = userId,
+                @idInvoice = invoiceId,
+                @amount = agreementInformation.Total,
+                @ccCNumber = encryptedCreditCard.Number,
+                @ccExpMonth = encryptedCreditCard.ExpirationMonth,
+                @ccExpYear = encryptedCreditCard.ExpirationYear,
+                @ccHolderName = encryptedCreditCard.HolderName,
+                @date = DateTime.UtcNow,
+                @source = SourceTypeBuyCreditsId,
+                @accountingTypeDescription = AccountingEntryTypeDescriptionCCPayment,
+                @idAccountType = UserAccountType,
+                @idInvoiceBillingType = InvoiceBillingTypeQBL,
+                @accountEntryType = AccountEntryTypePayment,
+                @authorizationNumber = authorizationNumber,
+                @paymentEntryType = PaymentEntryTypePayment
+            });
+
+            return invoiceId;
+        }
+
+        public async Task<int> CreateBillingCreditAsync(AgreementInformation agreementInformation, UserBillingInformation user, UserTypePlanInformation newUserTypePlan)
+        {
+            var currentPaymentMethod = await GetCurrentPaymentMethod(user.Email);
+            var buyCreditAgreement = new CreateAgreement
+            {
+                IdUser = user.IdUser,
+                IdCountry = user.IdCountry,
+                IdPaymentMethod = (int)user.PaymentMethod,
+                IdCCType = currentPaymentMethod.IdCCType,
+                CCExpMonth = short.Parse(currentPaymentMethod.CCExpMonth),
+                CCExpYear = short.Parse(currentPaymentMethod.CCExpYear),
+                CCHolderFullName = currentPaymentMethod.CCHolderFullName,
+                CCIdentificationType = currentPaymentMethod.CCType,
+                CCIdentificationNumber = currentPaymentMethod.CCNumber,
+                CCNumber = currentPaymentMethod.CCNumber,
+                CCVerification = currentPaymentMethod.CCVerification,
+                IdConsumerType = !string.IsNullOrEmpty(currentPaymentMethod.IdConsumerType) ? int.Parse(currentPaymentMethod.IdConsumerType) : null,
+                RazonSocial = currentPaymentMethod.RazonSocial,
+                ResponsableIVA = user.ResponsableIVA,
+                Cuit = user.IdCountry == CountryEnumArgentina ? currentPaymentMethod.IdentificationNumber : null,
+                CFDIUse = user.CFDIUse,
+                PaymentWay = user.PaymentWay,
+                PaymentType = user.PaymentType,
+                BankName = user.BankName,
+                BankAccount = user.BankAccount
+            };
+
+            var now = DateTime.UtcNow;
+            buyCreditAgreement.BillingCredit = new BillingCreditModel()
+            {
+                Date = now,
+                PaymentDate = now,
+                ApprovedDate = now,
+                Approved = true,
+                Payed = true,
+                IdUserTypePlan = agreementInformation.PlanId,
+                PlanFee = (double?)agreementInformation.Total,
+                CreditsQty = newUserTypePlan.EmailQty ?? null,
+                ExtraEmailFee = newUserTypePlan.ExtraEmailCost ?? null
+            };
+
+            var connection = await _connectionFactory.GetConnection();
+            var result = await connection.QueryFirstOrDefaultAsync<int>(@"
+INSERT INTO [dbo].[BillingCredits]
+    ([Date],
+    [IdUser],
+    [IdPaymentMethod],
+    [PlanFee],
+    [PaymentDate],
+    [Taxes],
+    [IdCurrencyType],
+    [CreditsQty],
+    [ActivationDate],
+    [ExtraEmailFee],
+    [TotalCreditsQty],
+    [IdBillingCreditType],
+    [CCNumber],
+    [CCExpMonth],
+    [CCExpYear],
+    [CCVerification],
+    [IdCCType],
+    [IdConsumerType],
+    [RazonSocial],
+    [CUIT],
+    [ExclusiveMessage],
+    [IdUserTypePlan],
+    [DiscountPlanFeePromotion],
+    [ExtraCreditsPromotion],
+    [SubscribersQty],
+    [CCHolderFullName],
+    [NroFacturacion],
+    [IdDiscountPlan],
+    [TotalMonthPlan],
+    [CurrentMonthPlan],
+    [PaymentType],
+    [CFDIUse],
+    [PaymentWay],
+    [BankName],
+    [BankAccount],
+    [IdResponsabileBilling],
+    [CCIdentificationType],
+    [CCIdentificationNumber],
+    [ResponsableIVA])
+VALUES (
+    @date,
+    @idUser,
+    @idPaymentMethod,
+    @planFee,
+    @paymentDate,
+    @taxes,
+    @idCurrencyType,
+    @creditsQty,
+    @activationDate,
+    @extraEmailFee,
+    @totalCreditsQty,
+    @idBillingCreditType,
+    @ccNumber,
+    @ccExpMonth,
+    @ccExpYear,
+    @ccVerification,
+    @idCCType,
+    @idConsumerType,
+    @razonSocial,
+    @cuit,
+    @exclusiveMessage,
+    @idUserTypePlan,
+    @discountPlanFeePromotion,
+    @extraCreditsPromotion,
+    @subscribersQty,
+    @ccHolderFullName,
+    @nroFacturacion,
+    @idDiscountPlan,
+    @totalMonthPlan,
+    @currentMonthPlan,
+    @paymentType,
+    @cfdiUse,
+    @paymentWay,
+    @bankName,
+    @bankAccount,
+    @idResponsabileBilling,
+    @ccIdentificationType,
+    @ccIdentificationNumber,
+    @responsableIVA);
+SELECT CAST(SCOPE_IDENTITY() AS INT)",
+            new
+            {
+                @date = now,
+                @idUser = buyCreditAgreement.IdUser,
+                @idPaymentMethod = buyCreditAgreement.IdPaymentMethod,
+                @planFee = buyCreditAgreement.BillingCredit.PlanFee,
+                @paymentDate = now,
+                @taxes = buyCreditAgreement.BillingCredit.Taxes,
+                @idCurrencyType = CurrencyTypeUsd,
+                @creditsQty = buyCreditAgreement.BillingCredit.CreditsQty,
+                @activationDate = now,
+                @extraEmailFee = buyCreditAgreement.BillingCredit.ExtraEmailFee,
+                @totalCreditsQty = buyCreditAgreement.BillingCredit.CreditsQty,
+                @idBillingCreditType = BillingCreditTypeFreeToIndividual,
+                @ccNumber = _encryptionService.EncryptAES256(buyCreditAgreement.CCNumber),
+                @ccExpMonth = buyCreditAgreement.CCExpMonth,
+                @ccExpYear = buyCreditAgreement.CCExpYear,
+                @ccVerification = _encryptionService.EncryptAES256(buyCreditAgreement.CCVerification),
+                @idCCType = buyCreditAgreement.IdCCType,
+                @idConsumerType = (buyCreditAgreement.IdPaymentMethod == (int)PaymentMethodEnum.MP && !buyCreditAgreement.IdConsumerType.HasValue) ?
+                    (int)ConsumerTypeEnum.CF :
+                    buyCreditAgreement.IdConsumerType,
+                @razonSocial = buyCreditAgreement.RazonSocial,
+                @cuit = buyCreditAgreement.Cuit ?? buyCreditAgreement.Rfc,
+                @exclusiveMessage = buyCreditAgreement.ExclusiveMessage,
+                @idUserTypePlan = buyCreditAgreement.BillingCredit.IdUserTypePlan,
+                @discountPlanFeePromotion = buyCreditAgreement.BillingCredit.DiscountPlanFeePromotion,
+                @extraCreditsPromotion = buyCreditAgreement.BillingCredit.ExtraCreditsPromotion,
+                @subscribersQty = buyCreditAgreement.BillingCredit.SubscribersQty,
+                @ccHolderFullName = _encryptionService.EncryptAES256(buyCreditAgreement.CCHolderFullName),
+                @nroFacturacion = 0,
+                @idDiscountPlan = buyCreditAgreement.BillingCredit.IdDiscountPlan,
+                @totalMonthPlan = buyCreditAgreement.BillingCredit.MonthPlan,
+                @currentMonthPlan = buyCreditAgreement.BillingCredit.MonthPlan,
+                @paymentType = buyCreditAgreement.PaymentType,
+                @cfdiUse = buyCreditAgreement.CFDIUse,
+                @paymentWay = buyCreditAgreement.PaymentWay,
+                @bankName = buyCreditAgreement.BankName,
+                @bankAccount = buyCreditAgreement.BankAccount,
+                @idResponsabileBilling = (int)ResponsabileBillingEnum.QBL,
+                @ccIdentificationType = buyCreditAgreement.CCIdentificationType,
+                @ccIdentificationNumber = buyCreditAgreement.CCIdentificationNumber,
+                @responsableIVA = buyCreditAgreement.ResponsableIVA
+            });
+
+            return result;
+        }
+
+        public async Task<int> CreateMovementCreditAsync(int idBillingCredit, int partialBalance, UserBillingInformation user, UserTypePlanInformation newUserTypePlan)
+        {
+            BillingCredit billingCredit = await GetBillingCredit(idBillingCredit);
+
+            var connection = await _connectionFactory.GetConnection();
+            var result = await connection.QueryAsync<int>(@"
+INSERT INTO [dbo].[MovementsCredits]
+    ([IdUser],
+    [Date],
+    [CreditsQty],
+    [IdBillingCredit],
+    [PartialBalance],
+    [ConceptEnglish],
+    [ConceptSpanish],
+    [IdUserType])
+VALUES
+    (@idUser,
+    @date,
+    @creditsQty,
+    @idBillingCredit,
+    @partialBalance,
+    @conceptEnglish,
+    @conceptSpanish,
+    @idUserType);
+SELECT CAST(SCOPE_IDENTITY() AS INT)",
+            new
+            {
+                @idUser = billingCredit.IdUser,
+                @date = billingCredit.ActivationDate.HasValue ? billingCredit.ActivationDate.Value : DateTime.UtcNow,
+                @idUserType = newUserTypePlan.IdUserType,
+                @creditsQty = billingCredit.TotalCreditsQty.Value,
+                @idBillingCredit = billingCredit.IdBillingCredit,
+                @partialBalance = partialBalance + billingCredit.TotalCreditsQty.Value,
+                @conceptEnglish = newUserTypePlan.IdUserType == UserTypeEnum.INDIVIDUAL ? "Credits Acreditation" : null,
+                @conceptSpanish = newUserTypePlan.IdUserType == UserTypeEnum.INDIVIDUAL ? "Acreditación de Créditos" : null,
+            });
+
+            return result.FirstOrDefault();
+        }
+
+        private async Task<BillingCredit> GetBillingCredit(int billingCreditId)
+        {
+            using var connection = await _connectionFactory.GetConnection();
+            var billingCredit = await connection.QueryFirstOrDefaultAsync<BillingCredit>(@"
+SELECT
+    [IdBillingCredit],
+    [Date],
+    [IdUser],
+    [IdPaymentMethod],
+    [PlanFee],
+    [PaymentDate],
+    [Taxes],
+    [IdCurrencyType],
+    [CreditsQty],
+    [ActivationDate],
+    [ExtraEmailFee],
+    [TotalCreditsQty],
+    [IdBillingCreditType],
+    [CCNumber],
+    [CCExpMonth],
+    [CCExpYear],
+    [CCVerification],
+    [IdCCType],
+    [IdConsumerType],
+    [RazonSocial],
+    [CUIT],
+    [ExclusiveMessage],
+    [IdUserTypePlan],
+    [DiscountPlanFeePromotion],
+    [ExtraCreditsPromotion],
+    [SubscribersQty],
+    [CCHolderFullName],
+    [NroFacturacion],
+    [IdDiscountPlan],
+    [TotalMonthPlan],
+    [CurrentMonthPlan],
+    [PaymentType],
+    [CFDIUse],
+    [PaymentWay],
+    [BankName],
+    [BankAccount],
+    [IdResponsabileBilling],
+    [CCIdentificationType],
+    [CCIdentificationNumber],
+    [ResponsableIVA]
+FROM
+    [dbo].[BillingCredits]
+WHERE
+    IdBillingCredit = @billingCreditId",
+                new
+                {
+                    @billingCreditId = billingCreditId
+                });
+
+            return billingCredit;
         }
     }
 }
