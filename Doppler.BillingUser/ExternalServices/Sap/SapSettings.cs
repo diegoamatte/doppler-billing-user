@@ -4,5 +4,7 @@ namespace Doppler.BillingUser.ExternalServices.Sap
     {
         public string SapBaseUrl { get; set; }
         public string SapCreateBusinessPartnerEndpoint { get; set; }
+        public string SapCreateBillingRequestEndpoint { get; set; }
+        public int TimeZoneOffset { get; set; }
     }
 }
