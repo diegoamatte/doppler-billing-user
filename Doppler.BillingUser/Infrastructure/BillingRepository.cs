@@ -185,6 +185,40 @@ WHERE
             await SendUserDataToSap(accountName, planId);
         }
 
+        public async Task<CurrentPlan> GetCurrentPlan(string accountName)
+        {
+            using var connection = await _connectionFactory.GetConnection();
+
+            var currentPlan = await connection.QueryFirstOrDefaultAsync<CurrentPlan>(@"
+SELECT
+    B.IdUserTypePlan as IdPlan,
+    D.MonthPlan AS PlanSubscription,
+    UT.Description AS PlanType,
+    T.EmailQty,
+    T.SubscribersQty,
+    PartialBalance.Total AS RemainingCredits
+FROM
+    [BillingCredits] B
+LEFT JOIN
+    [UserTypesPlans] T ON T.[IdUserTypePlan] = B.[IdUserTypePlan]
+LEFT JOIN
+    [DiscountXPlan] D ON D.[IdDiscountPlan] = B.[IdDiscountPlan]
+LEFT JOIN
+    [UserTypes] UT ON UT.[IdUserType] = T.[IdUserType]
+OUTER APPLY (SELECT TOP 1 MC.[PartialBalance] AS Total
+    FROM [dbo].[MovementsCredits] MC
+    WHERE MC.IdUser = (SELECT IdUser FROM [User] WHERE Email = @email)
+    ORDER BY MC.[IdMovementCredit] DESC) PartialBalance
+WHERE
+    B.[IdUser] = (SELECT IdUser FROM [User] WHERE Email = @email) ORDER BY B.[Date] DESC;",
+                new
+                {
+                    @email = accountName
+                });
+
+            return currentPlan;
+        }
+
         public async Task<bool> UpdateCurrentPaymentMethod(string accountName, PaymentMethod paymentMethod)
         {
             using var connection = await _connectionFactory.GetConnection();
