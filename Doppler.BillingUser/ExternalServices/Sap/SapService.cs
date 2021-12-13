@@ -13,18 +13,18 @@ namespace Doppler.BillingUser.ExternalServices.Sap
         private readonly IOptions<SapSettings> _options;
         private readonly ILogger _logger;
         private readonly IFlurlClient _flurlClient;
-        private readonly ICurrentRequestApiTokenGetter _usersApiTokenGetter;
+        private readonly IJwtTokenGenerator _jwtTokenGenerator;
 
         public SapService(
             IOptions<SapSettings> options,
             ILogger<SapService> logger,
             IFlurlClientFactory flurlClientFac,
-            ICurrentRequestApiTokenGetter currentRequestApiTokenGetter)
+            IJwtTokenGenerator jwtTokenGenerator)
         {
             _options = options;
             _logger = logger;
             _flurlClient = flurlClientFac.Get(_options.Value.SapCreateBusinessPartnerEndpoint);
-            _usersApiTokenGetter = currentRequestApiTokenGetter;
+            _jwtTokenGenerator = jwtTokenGenerator;
         }
 
         public async Task SendUserDataToSap(SapBusinessPartner sapBusinessPartner, string resultMessage = null)
@@ -32,7 +32,7 @@ namespace Doppler.BillingUser.ExternalServices.Sap
             try
             {
                 await _flurlClient.Request(_options.Value.SapBaseUrl + _options.Value.SapCreateBusinessPartnerEndpoint)
-                    .WithHeader("Authorization", $"Bearer {await _usersApiTokenGetter.GetTokenAsync()}")
+                    .WithHeader("Authorization", $"Bearer {_jwtTokenGenerator.GenerateSuperUserJwtToken()}")
                     .PostJsonAsync(sapBusinessPartner);
 
                 _logger.LogInformation($"User data successfully sent to DopplerSap. Iduser: {sapBusinessPartner.Id} - ClientManager: {sapBusinessPartner.IsClientManager}");
@@ -49,7 +49,7 @@ namespace Doppler.BillingUser.ExternalServices.Sap
                 try
                 {
                     await _flurlClient.Request(_options.Value.SapBaseUrl + _options.Value.SapCreateBillingRequestEndpoint)
-                        .WithHeader("Authorization", $"Bearer {await _usersApiTokenGetter.GetTokenAsync()}")
+                        .WithHeader("Authorization", $"Bearer {_jwtTokenGenerator.GenerateSuperUserJwtToken()}")
                         .PostJsonAsync(sapBilling);
 
                     _logger.LogInformation($"User billing data successfully sent to Sap. User: {email}");
