@@ -128,6 +128,22 @@ namespace Doppler.BillingUser.Controllers
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
+        [HttpGet("/accounts/{accountname}/plans/current")]
+        public async Task<IActionResult> GetCurrentPlan(string accountname)
+        {
+            _logger.LogDebug("Get current plan.");
+
+            var currentPlan = await _billingRepository.GetCurrentPlan(accountname);
+
+            if (currentPlan == null)
+            {
+                return new NotFoundResult();
+            }
+
+            return new OkObjectResult(currentPlan);
+        }
+
+        [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
         [HttpPost("/accounts/{accountname}/agreements")]
         public async Task<IActionResult> CreateAgreement([FromRoute] string accountname, [FromBody] AgreementInformation agreementInformation)
         {

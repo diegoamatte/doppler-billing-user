@@ -28,7 +28,7 @@ namespace Doppler.BillingUser.Test
                 GetSapServiceSettingsMock().Object,
                 Mock.Of<ILogger<SapService>>(),
                 new PerBaseUrlFlurlClientFactory(),
-                Mock.Of<ICurrentRequestApiTokenGetter>());
+                Mock.Of<IJwtTokenGenerator>());
             using var httpTest = new HttpTest();
 
             //Act
