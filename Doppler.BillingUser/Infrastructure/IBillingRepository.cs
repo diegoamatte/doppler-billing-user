@@ -24,5 +24,7 @@ namespace Doppler.BillingUser.Infrastructure
         Task<int> CreateBillingCreditAsync(AgreementInformation agreementInformation, UserBillingInformation user, UserTypePlanInformation newUserTypePlan, Promotion promotion);
 
         Task<int> CreateMovementCreditAsync(int idBillingCredit, int partialBalance, UserBillingInformation user, UserTypePlanInformation newUserTypePlan);
+
+        Task<BillingCredit> GetBillingCredit(int billingCreditId);
     }
 }

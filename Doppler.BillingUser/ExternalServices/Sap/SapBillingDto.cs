@@ -13,7 +13,7 @@ namespace Doppler.BillingUser.ExternalServices.Sap
         public int? Periodicity { get; set; }
         public int PeriodMonth { get; set; }
         public int PeriodYear { get; set; }
-        public double PlanFee { get; set; }
+        public decimal PlanFee { get; set; }
         public int? Discount { get; set; }
         public int? ExtraEmails { get; set; }
         public double? ExtraEmailsFeePerUnit { get; set; }

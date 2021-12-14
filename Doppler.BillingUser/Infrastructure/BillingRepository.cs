@@ -746,53 +746,24 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
             return result.FirstOrDefault();
         }
 
-        private async Task<BillingCredit> GetBillingCredit(int billingCreditId)
+        public async Task<BillingCredit> GetBillingCredit(int billingCreditId)
         {
             using var connection = await _connectionFactory.GetConnection();
             var billingCredit = await connection.QueryFirstOrDefaultAsync<BillingCredit>(@"
 SELECT
-    [IdBillingCredit],
-    [Date],
-    [IdUser],
-    [IdPaymentMethod],
-    [PlanFee],
-    [PaymentDate],
-    [Taxes],
-    [IdCurrencyType],
-    [CreditsQty],
-    [ActivationDate],
-    [ExtraEmailFee],
-    [TotalCreditsQty],
-    [IdBillingCreditType],
-    [CCNumber],
-    [CCExpMonth],
-    [CCExpYear],
-    [CCVerification],
-    [IdCCType],
-    [IdConsumerType],
-    [RazonSocial],
-    [CUIT],
-    [ExclusiveMessage],
-    [IdUserTypePlan],
-    [DiscountPlanFeePromotion],
-    [ExtraCreditsPromotion],
-    [SubscribersQty],
-    [CCHolderFullName],
-    [NroFacturacion],
-    [IdDiscountPlan],
-    [TotalMonthPlan],
-    [CurrentMonthPlan],
-    [PaymentType],
-    [CFDIUse],
-    [PaymentWay],
-    [BankName],
-    [BankAccount],
-    [IdResponsabileBilling],
-    [CCIdentificationType],
-    [CCIdentificationNumber],
-    [ResponsableIVA]
+    BC.[IdBillingCredit],
+    BC.[Date],
+    BC.[IdUser],
+    BC.[PlanFee],
+    BC.[CreditsQty],
+    BC.[ActivationDate],
+    BC.[TotalCreditsQty],
+    BC.[IdUserTypePlan],
+    DP.[DiscountPlanFee]
 FROM
-    [dbo].[BillingCredits]
+    [dbo].[BillingCredits] BC
+        LEFT JOIN [dbo].[DiscountXPlan] DP
+        ON BC.IdDiscountPlan = DP.IdDiscountPlan
 WHERE
     IdBillingCredit = @billingCreditId",
                 new
