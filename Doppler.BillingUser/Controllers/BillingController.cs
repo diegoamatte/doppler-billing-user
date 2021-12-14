@@ -232,11 +232,8 @@ namespace Doppler.BillingUser.Controllers
             user.IdCurrentBillingCredit = billingCreditId;
             await _userRepository.UpdateUserBillingCredit(user);
 
-            if (agreementInformation.Total.GetValueOrDefault() > 0)
-            {
-                var partialBalance = await _userRepository.GetAvailableCredit(user.IdUser);
-                await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan);
-            }
+            var partialBalance = await _userRepository.GetAvailableCredit(user.IdUser);
+            await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan);
 
             if (agreementInformation.Total.GetValueOrDefault() > 0)
             {

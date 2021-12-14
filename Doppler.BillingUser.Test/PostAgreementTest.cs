@@ -766,7 +766,7 @@ namespace Doppler.BillingUser.Test
         }
 
         [Fact]
-        public async Task POST_agreement_information_should_return_ok_when_total_is_zero_and_accounting_and_movement_records_are_not_created_in_db()
+        public async Task POST_agreement_information_should_return_ok_when_total_is_zero_and_accounting_records_are_not_created_in_db()
         {
             // Arrange
             var agreement = new
@@ -828,7 +828,6 @@ namespace Doppler.BillingUser.Test
 
             // Assert
             billingRepositoryMock.Verify(ms => ms.CreateAccountingEntriesAsync(It.IsAny<AgreementInformation>(), It.IsAny<CreditCard>(), It.IsAny<int>(), It.IsAny<string>()), Times.Never);
-            billingRepositoryMock.Verify(ms => ms.CreateMovementCreditAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<UserBillingInformation>(), It.IsAny<UserTypePlanInformation>()), Times.Never);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
