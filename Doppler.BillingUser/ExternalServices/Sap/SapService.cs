@@ -5,6 +5,7 @@ using System;
 using System.Threading.Tasks;
 using Flurl.Http;
 using Flurl.Http.Configuration;
+using System.Collections.Generic;
 
 namespace Doppler.BillingUser.ExternalServices.Sap
 {
@@ -50,7 +51,7 @@ namespace Doppler.BillingUser.ExternalServices.Sap
                 {
                     await _flurlClient.Request(_options.Value.SapBaseUrl + _options.Value.SapCreateBillingRequestEndpoint)
                         .WithHeader("Authorization", $"Bearer {_jwtTokenGenerator.GenerateSuperUserJwtToken()}")
-                        .PostJsonAsync(sapBilling);
+                        .PostJsonAsync(new List<SapBillingDto>() { sapBilling });
 
                     _logger.LogInformation($"User billing data successfully sent to Sap. User: {email}");
                 }

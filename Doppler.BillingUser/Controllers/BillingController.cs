@@ -238,7 +238,7 @@ namespace Doppler.BillingUser.Controllers
             if (agreementInformation.Total.GetValueOrDefault() > 0)
             {
                 await _sapService.SendBillingToSap(
-                    await MapBillingToSapAsync(encryptedCreditCard, newPlan, authorizationNumber, invoiceId, billingCreditId),
+                    await MapBillingToSapAsync(encryptedCreditCard, currentPlan, newPlan, authorizationNumber, invoiceId, billingCreditId),
                     accountname);
             }
 
@@ -247,7 +247,7 @@ namespace Doppler.BillingUser.Controllers
             return new OkObjectResult("Successfully");
         }
 
-        private async Task<SapBillingDto> MapBillingToSapAsync(CreditCard creditCard, UserTypePlanInformation currentUserPlan, string authorizationNumber, int invoidId, int billingCreditId)
+        private async Task<SapBillingDto> MapBillingToSapAsync(CreditCard creditCard, UserTypePlanInformation currentUserPlan, UserTypePlanInformation newUserPlan, string authorizationNumber, int invoidId, int billingCreditId)
         {
             var billingCredit = await _billingRepository.GetBillingCredit(billingCreditId);
             var cardNumber = _encryptionService.DecryptAES256(creditCard.Number);
@@ -257,7 +257,7 @@ namespace Doppler.BillingUser.Controllers
                 Id = billingCredit.IdUser,
                 CreditsOrSubscribersQuantity = billingCredit.CreditsQty.GetValueOrDefault(),
                 IsCustomPlan = new[] { 0, 9, 17 }.Contains(billingCredit.IdUserTypePlan),
-                IsPlanUpgrade = true,
+                IsPlanUpgrade = false, // TODO: Check when the other types of purchases are implemented.
                 Currency = CurrencyTypeUsd,
                 Periodicity = null,
                 PeriodMonth = billingCredit.Date.Month,
@@ -267,7 +267,7 @@ namespace Doppler.BillingUser.Controllers
                 ExtraEmailsPeriodMonth = billingCredit.Date.Month,
                 ExtraEmailsPeriodYear = billingCredit.Date.Year,
                 ExtraEmailsFee = 0,
-                IsFirstPurchase = currentUserPlan.IdUserTypePlan == (int)UserTypeEnum.FREE,
+                IsFirstPurchase = currentUserPlan == null,
                 PlanType = billingCredit.IdUserTypePlan,
                 CardHolder = _encryptionService.DecryptAES256(creditCard.HolderName),
                 CardType = _encryptionService.DecryptAES256(creditCard.IdentificationType),
