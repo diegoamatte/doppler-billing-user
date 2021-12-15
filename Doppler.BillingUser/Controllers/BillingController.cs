@@ -9,7 +9,6 @@ using Doppler.BillingUser.ExternalServices.AccountPlansApi;
 using FluentValidation;
 using Doppler.BillingUser.Enums;
 using Doppler.BillingUser.ExternalServices.FirstData;
-using System;
 
 namespace Doppler.BillingUser.Controllers
 {
@@ -188,6 +187,12 @@ namespace Doppler.BillingUser.Controllers
                 return new BadRequestObjectResult("Invalid selected plan type");
             }
 
+            var promotion = await _accountPlansService.GetValidPromotionByCode(agreementInformation.Promocode, agreementInformation.PlanId);
+            if (!string.IsNullOrEmpty(agreementInformation.Promocode) && promotion == null)
+            {
+                return new BadRequestObjectResult("Invalid promotion.");
+            }
+
             if (agreementInformation.Total.GetValueOrDefault() > 0)
             {
                 var encryptedCreditCard = await _userRepository.GetEncryptedCreditCard(accountname);
@@ -204,7 +209,7 @@ namespace Doppler.BillingUser.Controllers
                 await _billingRepository.CreateAccountingEntriesAsync(agreementInformation, encryptedCreditCard, user.IdUser, authorizationNumber);
             }
 
-            var billingCreditId = await _billingRepository.CreateBillingCreditAsync(agreementInformation, user, newPlan);
+            var billingCreditId = await _billingRepository.CreateBillingCreditAsync(agreementInformation, user, newPlan, promotion);
 
             user.IdCurrentBillingCredit = billingCreditId;
             await _userRepository.UpdateUserBillingCredit(user);

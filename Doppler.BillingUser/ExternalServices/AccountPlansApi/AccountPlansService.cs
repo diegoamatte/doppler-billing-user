@@ -33,7 +33,14 @@ namespace Doppler.BillingUser.ExternalServices.AccountPlansApi
         {
             try
             {
-                var planAmountDetails = await SendRequest(accountname, agreementInformation);
+                var planAmountDetails = await _flurlClient.Request(new UriTemplate(_options.Value.CalculateUrlTemplate)
+                        .AddParameter("accountname", accountname)
+                        .AddParameter("planId", agreementInformation.PlanId)
+                        .AddParameter("discountId", agreementInformation.DiscountId)
+                        .AddParameter("promocode", agreementInformation.Promocode)
+                        .Resolve())
+                    .WithHeader("Authorization", $"Bearer {await _usersApiTokenGetter.GetTokenAsync()}")
+                    .GetJsonAsync<PlanAmountDetails>();
 
                 return planAmountDetails.Total == agreementInformation.Total;
             }
@@ -44,14 +51,25 @@ namespace Doppler.BillingUser.ExternalServices.AccountPlansApi
             }
         }
 
-        private async Task<PlanAmountDetails> SendRequest(string accountname, AgreementInformation agreement)
-            => await _flurlClient.Request(new UriTemplate(_options.Value.CalculateUrlTemplate)
-                    .AddParameter("accountname", accountname)
-                    .AddParameter("planId", agreement.PlanId)
-                    .AddParameter("discountId", agreement.DiscountId)
-                    .AddParameter("promocode", agreement.Promocode)
+        public async Task<Promotion> GetValidPromotionByCode(string promocode, int planId)
+        {
+            try
+            {
+                var promotion = await _flurlClient.Request(new UriTemplate(_options.Value.GetPromoCodeTemplate)
+                    .AddParameter("planId", planId)
+                    .AddParameter("promocode", promocode)
                     .Resolve())
-                .WithHeader("Authorization", $"Bearer {await _usersApiTokenGetter.GetTokenAsync()}")
-                .GetJsonAsync<PlanAmountDetails>();
+                    .WithHeader("Authorization", $"Bearer {await _usersApiTokenGetter.GetTokenAsync()}")
+                    .GetJsonAsync<Promotion>();
+
+                return promotion;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, $"Error to get promocode information {promocode}.");
+            }
+
+            return null;
+        }
     }
 }

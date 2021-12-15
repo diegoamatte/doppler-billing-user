@@ -527,7 +527,11 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
             return invoiceId;
         }
 
-        public async Task<int> CreateBillingCreditAsync(AgreementInformation agreementInformation, UserBillingInformation user, UserTypePlanInformation newUserTypePlan)
+        public async Task<int> CreateBillingCreditAsync(
+            AgreementInformation agreementInformation,
+            UserBillingInformation user,
+            UserTypePlanInformation newUserTypePlan,
+            Promotion promotion)
         {
             var currentPaymentMethod = await GetCurrentPaymentMethod(user.Email);
             var buyCreditAgreement = new CreateAgreement
@@ -609,7 +613,8 @@ INSERT INTO [dbo].[BillingCredits]
     [IdResponsabileBilling],
     [CCIdentificationType],
     [CCIdentificationNumber],
-    [ResponsableIVA])
+    [ResponsableIVA],
+    [IdPromotion])
 VALUES (
     @date,
     @idUser,
@@ -649,7 +654,8 @@ VALUES (
     @idResponsabileBilling,
     @ccIdentificationType,
     @ccIdentificationNumber,
-    @responsableIVA);
+    @responsableIVA,
+    @IdPromotion);
 SELECT CAST(SCOPE_IDENTITY() AS INT)",
             new
             {
@@ -693,7 +699,8 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @idResponsabileBilling = (int)ResponsabileBillingEnum.QBL,
                 @ccIdentificationType = buyCreditAgreement.CCIdentificationType,
                 @ccIdentificationNumber = buyCreditAgreement.CCIdentificationNumber,
-                @responsableIVA = buyCreditAgreement.ResponsableIVA
+                @responsableIVA = buyCreditAgreement.ResponsableIVA,
+                @idPromotion = promotion?.IdPromotion
             });
 
             return result;

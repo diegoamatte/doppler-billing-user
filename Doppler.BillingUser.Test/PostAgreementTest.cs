@@ -1,28 +1,18 @@
-using System.Data.Common;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
-using Dapper;
 using Doppler.BillingUser.Encryption;
 using Doppler.BillingUser.ExternalServices.AccountPlansApi;
 using Doppler.BillingUser.Enums;
 using Doppler.BillingUser.ExternalServices.FirstData;
 using Doppler.BillingUser.Infrastructure;
 using Doppler.BillingUser.Model;
-using Doppler.BillingUser.Test.Utils;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using Moq.Dapper;
-using System.Data.Common;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Threading.Tasks;
 using Xunit;
 using System;
 
@@ -106,7 +96,8 @@ namespace Doppler.BillingUser.Test
             var accountPlansServiceMock = new Mock<IAccountPlansService>();
             accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
                 .ReturnsAsync(true);
-
+            accountPlansServiceMock.Setup(x => x.GetValidPromotionByCode(It.IsAny<string>(), It.IsAny<int>()))
+                .ReturnsAsync(new Promotion());
             var userRepositoryMock = new Mock<IUserRepository>();
             userRepositoryMock.Setup(x => x.GetUserBillingInformation(accountName))
                 .ReturnsAsync(new UserBillingInformation()
@@ -221,6 +212,8 @@ namespace Doppler.BillingUser.Test
             var accountPlansServiceMock = new Mock<IAccountPlansService>();
             accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
                 .ReturnsAsync(true);
+            accountPlansServiceMock.Setup(x => x.GetValidPromotionByCode(It.IsAny<string>(), It.IsAny<int>()))
+                .ReturnsAsync(new Promotion());
             var creditCard = new CreditCard()
             {
                 CardType = CardTypeEnum.Visa,
@@ -257,7 +250,12 @@ namespace Doppler.BillingUser.Test
 
             var billingRepositoryMock = new Mock<IBillingRepository>();
             billingRepositoryMock.Setup(x => x.CreateAccountingEntriesAsync(It.IsAny<AgreementInformation>(), It.IsAny<CreditCard>(), It.IsAny<int>(), It.IsAny<string>())).ReturnsAsync(invoiceId);
-            billingRepositoryMock.Setup(x => x.CreateBillingCreditAsync(It.IsAny<AgreementInformation>(), It.IsAny<UserBillingInformation>(), It.IsAny<UserTypePlanInformation>())).ReturnsAsync(billingCreditId);
+            billingRepositoryMock.Setup(x => x.CreateBillingCreditAsync(
+                    It.IsAny<AgreementInformation>(),
+                    It.IsAny<UserBillingInformation>(),
+                    It.IsAny<UserTypePlanInformation>(),
+                    It.IsAny<Promotion>()))
+                .ReturnsAsync(billingCreditId);
             billingRepositoryMock.Setup(x => x.CreateMovementCreditAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<UserBillingInformation>(), It.IsAny<UserTypePlanInformation>())).ReturnsAsync(movementCreditId);
 
             var client = _factory.WithWebHostBuilder(builder =>
@@ -371,15 +369,6 @@ namespace Doppler.BillingUser.Test
             var accountPlansServiceMock = new Mock<IAccountPlansService>();
             accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
                 .ReturnsAsync(true);
-            var creditCard = new CreditCard()
-            {
-                CardType = CardTypeEnum.Visa,
-                ExpirationMonth = 12,
-                ExpirationYear = 23,
-                HolderName = "kBvAJf5f3AIp8+MEVYVTGA==",
-                Number = "Oe9VdYnmPsZGPKnLEogk1hbP7NH3YfZnqxLrUJxnGgc=",
-                Code = "pNw3zrff06X9K972Ro6OwQ=="
-            };
 
             var userRepositoryMock = new Mock<IUserRepository>();
             userRepositoryMock.Setup(x => x.GetUserBillingInformation(accountName)).ReturnsAsync(user);
@@ -445,6 +434,8 @@ namespace Doppler.BillingUser.Test
             var accountPlansServiceMock = new Mock<IAccountPlansService>();
             accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
                 .ReturnsAsync(true);
+            accountPlansServiceMock.Setup(x => x.GetValidPromotionByCode(It.IsAny<string>(), It.IsAny<int>()))
+                .ReturnsAsync(new Promotion());
             var invoiceId = 1;
             var billingCreditId = 1;
             var movementCreditId = 1;
@@ -465,7 +456,12 @@ namespace Doppler.BillingUser.Test
 
             var billingRepositoryMock = new Mock<IBillingRepository>();
             billingRepositoryMock.Setup(x => x.CreateAccountingEntriesAsync(It.IsAny<AgreementInformation>(), It.IsAny<CreditCard>(), It.IsAny<int>(), It.IsAny<string>())).ReturnsAsync(invoiceId);
-            billingRepositoryMock.Setup(x => x.CreateBillingCreditAsync(It.IsAny<AgreementInformation>(), It.IsAny<UserBillingInformation>(), It.IsAny<UserTypePlanInformation>())).ReturnsAsync(billingCreditId);
+            billingRepositoryMock.Setup(x => x.CreateBillingCreditAsync(
+                    It.IsAny<AgreementInformation>(),
+                    It.IsAny<UserBillingInformation>(),
+                    It.IsAny<UserTypePlanInformation>(),
+                    It.IsAny<Promotion>()))
+                .ReturnsAsync(billingCreditId);
             billingRepositoryMock.Setup(x => x.CreateMovementCreditAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<UserBillingInformation>(), It.IsAny<UserTypePlanInformation>())).ReturnsAsync(movementCreditId);
 
             var client = _factory.WithWebHostBuilder(builder =>
@@ -758,6 +754,8 @@ namespace Doppler.BillingUser.Test
             var accountPlansServiceMock = new Mock<IAccountPlansService>();
             accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
                 .ReturnsAsync(true);
+            accountPlansServiceMock.Setup(x => x.GetValidPromotionByCode(It.IsAny<string>(), It.IsAny<int>()))
+                .ReturnsAsync(new Promotion());
             var invoiceId = 1;
             var billingCreditId = 1;
             var movementCreditId = 1;
@@ -778,7 +776,12 @@ namespace Doppler.BillingUser.Test
 
             var billingRepositoryMock = new Mock<IBillingRepository>();
             billingRepositoryMock.Setup(x => x.CreateAccountingEntriesAsync(It.IsAny<AgreementInformation>(), It.IsAny<CreditCard>(), It.IsAny<int>(), It.IsAny<string>())).ReturnsAsync(invoiceId);
-            billingRepositoryMock.Setup(x => x.CreateBillingCreditAsync(It.IsAny<AgreementInformation>(), It.IsAny<UserBillingInformation>(), It.IsAny<UserTypePlanInformation>())).ReturnsAsync(billingCreditId);
+            billingRepositoryMock.Setup(x => x.CreateBillingCreditAsync(
+                    It.IsAny<AgreementInformation>(),
+                    It.IsAny<UserBillingInformation>(),
+                    It.IsAny<UserTypePlanInformation>(),
+                    It.IsAny<Promotion>()))
+                .ReturnsAsync(billingCreditId);
             billingRepositoryMock.Setup(x => x.CreateMovementCreditAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<UserBillingInformation>(), It.IsAny<UserTypePlanInformation>())).ReturnsAsync(movementCreditId);
 
             var client = _factory.WithWebHostBuilder(builder =>
@@ -801,6 +804,157 @@ namespace Doppler.BillingUser.Test
             // Assert
             billingRepositoryMock.Verify(ms => ms.CreateAccountingEntriesAsync(It.IsAny<AgreementInformation>(), It.IsAny<CreditCard>(), It.IsAny<int>(), It.IsAny<string>()), Times.Never);
             billingRepositoryMock.Verify(ms => ms.CreateMovementCreditAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<UserBillingInformation>(), It.IsAny<UserTypePlanInformation>()), Times.Never);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async void POST_agreement_should_return_ok_when_promocode_is_null()
+        {
+            // Arrange
+            const string accountName = "test1@test.com";
+            var agreement = new
+            {
+                planId = 1,
+                total = 0
+            };
+            var billingRepositoryMock = new Mock<IBillingRepository>();
+            var accountPlansServiceMock = new Mock<IAccountPlansService>();
+            accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
+                .ReturnsAsync(true);
+            var userRepositoryMock = new Mock<IUserRepository>();
+            userRepositoryMock.Setup(x => x.GetUserBillingInformation(accountName))
+                .ReturnsAsync(new UserBillingInformation
+                {
+                    IdUser = 1,
+                    PaymentMethod = PaymentMethodEnum.CC
+                });
+            userRepositoryMock.Setup(x => x.GetUserNewTypePlan(It.IsAny<int>()))
+                .ReturnsAsync(new UserTypePlanInformation
+                {
+                    IdUserType = UserTypeEnum.INDIVIDUAL
+                });
+
+            var factory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    services.AddSingleton(Mock.Of<IEncryptionService>());
+                    services.AddSingleton(accountPlansServiceMock.Object);
+                    services.AddSingleton(userRepositoryMock.Object);
+                    services.AddSingleton(billingRepositoryMock.Object);
+                });
+
+            });
+            var client = factory.CreateClient(new WebApplicationFactoryClientOptions());
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TOKEN_ACCOUNT123_TEST1_AT_TEST_DOT_COM_EXPIRE20330518);
+
+            // Act
+            var response = await client.PostAsJsonAsync($"accounts/{accountName}/agreements", agreement);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async void POST_agreement_should_return_bad_request_when_promocode_is_invalid()
+        {
+            // Arrange
+            const string accountName = "test1@test.com";
+            var agreement = new
+            {
+                planId = 1,
+                total = 0,
+                promocode = "promocode-test"
+            };
+            var billingRepositoryMock = new Mock<IBillingRepository>();
+            var accountPlansServiceMock = new Mock<IAccountPlansService>();
+            accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
+                .ReturnsAsync(true);
+            var userRepositoryMock = new Mock<IUserRepository>();
+            userRepositoryMock.Setup(x => x.GetUserBillingInformation(accountName))
+                .ReturnsAsync(new UserBillingInformation
+                {
+                    IdUser = 1,
+                    PaymentMethod = PaymentMethodEnum.CC
+                });
+            userRepositoryMock.Setup(x => x.GetUserNewTypePlan(It.IsAny<int>()))
+                .ReturnsAsync(new UserTypePlanInformation
+                {
+                    IdUserType = UserTypeEnum.INDIVIDUAL
+                });
+
+            var factory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    services.AddSingleton(Mock.Of<IEncryptionService>());
+                    services.AddSingleton(accountPlansServiceMock.Object);
+                    services.AddSingleton(userRepositoryMock.Object);
+                    services.AddSingleton(billingRepositoryMock.Object);
+                });
+
+            });
+            var client = factory.CreateClient(new WebApplicationFactoryClientOptions());
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TOKEN_ACCOUNT123_TEST1_AT_TEST_DOT_COM_EXPIRE20330518);
+
+            // Act
+            var response = await client.PostAsJsonAsync($"accounts/{accountName}/agreements", agreement);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async void POST_agreement_should_return_ok_when_promocode_is_valid()
+        {
+            // Arrange
+            const string accountName = "test1@test.com";
+            var agreement = new
+            {
+                planId = 1,
+                total = 0,
+                promocode = "promocode-test"
+            };
+            var billingRepositoryMock = new Mock<IBillingRepository>();
+            var accountPlansServiceMock = new Mock<IAccountPlansService>();
+            accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
+                .ReturnsAsync(true);
+            accountPlansServiceMock.Setup(x => x.GetValidPromotionByCode("promocode-test", 1))
+                .ReturnsAsync(new Promotion
+                {
+                    IdPromotion = 1
+                });
+            var userRepositoryMock = new Mock<IUserRepository>();
+            userRepositoryMock.Setup(x => x.GetUserBillingInformation(accountName))
+                .ReturnsAsync(new UserBillingInformation
+                {
+                    IdUser = 1,
+                    PaymentMethod = PaymentMethodEnum.CC
+                });
+            userRepositoryMock.Setup(x => x.GetUserNewTypePlan(It.IsAny<int>()))
+                .ReturnsAsync(new UserTypePlanInformation
+                {
+                    IdUserType = UserTypeEnum.INDIVIDUAL
+                });
+
+            var factory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    services.AddSingleton(Mock.Of<IEncryptionService>());
+                    services.AddSingleton(accountPlansServiceMock.Object);
+                    services.AddSingleton(userRepositoryMock.Object);
+                    services.AddSingleton(billingRepositoryMock.Object);
+                });
+
+            });
+            var client = factory.CreateClient(new WebApplicationFactoryClientOptions());
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TOKEN_ACCOUNT123_TEST1_AT_TEST_DOT_COM_EXPIRE20330518);
+
+            // Act
+            var response = await client.PostAsJsonAsync($"accounts/{accountName}/agreements", agreement);
+
+            // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
     }

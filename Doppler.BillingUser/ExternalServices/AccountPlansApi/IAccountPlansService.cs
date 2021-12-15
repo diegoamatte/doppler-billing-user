@@ -6,5 +6,6 @@ namespace Doppler.BillingUser.ExternalServices.AccountPlansApi
     public interface IAccountPlansService
     {
         public Task<bool> IsValidTotal(string accountname, AgreementInformation agreementInformation);
+        Task<Promotion> GetValidPromotionByCode(string promocode, int planId);
     }
 }
