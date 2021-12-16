@@ -1,3 +1,4 @@
+using System;
 using Doppler.BillingUser.DopplerSecurity;
 using Doppler.BillingUser.Model;
 using Doppler.BillingUser.Infrastructure;
@@ -30,7 +31,7 @@ namespace Doppler.BillingUser.Controllers
         private readonly ISapService _sapService;
         private readonly IEncryptionService _encryptionService;
         private readonly IOptions<SapSettings> _sapSettings;
-
+        private readonly IPromotionRepository _promotionRepository;
         private const int CurrencyTypeUsd = 0;
 
         public BillingController(
@@ -43,7 +44,8 @@ namespace Doppler.BillingUser.Controllers
             IPaymentGateway paymentGateway,
             ISapService sapService,
             IEncryptionService encryptionService,
-            IOptions<SapSettings> sapSettings)
+            IOptions<SapSettings> sapSettings,
+            IPromotionRepository promotionRepository)
         {
             _logger = logger;
             _billingRepository = billingRepository;
@@ -55,6 +57,7 @@ namespace Doppler.BillingUser.Controllers
             _sapService = sapService;
             _encryptionService = encryptionService;
             _sapSettings = sapSettings;
+            _promotionRepository = promotionRepository;
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
@@ -206,6 +209,7 @@ namespace Doppler.BillingUser.Controllers
             if (!string.IsNullOrEmpty(agreementInformation.Promocode))
             {
                 promotion = await _accountPlansService.GetValidPromotionByCode(agreementInformation.Promocode, agreementInformation.PlanId);
+                await _promotionRepository.UpdateTimeToUse(promotion, "+");
             }
 
             int invoiceId = 0;
@@ -216,14 +220,27 @@ namespace Doppler.BillingUser.Controllers
                 encryptedCreditCard = await _userRepository.GetEncryptedCreditCard(accountname);
                 if (encryptedCreditCard == null)
                 {
+                    if (promotion != null)
+                        await _promotionRepository.UpdateTimeToUse(promotion, "-");
+
                     return new ObjectResult("User credit card missing")
                     {
                         StatusCode = 500
                     };
                 }
 
-                // TODO: Deal with first data exceptions.
-                authorizationNumber = await _paymentGateway.CreateCreditCardPayment(agreementInformation.Total.GetValueOrDefault(), encryptedCreditCard, user.IdUser);
+                try
+                {
+                    authorizationNumber = await _paymentGateway.CreateCreditCardPayment(agreementInformation.Total.GetValueOrDefault(), encryptedCreditCard, user.IdUser);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Error in payment with first data");
+                    if (promotion != null)
+                        await _promotionRepository.UpdateTimeToUse(promotion, "-");
+                    throw;
+                }
+
                 invoiceId = await _billingRepository.CreateAccountingEntriesAsync(agreementInformation, encryptedCreditCard, user.IdUser, authorizationNumber);
             }
 
