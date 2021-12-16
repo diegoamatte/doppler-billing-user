@@ -3,6 +3,7 @@ namespace Doppler.BillingUser.Model
     public class User
     {
         public string FirstName { get; set; }
+        public string LastName { get; set; }
         public int IdUser { get; set; }
         public string BillingEmails { get; set; }
         public string RazonSocial { get; set; }
@@ -34,8 +35,12 @@ namespace Doppler.BillingUser.Model
         public int IdUserType { get; set; }
         //Vendor
         public bool IsInbound { get; set; }
+        public string Vendor { get; set; }
         //BillingState
         public string BillingStateCountryCode { get; set; }
         public string BillingStateName { get; set; }
+        public string Company { get; set; }
+        public string Language { get; set; }
+        public string BillingCountryName { get; set; }
     }
 }

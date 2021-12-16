@@ -35,6 +35,7 @@ namespace Doppler.BillingUser
         {
             services.Configure<DopplerDatabaseSettings>(Configuration.GetSection(nameof(DopplerDatabaseSettings)));
             services.Configure<RelayEmailSenderSettings>(Configuration.GetSection(nameof(RelayEmailSenderSettings)));
+            services.Configure<EmailNotificationsConfiguration>(Configuration.GetSection(nameof(EmailNotificationsConfiguration)));
             services.AddDopplerSecurity();
             services.AddRepositories();
             services.AddControllers();
@@ -93,6 +94,7 @@ namespace Doppler.BillingUser
             services.AddSingleton<IFlurlClientFactory, PerBaseUrlFlurlClientFactory>();
             services.AddScoped<IPromotionRepository, PromotionRepository>();
             services.Configure<SlackSettings>(Configuration.GetSection(nameof(SlackSettings)));
+            services.AddTransient<IEmailSender, RelayEmailSender>();
             services.AddScoped<ISlackService, SlackService>();
         }
 

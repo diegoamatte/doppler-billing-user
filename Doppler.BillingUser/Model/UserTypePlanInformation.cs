@@ -10,5 +10,6 @@ namespace Doppler.BillingUser.Model
         public double? Fee { get; set; }
         public double? ExtraEmailCost { get; set; }
         public int? SubscribersQty { get; set; }
+        public string? Subscribers { get; set; }
     }
 }

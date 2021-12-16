@@ -2,7 +2,6 @@ namespace Doppler.BillingUser.ExternalServices.EmailSender
 {
     public class RelayEmailSenderSettings
     {
-        public string SendUrlTemplate { get; set; }
         public string SendTemplateUrlTemplate { get; set; }
         public string ApiKey { get; set; }
         public int AccountId { get; set; }
