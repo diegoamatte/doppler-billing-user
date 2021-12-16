@@ -14,5 +14,6 @@ namespace Doppler.BillingUser.Model
         public decimal PlanFee { get; set; }
         public int DiscountPlanFee { get; set; }
         public int IdResponsabileBilling { get; set; }
+        public string CCIdentificationType { get; set; }
     }
 }

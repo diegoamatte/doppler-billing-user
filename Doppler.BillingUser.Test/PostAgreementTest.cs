@@ -842,6 +842,12 @@ namespace Doppler.BillingUser.Test
                 total = 2
             };
             var billingRepositoryMock = new Mock<IBillingRepository>();
+            billingRepositoryMock.Setup(x => x.GetBillingCredit(It.IsAny<int>())).ReturnsAsync(new BillingCredit()
+            {
+                IdBillingCredit = 1,
+                Date = new DateTime(2021, 12, 10)
+            });
+
             var userRepositoryMock = new Mock<IUserRepository>();
             userRepositoryMock.Setup(x => x.GetUserBillingInformation(accountName))
                 .ReturnsAsync(new UserBillingInformation
@@ -862,14 +868,22 @@ namespace Doppler.BillingUser.Test
                     It.IsAny<CreditCard>(),
                     It.IsAny<int>()))
                 .ReturnsAsync("authorizatioNumber");
+
+            var sapServiceMock = new Mock<ISapService>();
+            sapServiceMock.Setup(x => x.SendBillingToSap(It.IsAny<SapBillingDto>(), It.IsAny<string>()));
+
+            var encryptionServiceMock = new Mock<IEncryptionService>();
+            encryptionServiceMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("12345");
+
             var factory = _factory.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureTestServices(services =>
                 {
-                    services.AddSingleton(Mock.Of<IEncryptionService>());
+                    services.AddSingleton(encryptionServiceMock.Object);
                     services.AddSingleton(userRepositoryMock.Object);
                     services.AddSingleton(billingRepositoryMock.Object);
                     services.AddSingleton(paymentGatewayMock.Object);
+                    services.AddSingleton(sapServiceMock.Object);
                 });
 
             });

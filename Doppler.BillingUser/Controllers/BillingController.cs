@@ -270,7 +270,7 @@ namespace Doppler.BillingUser.Controllers
                 IsFirstPurchase = currentUserPlan == null,
                 PlanType = billingCredit.IdUserTypePlan,
                 CardHolder = _encryptionService.DecryptAES256(creditCard.HolderName),
-                CardType = _encryptionService.DecryptAES256(creditCard.IdentificationType),
+                CardType = billingCredit.CCIdentificationType,
                 CardNumber = cardNumber[^4..],
                 CardErrorCode = "100",
                 CardErrorDetail = "Successfully approved",
