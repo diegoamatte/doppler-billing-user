@@ -257,7 +257,7 @@ namespace Doppler.BillingUser.Controllers
                 Id = billingCredit.IdUser,
                 CreditsOrSubscribersQuantity = billingCredit.CreditsQty.GetValueOrDefault(),
                 IsCustomPlan = new[] { 0, 9, 17 }.Contains(billingCredit.IdUserTypePlan),
-                IsPlanUpgrade = false, // TODO: Check when the other types of purchases are implemented.
+                IsPlanUpgrade = true, // TODO: Check when the other types of purchases are implemented.
                 Currency = CurrencyTypeUsd,
                 Periodicity = null,
                 PeriodMonth = billingCredit.Date.Month,
@@ -279,6 +279,7 @@ namespace Doppler.BillingUser.Controllers
                 InvoiceId = invoidId,
                 PaymentDate = billingCredit.Date.ToHourOffset(_sapSettings.Value.TimeZoneOffset),
                 InvoiceDate = billingCredit.Date.ToHourOffset(_sapSettings.Value.TimeZoneOffset),
+                BillingSystemId = billingCredit.IdResponsabileBilling
             };
 
             return sapBilling;

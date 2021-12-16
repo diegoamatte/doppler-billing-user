@@ -566,7 +566,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 ApprovedDate = now,
                 Approved = true,
                 Payed = true,
-                IdUserTypePlan = agreementInformation.PlanId,
+                IdUserTypePlan = newUserTypePlan.IdUserTypePlan,
                 PlanFee = (double?)agreementInformation.Total,
                 CreditsQty = newUserTypePlan.EmailQty ?? null,
                 ExtraEmailFee = newUserTypePlan.ExtraEmailCost ?? null
@@ -759,7 +759,8 @@ SELECT
     BC.[ActivationDate],
     BC.[TotalCreditsQty],
     BC.[IdUserTypePlan],
-    DP.[DiscountPlanFee]
+    DP.[DiscountPlanFee],
+    BC.[IdResponsabileBilling]
 FROM
     [dbo].[BillingCredits] BC
         LEFT JOIN [dbo].[DiscountXPlan] DP

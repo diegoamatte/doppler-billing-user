@@ -13,5 +13,6 @@ namespace Doppler.BillingUser.Model
         public DateTime Date { get; set; }
         public decimal PlanFee { get; set; }
         public int DiscountPlanFee { get; set; }
+        public int IdResponsabileBilling { get; set; }
     }
 }
