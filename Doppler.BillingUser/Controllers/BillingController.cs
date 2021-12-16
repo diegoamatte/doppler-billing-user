@@ -9,6 +9,10 @@ using Doppler.BillingUser.ExternalServices.AccountPlansApi;
 using FluentValidation;
 using Doppler.BillingUser.Enums;
 using Doppler.BillingUser.ExternalServices.FirstData;
+using Doppler.BillingUser.ExternalServices.Sap;
+using Doppler.BillingUser.Encryption;
+using System.Linq;
+using Microsoft.Extensions.Options;
 
 namespace Doppler.BillingUser.Controllers
 {
@@ -23,6 +27,11 @@ namespace Doppler.BillingUser.Controllers
         private readonly IAccountPlansService _accountPlansService;
         private readonly IValidator<AgreementInformation> _agreementInformationValidator;
         private readonly IPaymentGateway _paymentGateway;
+        private readonly ISapService _sapService;
+        private readonly IEncryptionService _encryptionService;
+        private readonly IOptions<SapSettings> _sapSettings;
+
+        private const int CurrencyTypeUsd = 0;
 
         public BillingController(
             ILogger<BillingController> logger,
@@ -31,7 +40,10 @@ namespace Doppler.BillingUser.Controllers
             IValidator<BillingInformation> billingInformationValidator,
             IValidator<AgreementInformation> agreementInformationValidator,
             IAccountPlansService accountPlansService,
-            IPaymentGateway paymentGateway)
+            IPaymentGateway paymentGateway,
+            ISapService sapService,
+            IEncryptionService encryptionService,
+            IOptions<SapSettings> sapSettings)
         {
             _logger = logger;
             _billingRepository = billingRepository;
@@ -40,6 +52,9 @@ namespace Doppler.BillingUser.Controllers
             _agreementInformationValidator = agreementInformationValidator;
             _accountPlansService = accountPlansService;
             _paymentGateway = paymentGateway;
+            _sapService = sapService;
+            _encryptionService = encryptionService;
+            _sapSettings = sapSettings;
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
@@ -193,9 +208,12 @@ namespace Doppler.BillingUser.Controllers
                 promotion = await _accountPlansService.GetValidPromotionByCode(agreementInformation.Promocode, agreementInformation.PlanId);
             }
 
+            int invoiceId = 0;
+            string authorizationNumber = string.Empty;
+            CreditCard encryptedCreditCard = null;
             if (agreementInformation.Total.GetValueOrDefault() > 0)
             {
-                var encryptedCreditCard = await _userRepository.GetEncryptedCreditCard(accountname);
+                encryptedCreditCard = await _userRepository.GetEncryptedCreditCard(accountname);
                 if (encryptedCreditCard == null)
                 {
                     return new ObjectResult("User credit card missing")
@@ -205,8 +223,8 @@ namespace Doppler.BillingUser.Controllers
                 }
 
                 // TODO: Deal with first data exceptions.
-                var authorizationNumber = await _paymentGateway.CreateCreditCardPayment(agreementInformation.Total.GetValueOrDefault(), encryptedCreditCard, user.IdUser);
-                await _billingRepository.CreateAccountingEntriesAsync(agreementInformation, encryptedCreditCard, user.IdUser, authorizationNumber);
+                authorizationNumber = await _paymentGateway.CreateCreditCardPayment(agreementInformation.Total.GetValueOrDefault(), encryptedCreditCard, user.IdUser);
+                invoiceId = await _billingRepository.CreateAccountingEntriesAsync(agreementInformation, encryptedCreditCard, user.IdUser, authorizationNumber);
             }
 
             var billingCreditId = await _billingRepository.CreateBillingCreditAsync(agreementInformation, user, newPlan, promotion);
@@ -214,16 +232,57 @@ namespace Doppler.BillingUser.Controllers
             user.IdCurrentBillingCredit = billingCreditId;
             await _userRepository.UpdateUserBillingCredit(user);
 
+            var partialBalance = await _userRepository.GetAvailableCredit(user.IdUser);
+            await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan);
+
             if (agreementInformation.Total.GetValueOrDefault() > 0)
             {
-                var partialBalance = await _userRepository.GetAvailableCredit(user.IdUser);
-                await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan);
+                await _sapService.SendBillingToSap(
+                    await MapBillingToSapAsync(encryptedCreditCard, currentPlan, newPlan, authorizationNumber, invoiceId, billingCreditId),
+                    accountname);
             }
 
             // TODO: SEND NOTIFICATIONS
-            // TODO: create invoice in SAP
 
             return new OkObjectResult("Successfully");
+        }
+
+        private async Task<SapBillingDto> MapBillingToSapAsync(CreditCard creditCard, UserTypePlanInformation currentUserPlan, UserTypePlanInformation newUserPlan, string authorizationNumber, int invoidId, int billingCreditId)
+        {
+            var billingCredit = await _billingRepository.GetBillingCredit(billingCreditId);
+            var cardNumber = _encryptionService.DecryptAES256(creditCard.Number);
+
+            var sapBilling = new SapBillingDto
+            {
+                Id = billingCredit.IdUser,
+                CreditsOrSubscribersQuantity = billingCredit.CreditsQty.GetValueOrDefault(),
+                IsCustomPlan = new[] { 0, 9, 17 }.Contains(billingCredit.IdUserTypePlan),
+                IsPlanUpgrade = true, // TODO: Check when the other types of purchases are implemented.
+                Currency = CurrencyTypeUsd,
+                Periodicity = null,
+                PeriodMonth = billingCredit.Date.Month,
+                PeriodYear = billingCredit.Date.Year,
+                PlanFee = billingCredit.PlanFee,
+                Discount = billingCredit.DiscountPlanFee,
+                ExtraEmailsPeriodMonth = billingCredit.Date.Month,
+                ExtraEmailsPeriodYear = billingCredit.Date.Year,
+                ExtraEmailsFee = 0,
+                IsFirstPurchase = currentUserPlan == null,
+                PlanType = billingCredit.IdUserTypePlan,
+                CardHolder = _encryptionService.DecryptAES256(creditCard.HolderName),
+                CardType = billingCredit.CCIdentificationType,
+                CardNumber = cardNumber[^4..],
+                CardErrorCode = "100",
+                CardErrorDetail = "Successfully approved",
+                TransactionApproved = true,
+                TransferReference = authorizationNumber,
+                InvoiceId = invoidId,
+                PaymentDate = billingCredit.Date.ToHourOffset(_sapSettings.Value.TimeZoneOffset),
+                InvoiceDate = billingCredit.Date.ToHourOffset(_sapSettings.Value.TimeZoneOffset),
+                BillingSystemId = billingCredit.IdResponsabileBilling
+            };
+
+            return sapBilling;
         }
     }
 }

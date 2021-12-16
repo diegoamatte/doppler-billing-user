@@ -1,4 +1,5 @@
 using Doppler.BillingUser.Enums;
+using System;
 
 namespace Doppler.BillingUser.Model
 {
@@ -15,7 +16,7 @@ namespace Doppler.BillingUser.Model
         public string BankName { get; set; }
         public string BankAccount { get; set; }
         public int IdCurrentBillingCredit { get; set; }
-        public string UTCFirstPayment { get; set; }
+        public DateTime? UTCFirstPayment { get; set; }
         public string Cuit { get; set; }
     }
 }

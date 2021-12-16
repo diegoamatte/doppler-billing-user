@@ -132,7 +132,7 @@ WHERE
                 @idUser = user.IdUser,
                 @IdCurrentBillingCredit = user.IdCurrentBillingCredit,
                 @cuit = user.Cuit,
-                @utfFirstPayment = user.UTCFirstPayment ?? DateTime.UtcNow.ToShortDateString(),
+                @utfFirstPayment = user.UTCFirstPayment ?? DateTime.UtcNow,
             });
 
             return result;
