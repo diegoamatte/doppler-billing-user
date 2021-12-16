@@ -188,7 +188,7 @@ namespace Doppler.BillingUser.Controllers
             }
 
             Promotion promotion = null;
-            if(!string.IsNullOrEmpty(agreementInformation.Promocode))
+            if (!string.IsNullOrEmpty(agreementInformation.Promocode))
             {
                 promotion = await _accountPlansService.GetValidPromotionByCode(agreementInformation.Promocode, agreementInformation.PlanId);
             }

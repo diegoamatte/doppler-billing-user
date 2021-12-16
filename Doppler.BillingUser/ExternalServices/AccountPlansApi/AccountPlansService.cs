@@ -55,6 +55,7 @@ namespace Doppler.BillingUser.ExternalServices.AccountPlansApi
         {
             try
             {
+                // TODO: in the future, consider validating a signed token in place of request to the AccountPlanAPI
                 var promotion = await _flurlClient.Request(new UriTemplate(_options.Value.GetPromoCodeTemplate)
                     .AddParameter("planId", planId)
                     .AddParameter("promocode", promocode)
