@@ -67,9 +67,8 @@ namespace Doppler.BillingUser.ExternalServices.AccountPlansApi
             catch (Exception e)
             {
                 _logger.LogError(e, $"Error to get promocode information {promocode}.");
+                throw;
             }
-
-            return null;
         }
     }
 }

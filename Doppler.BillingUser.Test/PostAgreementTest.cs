@@ -15,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
 using System;
+using Flurl.Http.Testing;
 
 namespace Doppler.BillingUser.Test
 {
@@ -815,12 +816,9 @@ namespace Doppler.BillingUser.Test
             var agreement = new
             {
                 planId = 1,
-                total = 0
+                total = 2
             };
             var billingRepositoryMock = new Mock<IBillingRepository>();
-            var accountPlansServiceMock = new Mock<IAccountPlansService>();
-            accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
-                .ReturnsAsync(true);
             var userRepositoryMock = new Mock<IUserRepository>();
             userRepositoryMock.Setup(x => x.GetUserBillingInformation(accountName))
                 .ReturnsAsync(new UserBillingInformation
@@ -833,20 +831,30 @@ namespace Doppler.BillingUser.Test
                 {
                     IdUserType = UserTypeEnum.INDIVIDUAL
                 });
-
+            userRepositoryMock.Setup(x => x.GetEncryptedCreditCard(It.IsAny<string>()))
+                .ReturnsAsync(new CreditCard());
+            var paymentGatewayMock = new Mock<IPaymentGateway>();
+            paymentGatewayMock.Setup(x => x.CreateCreditCardPayment(
+                    It.IsAny<decimal>(),
+                    It.IsAny<CreditCard>(),
+                    It.IsAny<int>()))
+                .ReturnsAsync("authorizatioNumber");
             var factory = _factory.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureTestServices(services =>
                 {
                     services.AddSingleton(Mock.Of<IEncryptionService>());
-                    services.AddSingleton(accountPlansServiceMock.Object);
                     services.AddSingleton(userRepositoryMock.Object);
                     services.AddSingleton(billingRepositoryMock.Object);
+                    services.AddSingleton(paymentGatewayMock.Object);
                 });
 
             });
+            factory.Server.PreserveExecutionContext = true;
             var client = factory.CreateClient(new WebApplicationFactoryClientOptions());
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TOKEN_ACCOUNT123_TEST1_AT_TEST_DOT_COM_EXPIRE20330518);
+            var httpTest = new HttpTest();
+            httpTest.RespondWithJson(new { Total = 2 });
 
             // Act
             var response = await client.PostAsJsonAsync($"accounts/{accountName}/agreements", agreement);
@@ -856,20 +864,17 @@ namespace Doppler.BillingUser.Test
         }
 
         [Fact]
-        public async void POST_agreement_should_return_bad_request_when_promocode_is_invalid()
+        public async void POST_agreement_should_return_internal_server_error_when_promocode_is_invalid()
         {
             // Arrange
             const string accountName = "test1@test.com";
             var agreement = new
             {
                 planId = 1,
-                total = 0,
+                total = 2,
                 promocode = "promocode-test"
             };
             var billingRepositoryMock = new Mock<IBillingRepository>();
-            var accountPlansServiceMock = new Mock<IAccountPlansService>();
-            accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
-                .ReturnsAsync(true);
             var userRepositoryMock = new Mock<IUserRepository>();
             userRepositoryMock.Setup(x => x.GetUserBillingInformation(accountName))
                 .ReturnsAsync(new UserBillingInformation
@@ -888,20 +893,23 @@ namespace Doppler.BillingUser.Test
                 builder.ConfigureTestServices(services =>
                 {
                     services.AddSingleton(Mock.Of<IEncryptionService>());
-                    services.AddSingleton(accountPlansServiceMock.Object);
                     services.AddSingleton(userRepositoryMock.Object);
                     services.AddSingleton(billingRepositoryMock.Object);
                 });
 
             });
+            factory.Server.PreserveExecutionContext = true;
             var client = factory.CreateClient(new WebApplicationFactoryClientOptions());
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TOKEN_ACCOUNT123_TEST1_AT_TEST_DOT_COM_EXPIRE20330518);
+            var httpTest = new HttpTest();
+            httpTest.RespondWithJson(new { Total = 2 });
+            httpTest.RespondWith(status: 500);
 
             // Act
             var response = await client.PostAsJsonAsync($"accounts/{accountName}/agreements", agreement);
 
             // Assert
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
         }
 
         [Fact]

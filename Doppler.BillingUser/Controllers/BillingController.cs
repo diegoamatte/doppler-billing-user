@@ -187,10 +187,10 @@ namespace Doppler.BillingUser.Controllers
                 return new BadRequestObjectResult("Invalid selected plan type");
             }
 
-            var promotion = await _accountPlansService.GetValidPromotionByCode(agreementInformation.Promocode, agreementInformation.PlanId);
-            if (!string.IsNullOrEmpty(agreementInformation.Promocode) && promotion == null)
+            Promotion promotion = null;
+            if(!string.IsNullOrEmpty(agreementInformation.Promocode))
             {
-                return new BadRequestObjectResult("Invalid promotion.");
+                promotion = await _accountPlansService.GetValidPromotionByCode(agreementInformation.Promocode, agreementInformation.PlanId);
             }
 
             if (agreementInformation.Total.GetValueOrDefault() > 0)
