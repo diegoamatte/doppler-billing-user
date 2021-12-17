@@ -655,7 +655,7 @@ VALUES (
     @ccIdentificationType,
     @ccIdentificationNumber,
     @responsableIVA,
-    @IdPromotion);
+    @idPromotion);
 SELECT CAST(SCOPE_IDENTITY() AS INT)",
             new
             {
