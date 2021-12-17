@@ -569,7 +569,8 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 IdUserTypePlan = newUserTypePlan.IdUserTypePlan,
                 PlanFee = (double?)agreementInformation.Total,
                 CreditsQty = newUserTypePlan.EmailQty ?? null,
-                ExtraEmailFee = newUserTypePlan.ExtraEmailCost ?? null
+                ExtraEmailFee = newUserTypePlan.ExtraEmailCost ?? null,
+                ExtraCreditsPromotion = promotion.ExtraCredits
             };
 
             var connection = await _connectionFactory.GetConnection();
@@ -669,7 +670,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @creditsQty = buyCreditAgreement.BillingCredit.CreditsQty,
                 @activationDate = now,
                 @extraEmailFee = buyCreditAgreement.BillingCredit.ExtraEmailFee,
-                @totalCreditsQty = buyCreditAgreement.BillingCredit.CreditsQty,
+                @totalCreditsQty = buyCreditAgreement.BillingCredit.CreditsQty + (buyCreditAgreement.BillingCredit.ExtraCreditsPromotion ?? 0),
                 @idBillingCreditType = BillingCreditTypeFreeToIndividual,
                 @ccNumber = _encryptionService.EncryptAES256(buyCreditAgreement.CCNumber),
                 @ccExpMonth = buyCreditAgreement.CCExpMonth,
