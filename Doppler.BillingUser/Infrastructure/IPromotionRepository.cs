@@ -5,6 +5,6 @@ namespace Doppler.BillingUser.Infrastructure
 {
     public interface IPromotionRepository
     {
-        Task UpdateTimeToUse(Promotion promocode, string operation);
+        Task IncrementUsedTimes(Promotion promocode);
     }
 }
