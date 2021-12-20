@@ -13,14 +13,14 @@ namespace Doppler.BillingUser.Infrastructure
             _connectionFactory = connectionFactory;
         }
 
-        public async Task UpdateTimeToUse(Promotion promocode, string operation)
+        public async Task IncrementUsedTimes(Promotion promocode)
         {
             using var connection = await _connectionFactory.GetConnection();
-            await connection.ExecuteAsync(@$"
+            await connection.ExecuteAsync(@"
 UPDATE
     [Promotions]
 SET
-    [TimesUsed] = [TimesUsed] {operation} 1
+    [TimesUsed] = [TimesUsed] + 1
 WHERE [IdPromotion] = @promocodeId", new
             {
                 @promocodeId = promocode.IdPromotion

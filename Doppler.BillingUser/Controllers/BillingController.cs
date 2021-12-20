@@ -1,4 +1,3 @@
-using System;
 using Doppler.BillingUser.DopplerSecurity;
 using Doppler.BillingUser.Model;
 using Doppler.BillingUser.Infrastructure;
@@ -209,7 +208,6 @@ namespace Doppler.BillingUser.Controllers
             if (!string.IsNullOrEmpty(agreementInformation.Promocode))
             {
                 promotion = await _accountPlansService.GetValidPromotionByCode(agreementInformation.Promocode, agreementInformation.PlanId);
-                await _promotionRepository.UpdateTimeToUse(promotion, "+");
             }
 
             int invoiceId = 0;
@@ -220,27 +218,14 @@ namespace Doppler.BillingUser.Controllers
                 encryptedCreditCard = await _userRepository.GetEncryptedCreditCard(accountname);
                 if (encryptedCreditCard == null)
                 {
-                    if (promotion != null)
-                        await _promotionRepository.UpdateTimeToUse(promotion, "-");
-
                     return new ObjectResult("User credit card missing")
                     {
                         StatusCode = 500
                     };
                 }
 
-                try
-                {
-                    authorizationNumber = await _paymentGateway.CreateCreditCardPayment(agreementInformation.Total.GetValueOrDefault(), encryptedCreditCard, user.IdUser);
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Error in payment with first data");
-                    if (promotion != null)
-                        await _promotionRepository.UpdateTimeToUse(promotion, "-");
-                    throw;
-                }
-
+                // TODO: Deal with first data exceptions.
+                authorizationNumber = await _paymentGateway.CreateCreditCardPayment(agreementInformation.Total.GetValueOrDefault(), encryptedCreditCard, user.IdUser);
                 invoiceId = await _billingRepository.CreateAccountingEntriesAsync(agreementInformation, encryptedCreditCard, user.IdUser, authorizationNumber);
             }
 
@@ -251,6 +236,9 @@ namespace Doppler.BillingUser.Controllers
 
             var partialBalance = await _userRepository.GetAvailableCredit(user.IdUser);
             await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan);
+
+            if (promotion != null)
+                await _promotionRepository.IncrementUsedTimes(promotion);
 
             if (agreementInformation.Total.GetValueOrDefault() > 0)
             {
