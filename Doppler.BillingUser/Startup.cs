@@ -16,6 +16,7 @@ using System;
 using System.IdentityModel.Tokens.Jwt;
 using Doppler.BillingUser.ExternalServices.AccountPlansApi;
 using Doppler.BillingUser.ExternalServices.EmailSender;
+using Doppler.BillingUser.ExternalServices.Slack;
 using Flurl.Http.Configuration;
 
 namespace Doppler.BillingUser
@@ -91,6 +92,8 @@ namespace Doppler.BillingUser
             services.AddScoped<ICurrentRequestApiTokenGetter, CurrentRequestApiTokenGetter>();
             services.AddSingleton<IFlurlClientFactory, PerBaseUrlFlurlClientFactory>();
             services.AddScoped<IPromotionRepository, PromotionRepository>();
+            services.Configure<SlackSettings>(Configuration.GetSection(nameof(SlackSettings)));
+            services.AddScoped<ISlackService, SlackService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

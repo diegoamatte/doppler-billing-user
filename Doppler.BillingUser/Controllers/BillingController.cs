@@ -1,3 +1,4 @@
+using System;
 using Doppler.BillingUser.DopplerSecurity;
 using Doppler.BillingUser.Model;
 using Doppler.BillingUser.Infrastructure;
@@ -12,6 +13,7 @@ using Doppler.BillingUser.ExternalServices.FirstData;
 using Doppler.BillingUser.ExternalServices.Sap;
 using Doppler.BillingUser.Encryption;
 using System.Linq;
+using Doppler.BillingUser.ExternalServices.Slack;
 using Microsoft.Extensions.Options;
 
 namespace Doppler.BillingUser.Controllers
@@ -31,6 +33,7 @@ namespace Doppler.BillingUser.Controllers
         private readonly IEncryptionService _encryptionService;
         private readonly IOptions<SapSettings> _sapSettings;
         private readonly IPromotionRepository _promotionRepository;
+        private readonly ISlackService _slackService;
         private const int CurrencyTypeUsd = 0;
 
         public BillingController(
@@ -44,7 +47,8 @@ namespace Doppler.BillingUser.Controllers
             ISapService sapService,
             IEncryptionService encryptionService,
             IOptions<SapSettings> sapSettings,
-            IPromotionRepository promotionRepository)
+            IPromotionRepository promotionRepository,
+            ISlackService slackService)
         {
             _logger = logger;
             _billingRepository = billingRepository;
@@ -57,6 +61,7 @@ namespace Doppler.BillingUser.Controllers
             _encryptionService = encryptionService;
             _sapSettings = sapSettings;
             _promotionRepository = promotionRepository;
+            _slackService = slackService;
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
@@ -163,93 +168,108 @@ namespace Doppler.BillingUser.Controllers
         [HttpPost("/accounts/{accountname}/agreements")]
         public async Task<IActionResult> CreateAgreement([FromRoute] string accountname, [FromBody] AgreementInformation agreementInformation)
         {
-            var results = await _agreementInformationValidator.ValidateAsync(agreementInformation);
-            if (!results.IsValid)
+            try
             {
-                return new BadRequestObjectResult(results.ToString("-"));
-            }
-
-            var user = await _userRepository.GetUserBillingInformation(accountname);
-            if (user == null)
-            {
-                return new NotFoundObjectResult("Invalid user");
-            }
-
-            if (user.PaymentMethod != PaymentMethodEnum.CC)
-            {
-                return new BadRequestObjectResult("Invalid payment method");
-            }
-
-            var isValidTotal = await _accountPlansService.IsValidTotal(accountname, agreementInformation);
-
-            if (!isValidTotal)
-            {
-                return new BadRequestObjectResult("Total of agreement is not valid");
-            }
-
-            var currentPlan = await _userRepository.GetUserCurrentTypePlan(user.IdUser);
-            if (currentPlan != null)
-            {
-                return new BadRequestObjectResult("Invalid user type (only free users)");
-            }
-
-            var newPlan = await _userRepository.GetUserNewTypePlan(agreementInformation.PlanId);
-            if (newPlan == null)
-            {
-                return new BadRequestObjectResult("Invalid selected plan");
-            }
-
-            if (newPlan.IdUserType != UserTypeEnum.INDIVIDUAL)
-            {
-                return new BadRequestObjectResult("Invalid selected plan type");
-            }
-
-            Promotion promotion = null;
-            if (!string.IsNullOrEmpty(agreementInformation.Promocode))
-            {
-                promotion = await _accountPlansService.GetValidPromotionByCode(agreementInformation.Promocode, agreementInformation.PlanId);
-            }
-
-            int invoiceId = 0;
-            string authorizationNumber = string.Empty;
-            CreditCard encryptedCreditCard = null;
-            if (agreementInformation.Total.GetValueOrDefault() > 0)
-            {
-                encryptedCreditCard = await _userRepository.GetEncryptedCreditCard(accountname);
-                if (encryptedCreditCard == null)
+                var results = await _agreementInformationValidator.ValidateAsync(agreementInformation);
+                if (!results.IsValid)
                 {
-                    return new ObjectResult("User credit card missing")
-                    {
-                        StatusCode = 500
-                    };
+                    return new BadRequestObjectResult(results.ToString("-"));
                 }
 
-                // TODO: Deal with first data exceptions.
-                authorizationNumber = await _paymentGateway.CreateCreditCardPayment(agreementInformation.Total.GetValueOrDefault(), encryptedCreditCard, user.IdUser);
-                invoiceId = await _billingRepository.CreateAccountingEntriesAsync(agreementInformation, encryptedCreditCard, user.IdUser, authorizationNumber);
+                var user = await _userRepository.GetUserBillingInformation(accountname);
+                if (user == null)
+                {
+                    return new NotFoundObjectResult("Invalid user");
+                }
+
+                if (user.PaymentMethod != PaymentMethodEnum.CC)
+                {
+                    return new BadRequestObjectResult("Invalid payment method");
+                }
+
+                var isValidTotal = await _accountPlansService.IsValidTotal(accountname, agreementInformation);
+
+                if (!isValidTotal)
+                {
+                    return new BadRequestObjectResult("Total of agreement is not valid");
+                }
+
+                var currentPlan = await _userRepository.GetUserCurrentTypePlan(user.IdUser);
+                if (currentPlan != null)
+                {
+                    return new BadRequestObjectResult("Invalid user type (only free users)");
+                }
+
+                var newPlan = await _userRepository.GetUserNewTypePlan(agreementInformation.PlanId);
+                if (newPlan == null)
+                {
+                    return new BadRequestObjectResult("Invalid selected plan");
+                }
+
+                if (newPlan.IdUserType != UserTypeEnum.INDIVIDUAL)
+                {
+                    return new BadRequestObjectResult("Invalid selected plan type");
+                }
+
+                Promotion promotion = null;
+                if (!string.IsNullOrEmpty(agreementInformation.Promocode))
+                {
+                    promotion = await _accountPlansService.GetValidPromotionByCode(agreementInformation.Promocode,
+                        agreementInformation.PlanId);
+                }
+
+                int invoiceId = 0;
+                string authorizationNumber = string.Empty;
+                CreditCard encryptedCreditCard = null;
+                if (agreementInformation.Total.GetValueOrDefault() > 0)
+                {
+                    encryptedCreditCard = await _userRepository.GetEncryptedCreditCard(accountname);
+                    if (encryptedCreditCard == null)
+                    {
+                        return new ObjectResult("User credit card missing")
+                        {
+                            StatusCode = 500
+                        };
+                    }
+
+                    // TODO: Deal with first data exceptions.
+                    authorizationNumber = await _paymentGateway.CreateCreditCardPayment(agreementInformation.Total.GetValueOrDefault(), encryptedCreditCard, user.IdUser);
+                    invoiceId = await _billingRepository.CreateAccountingEntriesAsync(agreementInformation, encryptedCreditCard, user.IdUser, authorizationNumber);
+                }
+
+                var billingCreditId = await _billingRepository.CreateBillingCreditAsync(agreementInformation, user, newPlan, promotion);
+
+                user.IdCurrentBillingCredit = billingCreditId;
+                await _userRepository.UpdateUserBillingCredit(user);
+
+                var partialBalance = await _userRepository.GetAvailableCredit(user.IdUser);
+                await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan);
+
+                if (promotion != null)
+                    await _promotionRepository.IncrementUsedTimes(promotion);
+
+                if (agreementInformation.Total.GetValueOrDefault() > 0)
+                {
+                    await _sapService.SendBillingToSap(
+                        await MapBillingToSapAsync(encryptedCreditCard, currentPlan, newPlan, authorizationNumber,
+                            invoiceId, billingCreditId),
+                        accountname);
+                }
+
+                // TODO: SEND NOTIFICATIONS
+
+                return new OkObjectResult("Successfully");
             }
-
-            var billingCreditId = await _billingRepository.CreateBillingCreditAsync(agreementInformation, user, newPlan, promotion);
-
-            user.IdCurrentBillingCredit = billingCreditId;
-            await _userRepository.UpdateUserBillingCredit(user);
-
-            var partialBalance = await _userRepository.GetAvailableCredit(user.IdUser);
-            await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan);
-
-            if (promotion != null)
-                await _promotionRepository.IncrementUsedTimes(promotion);
-
-            if (agreementInformation.Total.GetValueOrDefault() > 0)
+            catch (Exception e)
             {
-                await _sapService.SendBillingToSap(
-                    await MapBillingToSapAsync(encryptedCreditCard, currentPlan, newPlan, authorizationNumber, invoiceId, billingCreditId),
-                    accountname);
+                var messageError = $"Failed at creating new agreement for user {accountname} with exception {e.Message}";
+                _logger.LogError(e, messageError);
+                await _slackService.SendNotification(messageError);
+                return new ObjectResult("Failed at creating new agreement")
+                {
+                    StatusCode = 500
+                };
             }
-
-            // TODO: SEND NOTIFICATIONS
-
-            return new OkObjectResult("Successfully");
         }
 
         private async Task<SapBillingDto> MapBillingToSapAsync(CreditCard creditCard, UserTypePlanInformation currentUserPlan, UserTypePlanInformation newUserPlan, string authorizationNumber, int invoidId, int billingCreditId)

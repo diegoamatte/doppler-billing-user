@@ -17,6 +17,8 @@ using Xunit;
 using System;
 using Flurl.Http.Testing;
 using Doppler.BillingUser.ExternalServices.Sap;
+using Doppler.BillingUser.ExternalServices.Slack;
+using Microsoft.Extensions.Options;
 
 namespace Doppler.BillingUser.Test
 {
@@ -591,12 +593,18 @@ namespace Doppler.BillingUser.Test
             var paymentGatewayMock = new Mock<IPaymentGateway>();
             paymentGatewayMock.Setup(x => x.CreateCreditCardPayment(It.IsAny<decimal>(), It.IsAny<CreditCard>(), It.IsAny<int>())).ThrowsAsync(new Exception());
 
+            var accountServiceMock = new Mock<IAccountPlansService>();
+            accountServiceMock.Setup(x => x.IsValidTotal(It.IsAny<string>(), It.IsAny<AgreementInformation>()))
+                .ReturnsAsync(true);
+
             var client = _factory.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureTestServices(services =>
                 {
                     services.AddSingleton(userRepositoryMock.Object);
                     services.AddSingleton(paymentGatewayMock.Object);
+                    services.AddSingleton(accountServiceMock.Object);
+                    services.AddSingleton(Mock.Of<ISlackService>());
                 });
 
             }).CreateClient(new WebApplicationFactoryClientOptions());
@@ -651,12 +659,18 @@ namespace Doppler.BillingUser.Test
             var billingRepositoryMock = new Mock<IBillingRepository>();
             billingRepositoryMock.Setup(x => x.CreateAccountingEntriesAsync(It.IsAny<AgreementInformation>(), It.IsAny<CreditCard>(), It.IsAny<int>(), It.IsAny<string>())).ReturnsAsync(0);
 
+            var accountServiceMock = new Mock<IAccountPlansService>();
+            accountServiceMock.Setup(x => x.IsValidTotal(It.IsAny<string>(), It.IsAny<AgreementInformation>()))
+                .ReturnsAsync(true);
+
             var client = _factory.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureTestServices(services =>
                 {
                     services.AddSingleton(userRepositoryMock.Object);
                     services.AddSingleton(paymentGatewayMock.Object);
+                    services.AddSingleton(accountServiceMock.Object);
+                    services.AddSingleton(Mock.Of<ISlackService>());
                 });
 
             }).CreateClient(new WebApplicationFactoryClientOptions());
@@ -1055,6 +1069,90 @@ namespace Doppler.BillingUser.Test
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             promotionRepositoryMock.Verify(x => x.IncrementUsedTimes(It.IsAny<Promotion>()), Times.Once());
+        }
+
+        [Fact]
+        public async Task POST_agreement_information_should_notify_in_slack_when_first_data_payment_fails()
+        {
+            // Arrange
+            var user = new UserBillingInformation
+            {
+                IdUser = 1,
+                PaymentMethod = PaymentMethodEnum.CC
+            };
+
+            var agreement = new
+            {
+                planId = 1,
+                total = 15
+            };
+
+            var creditCard = new CreditCard
+            {
+                CardType = CardTypeEnum.Visa,
+                ExpirationMonth = 12,
+                ExpirationYear = 23,
+                HolderName = "kBvAJf5f3AIp8+MEVYVTGA==",
+                Number = "Oe9VdYnmPsZGPKnLEogk1hbP7NH3YfZnqxLrUJxnGgc=",
+                Code = "pNw3zrff06X9K972Ro6OwQ=="
+            };
+
+            var userRepositoryMock = new Mock<IUserRepository>();
+            userRepositoryMock.Setup(x => x.GetUserBillingInformation(It.IsAny<string>()))
+                .ReturnsAsync(user);
+            userRepositoryMock.Setup(x => x.GetUserCurrentTypePlan(It.IsAny<int>()))
+                .ReturnsAsync(null as UserTypePlanInformation);
+            userRepositoryMock.Setup(x => x.GetUserNewTypePlan(It.IsAny<int>())).ReturnsAsync(new UserTypePlanInformation
+            {
+                IdUserType = UserTypeEnum.INDIVIDUAL
+            });
+            userRepositoryMock.Setup(x => x.GetEncryptedCreditCard(It.IsAny<string>()))
+                .ReturnsAsync(creditCard);
+
+            var paymentGatewayMock = new Mock<IPaymentGateway>();
+            paymentGatewayMock.Setup(x => x.CreateCreditCardPayment(It.IsAny<decimal>(), It.IsAny<CreditCard>(), It.IsAny<int>()))
+                .ThrowsAsync(new Exception());
+
+            var accountServiceMock = new Mock<IAccountPlansService>();
+            accountServiceMock.Setup(x => x.IsValidTotal(It.IsAny<string>(), It.IsAny<AgreementInformation>()))
+                .ReturnsAsync(true);
+
+            var factory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    services.AddSingleton(userRepositoryMock.Object);
+                    services.AddSingleton(paymentGatewayMock.Object);
+                    services.AddSingleton(accountServiceMock.Object);
+                    services.AddSingleton(GetSlackSettingsMock().Object);
+                });
+
+            });
+            factory.Server.PreserveExecutionContext = true;
+            var client = factory.CreateClient(new WebApplicationFactoryClientOptions());
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TOKEN_ACCOUNT123_TEST1_AT_TEST_DOT_COM_EXPIRE20330518);
+            var httpTest = new HttpTest();
+
+            // Act
+            var response = await client.PostAsJsonAsync("accounts/test1@test.com/agreements", agreement);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+
+            httpTest.ShouldHaveCalled("https://hooks.slack.com/services/test")
+                .WithVerb(HttpMethod.Post);
+        }
+
+        private static Mock<IOptions<SlackSettings>> GetSlackSettingsMock()
+        {
+            var slackSettingsMock = new Mock<IOptions<SlackSettings>>();
+            slackSettingsMock.Setup(x => x.Value)
+                .Returns(new SlackSettings
+                {
+                    Url = "https://hooks.slack.com/services/test"
+                });
+
+            return slackSettingsMock;
         }
     }
 }
