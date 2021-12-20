@@ -570,7 +570,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 PlanFee = (double?)agreementInformation.Total,
                 CreditsQty = newUserTypePlan.EmailQty ?? null,
                 ExtraEmailFee = newUserTypePlan.ExtraEmailCost ?? null,
-                ExtraCreditsPromotion = promotion.ExtraCredits
+                ExtraCreditsPromotion = promotion?.ExtraCredits
             };
 
             var connection = await _connectionFactory.GetConnection();
