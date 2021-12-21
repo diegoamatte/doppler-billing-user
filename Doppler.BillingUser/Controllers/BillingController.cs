@@ -273,7 +273,7 @@ namespace Doppler.BillingUser.Controllers
                 ExtraEmailsPeriodYear = billingCredit.Date.Year,
                 ExtraEmailsFee = 0,
                 IsFirstPurchase = currentUserPlan == null,
-                PlanType = billingCredit.IdUserTypePlan,
+                PlanType = (int)newUserPlan.IdUserType,
                 CardHolder = _encryptionService.DecryptAES256(creditCard.HolderName),
                 CardType = billingCredit.CCIdentificationType,
                 CardNumber = cardNumber[^4..],
