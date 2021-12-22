@@ -142,6 +142,9 @@ namespace Doppler.BillingUser.Controllers
 
             if (!isSuccess)
             {
+                var messageError = $"Failed at updating payment method for user {accountname}, Invalid Credit Card";
+                _logger.LogError(messageError);
+                await _slackService.SendNotification(messageError);
                 return new BadRequestObjectResult("Invalid Credit Card");
             }
 
@@ -173,49 +176,69 @@ namespace Doppler.BillingUser.Controllers
                 var results = await _agreementInformationValidator.ValidateAsync(agreementInformation);
                 if (!results.IsValid)
                 {
+                    var messageError = $"Failed at creating new agreement for user {accountname}, Validation error {results.ToString("-")}";
+                    _logger.LogError(messageError);
+                    await _slackService.SendNotification(messageError);
                     return new BadRequestObjectResult(results.ToString("-"));
                 }
 
                 var user = await _userRepository.GetUserBillingInformation(accountname);
                 if (user == null)
                 {
+                    var messageError = $"Failed at creating new agreement for user {accountname}, Invalid user";
+                    _logger.LogError(messageError);
+                    await _slackService.SendNotification(messageError);
                     return new NotFoundObjectResult("Invalid user");
                 }
 
                 if (user.PaymentMethod != PaymentMethodEnum.CC)
                 {
+                    var messageError = $"Failed at creating new agreement for user {accountname}, Invalid payment method {user.PaymentMethod}";
+                    _logger.LogError(messageError);
+                    await _slackService.SendNotification(messageError);
                     return new BadRequestObjectResult("Invalid payment method");
-                }
-
-                var isValidTotal = await _accountPlansService.IsValidTotal(accountname, agreementInformation);
-
-                if (!isValidTotal)
-                {
-                    return new BadRequestObjectResult("Total of agreement is not valid");
                 }
 
                 var currentPlan = await _userRepository.GetUserCurrentTypePlan(user.IdUser);
                 if (currentPlan != null)
                 {
+                    var messageError = $"Failed at creating new agreement for user {accountname}, Invalid user type (only free users) {currentPlan.IdUserType}";
+                    _logger.LogError(messageError);
+                    await _slackService.SendNotification(messageError);
                     return new BadRequestObjectResult("Invalid user type (only free users)");
                 }
 
                 var newPlan = await _userRepository.GetUserNewTypePlan(agreementInformation.PlanId);
                 if (newPlan == null)
                 {
+                    var messageError = $"Failed at creating new agreement for user {accountname}, Invalid selected plan {agreementInformation.PlanId}";
+                    _logger.LogError(messageError);
+                    await _slackService.SendNotification(messageError);
                     return new BadRequestObjectResult("Invalid selected plan");
                 }
 
                 if (newPlan.IdUserType != UserTypeEnum.INDIVIDUAL)
                 {
+                    var messageError = $"Failed at creating new agreement for user {accountname}, invalid selected plan type {newPlan.IdUserType}";
+                    _logger.LogError(messageError);
+                    await _slackService.SendNotification(messageError);
                     return new BadRequestObjectResult("Invalid selected plan type");
+                }
+
+                var isValidTotal = await _accountPlansService.IsValidTotal(accountname, agreementInformation);
+
+                if (!isValidTotal)
+                {
+                    var messageError = $"Failed at creating new agreement for user {accountname}, Total of agreement is not valid";
+                    _logger.LogError(messageError);
+                    await _slackService.SendNotification(messageError);
+                    return new BadRequestObjectResult("Total of agreement is not valid");
                 }
 
                 Promotion promotion = null;
                 if (!string.IsNullOrEmpty(agreementInformation.Promocode))
                 {
-                    promotion = await _accountPlansService.GetValidPromotionByCode(agreementInformation.Promocode,
-                        agreementInformation.PlanId);
+                    promotion = await _accountPlansService.GetValidPromotionByCode(agreementInformation.Promocode, agreementInformation.PlanId);
                 }
 
                 int invoiceId = 0;
@@ -226,6 +249,9 @@ namespace Doppler.BillingUser.Controllers
                     encryptedCreditCard = await _userRepository.GetEncryptedCreditCard(accountname);
                     if (encryptedCreditCard == null)
                     {
+                        var messageError = $"Failed at creating new agreement for user {accountname}, missing credit card information";
+                        _logger.LogError(messageError);
+                        await _slackService.SendNotification(messageError);
                         return new ObjectResult("User credit card missing")
                         {
                             StatusCode = 500
