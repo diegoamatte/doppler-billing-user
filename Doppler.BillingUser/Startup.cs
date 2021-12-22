@@ -96,6 +96,7 @@ namespace Doppler.BillingUser
             services.Configure<SlackSettings>(Configuration.GetSection(nameof(SlackSettings)));
             services.AddTransient<IEmailSender, RelayEmailSender>();
             services.AddScoped<ISlackService, SlackService>();
+            services.Configure<ZohoSettings>(Configuration.GetSection(nameof(ZohoSettings)));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
