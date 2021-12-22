@@ -284,6 +284,8 @@ namespace Doppler.BillingUser.Controllers
 
                 // TODO: SEND NOTIFICATIONS
 
+                var message = $"Successful at creating a new agreement for: User: {accountname} - Plan: {agreementInformation.PlanId}";
+                await _slackService.SendNotification(message + (!string.IsNullOrEmpty(agreementInformation.Promocode) ? $" - Promocode {agreementInformation.Promocode}" : string.Empty));
                 return new OkObjectResult("Successfully");
             }
             catch (Exception e)
