@@ -153,6 +153,7 @@ namespace Doppler.BillingUser.Test
                     services.AddSingleton(paymentGatewayMock.Object);
                     services.AddSingleton(billingRepositoryMock.Object);
                     services.AddSingleton(sapServiceMock.Object);
+                    services.AddSingleton(emailSenderMock.Object);
                 });
             }).CreateClient(new WebApplicationFactoryClientOptions());
             client.DefaultRequestHeaders.Add("Authorization", $"Bearer {TOKEN_ACCOUNT123_TEST1_AT_TEST_DOT_COM_EXPIRE20330518}");
@@ -311,6 +312,7 @@ namespace Doppler.BillingUser.Test
                     services.AddSingleton(userRepositoryMock.Object);
                     services.AddSingleton(paymentGatewayMock.Object);
                     services.AddSingleton(billingRepositoryMock.Object);
+                    services.AddSingleton(emailSenderMock.Object);
                 });
 
             }).CreateClient(new WebApplicationFactoryClientOptions());
@@ -523,6 +525,7 @@ namespace Doppler.BillingUser.Test
                     services.AddSingleton(accountPlansServiceMock.Object);
                     services.AddSingleton(userRepositoryMock.Object);
                     services.AddSingleton(billingRepositoryMock.Object);
+                    services.AddSingleton(emailSenderMock.Object);
                 });
 
             }).CreateClient(new WebApplicationFactoryClientOptions());
@@ -862,6 +865,7 @@ namespace Doppler.BillingUser.Test
                     services.AddSingleton(accountPlansServiceMock.Object);
                     services.AddSingleton(userRepositoryMock.Object);
                     services.AddSingleton(billingRepositoryMock.Object);
+                    services.AddSingleton(emailSenderMock.Object);
                 });
 
             }).CreateClient(new WebApplicationFactoryClientOptions());
@@ -937,6 +941,7 @@ namespace Doppler.BillingUser.Test
                     services.AddSingleton(billingRepositoryMock.Object);
                     services.AddSingleton(paymentGatewayMock.Object);
                     services.AddSingleton(sapServiceMock.Object);
+                    services.AddSingleton(emailSenderMock.Object);
                 });
 
             });
@@ -1051,6 +1056,7 @@ namespace Doppler.BillingUser.Test
                     services.AddSingleton(userRepositoryMock.Object);
                     services.AddSingleton(billingRepositoryMock.Object);
                     services.AddSingleton(Mock.Of<IPromotionRepository>());
+                    services.AddSingleton(emailSenderMock.Object);
                 });
             });
             var client = factory.CreateClient(new WebApplicationFactoryClientOptions());
@@ -1113,6 +1119,7 @@ namespace Doppler.BillingUser.Test
                     services.AddSingleton(userRepositoryMock.Object);
                     services.AddSingleton(billingRepositoryMock.Object);
                     services.AddSingleton(promotionRepositoryMock.Object);
+                    services.AddSingleton(emailSenderMock.Object);
                 });
             });
             var client = factory.CreateClient(new WebApplicationFactoryClientOptions());

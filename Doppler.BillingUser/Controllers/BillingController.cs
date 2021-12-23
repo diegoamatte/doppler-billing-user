@@ -308,7 +308,7 @@ namespace Doppler.BillingUser.Controllers
                             isPaymentMethodCC = user.PaymentMethod == PaymentMethodEnum.CC,
                             isPaymentMethodMP = user.PaymentMethod == PaymentMethodEnum.MP,
                             isPaymentMethodTransf = user.PaymentMethod == PaymentMethodEnum.TRANSF,
-                            availableCreditsQty = partialBalance,
+                            availableCreditsQty = partialBalance + newPlan.EmailQty + (promotion != null ? promotion.ExtraCredits ?? 0 : 0),
                             year = DateTime.UtcNow.Year
                         },
                         to: new[] { accountname });
@@ -321,7 +321,7 @@ namespace Doppler.BillingUser.Controllers
                         {
                             urlImagesBase = _emailSettings.Value.UrlEmailImagesBase,
                             user = accountname,
-                            client = string.Format($"{userInformation.FirstName} {userInformation.LastName}"),
+                            client = $"{userInformation.FirstName} {userInformation.LastName}",
                             address = userInformation.Address,
                             phone = userInformation.PhoneNumber,
                             company = userInformation.Company,
