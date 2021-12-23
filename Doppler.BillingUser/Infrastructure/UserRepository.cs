@@ -102,7 +102,8 @@ SELECT
     [EmailQty],
     [Fee],
     [ExtraEmailCost],
-    [SubscribersQty]
+    [SubscribersQty],
+    [Description] as Subscribers
 FROM
     [dbo].[UserTypesPlans]
 WHERE
@@ -157,6 +158,46 @@ DESC",
                 });
 
             return partialBalance;
+        }
+
+        public async Task<User> GetUserInformation(string accountName)
+        {
+            using var connection = await _connectionFactory.GetConnection();
+            var user = await connection.QueryFirstOrDefaultAsync<User>(@"
+SELECT
+    U.FirstName,
+    U.LastName,
+    U.Address,
+    U.PhoneNumber,
+    U.Company,
+    U.CityName,
+    BS.Name as BillingStateName,
+    U.ZipCode,
+    L.Name as Language,
+    C.Name as BillingCountryName,
+    V.Fullname as Vendor,
+    U.CUIT,
+    U.RazonSocial,
+    U.IdConsumerType,
+    U.BillingEmails
+FROM
+    [User] U
+LEFT JOIN
+    [Vendor] V ON V.IdVendor = U.IdVendor
+LEFT JOIN
+    [State] BS ON BS.IdState = U.IdBillingState
+LEFT JOIN
+    [Country] C ON C.IdCountry = BS.IdCountry
+INNER JOIN
+    Language L ON U.IdLanguage = L.IdLanguage
+WHERE
+    U.Email = @accountName;",
+                new
+                {
+                    accountName
+                });
+
+            return user;
         }
     }
 }
