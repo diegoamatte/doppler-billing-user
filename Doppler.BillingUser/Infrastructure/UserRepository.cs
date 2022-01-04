@@ -30,7 +30,8 @@ SELECT
     U.CFDIUse,
     U.Email,
     S.IdCountry,
-    U.UTCFirstPayment
+    U.UTCFirstPayment,
+    U.OriginInbound
 FROM
     [User] U
     INNER JOIN
@@ -125,7 +126,8 @@ UPDATE
 SET
     CUIT = @cuit,
     UTCFirstPayment = @utfFirstPayment,
-    IdCurrentBillingCredit = @idCurrentBillingCredit
+    IdCurrentBillingCredit = @idCurrentBillingCredit,
+    OriginInbound = @originInbound
 WHERE
     IdUser = @idUser;",
             new
@@ -134,6 +136,7 @@ WHERE
                 @IdCurrentBillingCredit = user.IdCurrentBillingCredit,
                 @cuit = user.Cuit,
                 @utfFirstPayment = user.UTCFirstPayment ?? DateTime.UtcNow,
+                @originInbound = user.OriginInbound,
             });
 
             return result;

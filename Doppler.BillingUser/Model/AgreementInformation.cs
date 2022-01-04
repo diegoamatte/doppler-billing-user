@@ -6,5 +6,6 @@ namespace Doppler.BillingUser.Model
         public int DiscountId { get; set; }
         public decimal? Total { get; set; }
         public string Promocode { get; set; }
+        public string OriginInbound { get; set; }
     }
 }

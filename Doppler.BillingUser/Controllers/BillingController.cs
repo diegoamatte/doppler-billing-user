@@ -274,6 +274,7 @@ namespace Doppler.BillingUser.Controllers
                 var billingCreditId = await _billingRepository.CreateBillingCreditAsync(agreementInformation, user, newPlan, promotion);
 
                 user.IdCurrentBillingCredit = billingCreditId;
+                user.OriginInbound = agreementInformation.OriginInbound;
                 await _userRepository.UpdateUserBillingCredit(user);
 
                 var partialBalance = await _userRepository.GetAvailableCredit(user.IdUser);
