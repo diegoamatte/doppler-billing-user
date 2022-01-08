@@ -18,6 +18,7 @@ using Doppler.BillingUser.ExternalServices.AccountPlansApi;
 using Doppler.BillingUser.ExternalServices.EmailSender;
 using Doppler.BillingUser.ExternalServices.Slack;
 using Flurl.Http.Configuration;
+using Doppler.BillingUser.ExternalServices.Zoho;
 
 namespace Doppler.BillingUser
 {
@@ -97,6 +98,7 @@ namespace Doppler.BillingUser
             services.AddTransient<IEmailSender, RelayEmailSender>();
             services.AddScoped<ISlackService, SlackService>();
             services.Configure<ZohoSettings>(Configuration.GetSection(nameof(ZohoSettings)));
+            services.AddScoped<IZohoService, ZohoService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
