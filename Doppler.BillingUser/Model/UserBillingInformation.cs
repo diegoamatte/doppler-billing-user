@@ -19,5 +19,6 @@ namespace Doppler.BillingUser.Model
         public DateTime? UTCFirstPayment { get; set; }
         public string Cuit { get; set; }
         public string OriginInbound { get; set; }
+        public bool UpgradePending { get; set; }
     }
 }
