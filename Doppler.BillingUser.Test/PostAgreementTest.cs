@@ -22,6 +22,9 @@ using Microsoft.Extensions.Options;
 using Doppler.BillingUser.ExternalServices.EmailSender;
 using System.Collections.Generic;
 using System.Threading;
+using Doppler.BillingUser.ExternalServices.Zoho;
+using Microsoft.Extensions.Logging;
+using Doppler.BillingUser.ExternalServices.Zoho.API;
 
 namespace Doppler.BillingUser.Test
 {
@@ -226,7 +229,7 @@ namespace Doppler.BillingUser.Test
         }
 
         [Fact]
-        public async Task POST_agreement_should_return_ok_when_planId_is_a_valid_prepaid_plan_and_user_exists_and_have_cc_as_payment_method_and_total_is_not_empty_and_has_valid_cc_and_first_datapayment_is_made_and_billing_credit_is_created()
+        public async Task POST_agreement_should_return_ok_when_planId_is_a_valid_prepaid_plan_and_user_exists_and_have_cc_as_payment_method_and_total_is_not_empty_and_has_valid_cc_and_first_datapayment_is_made_and_billing_credit_is_created_and_send_zoho_update()
         {
             // Arrange
             var agreement = new
@@ -303,6 +306,25 @@ namespace Doppler.BillingUser.Test
             var encryptionServiceMock = new Mock<IEncryptionService>();
             encryptionServiceMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("12345");
 
+            var zohoServiceMock = new Mock<IZohoService>();
+            zohoServiceMock.Setup(x => x.SearchZohoEntityAsync<ZohoEntityContact>("Contacts", It.IsAny<string>()));
+            zohoServiceMock.Setup(x => x.SearchZohoEntityAsync<ZohoResponse<ZohoEntityLead>>("Leads", It.IsAny<string>()))
+                .ReturnsAsync(
+                new ZohoResponse<ZohoEntityLead>()
+                {
+                    Data = new List<ZohoEntityLead>()
+                    {
+                        new ZohoEntityLead()
+                    }
+                });
+
+            zohoServiceMock.Setup(x => x.UpdateZohoEntityAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new ZohoUpdateResponse()
+                {
+                    Data = new List<ZohoUpdateResponseItem>()
+                }
+            );
+
             var client = _factory.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureTestServices(services =>
@@ -313,6 +335,8 @@ namespace Doppler.BillingUser.Test
                     services.AddSingleton(paymentGatewayMock.Object);
                     services.AddSingleton(billingRepositoryMock.Object);
                     services.AddSingleton(emailSenderMock.Object);
+                    services.AddSingleton(GetZohoServiceSettingsMock().Object);
+                    services.AddSingleton(zohoServiceMock.Object);
                 });
 
             }).CreateClient(new WebApplicationFactoryClientOptions());
@@ -1205,6 +1229,130 @@ namespace Doppler.BillingUser.Test
                 .WithVerb(HttpMethod.Post);
         }
 
+        [Fact]
+        public async Task POST_agreement_information_should_notify_to_slack_when_zoho_update_fails()
+        {
+            // Arrange
+            var agreement = new
+            {
+                planId = 1,
+                total = 15
+            };
+
+            var accountName = "test1@test.com";
+            var accountPlansServiceMock = new Mock<IAccountPlansService>();
+            accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
+                .ReturnsAsync(true);
+            accountPlansServiceMock.Setup(x => x.GetValidPromotionByCode(It.IsAny<string>(), It.IsAny<int>()))
+                .ReturnsAsync(new Promotion());
+            var creditCard = new CreditCard()
+            {
+                CardType = CardTypeEnum.Visa,
+                ExpirationMonth = 12,
+                ExpirationYear = 23,
+                HolderName = "kBvAJf5f3AIp8+MEVYVTGA==",
+                Number = "Oe9VdYnmPsZGPKnLEogk1hbP7NH3YfZnqxLrUJxnGgc=",
+                Code = "pNw3zrff06X9K972Ro6OwQ=="
+            };
+
+            var authorizatioNumber = "LLLTD222";
+            var invoiceId = 1;
+            var billingCreditId = 1;
+            var movementCreditId = 1;
+
+            var userRepositoryMock = new Mock<IUserRepository>();
+            userRepositoryMock.Setup(x => x.GetUserBillingInformation(accountName))
+                .ReturnsAsync(new UserBillingInformation()
+                {
+                    IdUser = 1,
+                    PaymentMethod = PaymentMethodEnum.CC
+                });
+            userRepositoryMock.Setup(x => x.GetUserCurrentTypePlan(It.IsAny<int>())).ReturnsAsync(null as UserTypePlanInformation);
+            userRepositoryMock.Setup(x => x.GetUserNewTypePlan(It.IsAny<int>())).ReturnsAsync(new UserTypePlanInformation()
+            {
+                IdUserType = UserTypeEnum.INDIVIDUAL
+            });
+            userRepositoryMock.Setup(x => x.GetEncryptedCreditCard(It.IsAny<string>())).ReturnsAsync(creditCard);
+            userRepositoryMock.Setup(x => x.UpdateUserBillingCredit(It.IsAny<UserBillingInformation>())).ReturnsAsync(1);
+            userRepositoryMock.Setup(x => x.GetAvailableCredit(It.IsAny<int>())).ReturnsAsync(10);
+            userRepositoryMock.Setup(x => x.GetUserInformation(It.IsAny<string>())).ReturnsAsync(new User()
+            {
+                Language = "es"
+            });
+
+            var paymentGatewayMock = new Mock<IPaymentGateway>();
+            paymentGatewayMock.Setup(x => x.CreateCreditCardPayment(It.IsAny<decimal>(), It.IsAny<CreditCard>(), It.IsAny<int>())).ReturnsAsync(authorizatioNumber);
+
+            var billingRepositoryMock = new Mock<IBillingRepository>();
+            billingRepositoryMock.Setup(x => x.CreateAccountingEntriesAsync(It.IsAny<AgreementInformation>(), It.IsAny<CreditCard>(), It.IsAny<int>(), It.IsAny<string>())).ReturnsAsync(invoiceId);
+            billingRepositoryMock.Setup(x => x.CreateBillingCreditAsync(
+                    It.IsAny<AgreementInformation>(),
+                    It.IsAny<UserBillingInformation>(),
+                    It.IsAny<UserTypePlanInformation>(),
+                    It.IsAny<Promotion>()))
+                .ReturnsAsync(billingCreditId);
+            billingRepositoryMock.Setup(x => x.CreateMovementCreditAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<UserBillingInformation>(), It.IsAny<UserTypePlanInformation>())).ReturnsAsync(movementCreditId);
+            billingRepositoryMock.Setup(x => x.GetBillingCredit(It.IsAny<int>())).ReturnsAsync(new BillingCredit()
+            {
+                IdBillingCredit = 1,
+                Date = new DateTime(2021, 12, 10)
+            });
+
+            var sapServiceMock = new Mock<ISapService>();
+            sapServiceMock.Setup(x => x.SendBillingToSap(It.IsAny<SapBillingDto>(), It.IsAny<string>()));
+
+            var emailSenderMock = new Mock<IEmailSender>();
+            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
+
+            var encryptionServiceMock = new Mock<IEncryptionService>();
+            encryptionServiceMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("12345");
+
+            var zohoServiceMock = new Mock<IZohoService>();
+            zohoServiceMock.Setup(x => x.SearchZohoEntityAsync<ZohoEntityContact>("Contacts", It.IsAny<string>()));
+            zohoServiceMock.Setup(x => x.SearchZohoEntityAsync<ZohoResponse<ZohoEntityLead>>("Leads", It.IsAny<string>()))
+                .ReturnsAsync(
+                new ZohoResponse<ZohoEntityLead>()
+                {
+                    Data = new List<ZohoEntityLead>()
+                    {
+                        new ZohoEntityLead()
+                    }
+                });
+
+            zohoServiceMock.Setup(x => x.UpdateZohoEntityAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ThrowsAsync(new Exception());
+
+            var factory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    services.AddSingleton(encryptionServiceMock.Object);
+                    services.AddSingleton(accountPlansServiceMock.Object);
+                    services.AddSingleton(userRepositoryMock.Object);
+                    services.AddSingleton(paymentGatewayMock.Object);
+                    services.AddSingleton(billingRepositoryMock.Object);
+                    services.AddSingleton(emailSenderMock.Object);
+                    services.AddSingleton(GetSlackSettingsMock().Object);
+                    services.AddSingleton(GetZohoServiceSettingsMock().Object);
+                    services.AddSingleton(zohoServiceMock.Object);
+                });
+            });
+
+            factory.Server.PreserveExecutionContext = true;
+            var client = factory.CreateClient(new WebApplicationFactoryClientOptions());
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TOKEN_ACCOUNT123_TEST1_AT_TEST_DOT_COM_EXPIRE20330518);
+            var httpTest = new HttpTest();
+
+            // Act
+            var response = await client.PostAsync($"accounts/{accountName}/agreements", JsonContent.Create(agreement));
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            httpTest.ShouldHaveCalled("https://hooks.slack.com/services/test")
+                .WithVerb(HttpMethod.Post);
+        }
+
         private static Mock<IOptions<SlackSettings>> GetSlackSettingsMock()
         {
             var slackSettingsMock = new Mock<IOptions<SlackSettings>>();
@@ -1215,6 +1363,18 @@ namespace Doppler.BillingUser.Test
                 });
 
             return slackSettingsMock;
+        }
+
+        private static Mock<IOptions<ZohoSettings>> GetZohoServiceSettingsMock()
+        {
+            var zohoSettingsMock = new Mock<IOptions<ZohoSettings>>();
+            zohoSettingsMock.Setup(x => x.Value)
+                .Returns(new ZohoSettings
+                {
+                    UseZoho = true
+                });
+
+            return zohoSettingsMock;
         }
     }
 }

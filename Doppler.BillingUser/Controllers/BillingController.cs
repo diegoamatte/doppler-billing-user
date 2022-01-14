@@ -17,6 +17,10 @@ using Doppler.BillingUser.ExternalServices.Slack;
 using Microsoft.Extensions.Options;
 using Doppler.BillingUser.ExternalServices.EmailSender;
 using Doppler.BillingUser.Utils;
+using Doppler.BillingUser.ExternalServices.Zoho;
+using Doppler.BillingUser.ExternalServices.Zoho.API;
+using Newtonsoft.Json;
+using System.Collections.Generic;
 
 namespace Doppler.BillingUser.Controllers
 {
@@ -38,7 +42,17 @@ namespace Doppler.BillingUser.Controllers
         private readonly IOptions<SapSettings> _sapSettings;
         private readonly IPromotionRepository _promotionRepository;
         private readonly ISlackService _slackService;
+        private readonly IOptions<ZohoSettings> _zohoSettings;
+        private readonly IZohoService _zohoService;
         private const int CurrencyTypeUsd = 0;
+        private const string userPlanTypeName = "Individual";
+        private readonly JsonSerializerSettings settings = new JsonSerializerSettings
+        {
+            DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'Z'",
+            DateFormatHandling = DateFormatHandling.IsoDateFormat,
+            DateTimeZoneHandling = DateTimeZoneHandling.Utc,
+            NullValueHandling = NullValueHandling.Ignore
+        };
 
         public BillingController(
             ILogger<BillingController> logger,
@@ -54,7 +68,9 @@ namespace Doppler.BillingUser.Controllers
             IPromotionRepository promotionRepository,
             ISlackService slackService,
             IEmailSender emailSender,
-            IOptions<EmailNotificationsConfiguration> emailSettings)
+            IOptions<EmailNotificationsConfiguration> emailSettings,
+            IOptions<ZohoSettings> zohoSettings,
+            IZohoService zohoService)
         {
             _logger = logger;
             _billingRepository = billingRepository;
@@ -70,6 +86,8 @@ namespace Doppler.BillingUser.Controllers
             _sapSettings = sapSettings;
             _promotionRepository = promotionRepository;
             _slackService = slackService;
+            _zohoSettings = zohoSettings;
+            _zohoService = zohoService;
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
@@ -367,6 +385,65 @@ namespace Doppler.BillingUser.Controllers
 
                 var message = $"Successful at creating a new agreement for: User: {accountname} - Plan: {agreementInformation.PlanId}";
                 await _slackService.SendNotification(message + (!string.IsNullOrEmpty(agreementInformation.Promocode) ? $" - Promocode {agreementInformation.Promocode}" : string.Empty));
+
+                if (_zohoSettings.Value.UseZoho)
+                {
+                    ZohoDTO zohoDto = new ZohoDTO()
+                    {
+                        Email = user.Email,
+                        UpgradeDate = DateTime.UtcNow,
+                        FirstPaymentDate = DateTime.UtcNow,
+                        Doppler = userPlanTypeName, // TODO: check for other plan types
+                        BillingSystem = PaymentMethodEnum.CC.ToString(),
+                        OriginInbound = agreementInformation.OriginInbound
+                    };
+
+                    if (promotion != null)
+                    {
+                        zohoDto.PromoCodo = agreementInformation.Promocode;
+                        if (promotion.ExtraCredits.HasValue && promotion.ExtraCredits.Value != 0)
+                            zohoDto.DiscountType = ZohoDopplerValues.Credits;
+                        else if (promotion.DiscountPlanFee.HasValue && promotion.DiscountPlanFee.Value != 0)
+                            zohoDto.DiscountType = ZohoDopplerValues.Discount;
+                    }
+
+                    try
+                    {
+                        var contact = await _zohoService.SearchZohoEntityAsync<ZohoEntityContact>("Contacts", string.Format("Email:equals:{0}", zohoDto.Email));
+                        if (contact == null)
+                        {
+                            var response = await _zohoService.SearchZohoEntityAsync<ZohoResponse<ZohoEntityLead>>("Leads", string.Format("Email:equals:{0}", zohoDto.Email));
+                            if (response != null)
+                            {
+                                var lead = response.Data.FirstOrDefault();
+                                MapForUpgrade(lead, zohoDto);
+                                var body = JsonConvert.SerializeObject(new ZohoUpdateModel<ZohoEntityLead> { Data = new List<ZohoEntityLead> { lead } }, settings);
+                                await _zohoService.UpdateZohoEntityAsync(body, lead.Id, "Leads");
+                            }
+                        }
+                        else
+                        {
+                            if (contact.AccountName != null && !string.IsNullOrEmpty(contact.AccountName.Name))
+                            {
+                                var response = await _zohoService.SearchZohoEntityAsync<ZohoResponse<ZohoEntityAccount>>("Accounts", string.Format("Account_Name:equals:{0}", contact.AccountName.Name));
+                                if (response != null)
+                                {
+                                    var account = response.Data.FirstOrDefault();
+                                    MapForUpgrade(account, zohoDto);
+                                    var body = JsonConvert.SerializeObject(new ZohoUpdateModel<ZohoEntityAccount> { Data = new List<ZohoEntityAccount> { account } }, settings);
+                                    await _zohoService.UpdateZohoEntityAsync(body, account.Id, "Accounts");
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        var messageError = $"Failed at updating lead from zoho {accountname} with exception {e.Message}";
+                        _logger.LogError(e, messageError);
+                        await _slackService.SendNotification(messageError);
+                    }
+                }
+
                 return new OkObjectResult("Successfully");
             }
             catch (Exception e)
@@ -417,6 +494,58 @@ namespace Doppler.BillingUser.Controllers
             };
 
             return sapBilling;
+        }
+
+        private void MapForUpgrade(ZohoEntityLead lead, ZohoDTO zohoDto)
+        {
+            lead.Doppler = zohoDto.Doppler;
+            if (zohoDto.FirstPaymentDate == DateTime.MinValue)
+            {
+                lead.DFirstPayment = null;
+            }
+            else
+            {
+                lead.DFirstPayment = zohoDto.FirstPaymentDate;
+            }
+            lead.DDiscountType = zohoDto.DiscountType;
+            lead.DBillingSystem = zohoDto.BillingSystem;
+            if (zohoDto.UpgradeDate == DateTime.MinValue)
+            {
+                lead.DUpgradeDate = null;
+            }
+            else
+            {
+                lead.DUpgradeDate = zohoDto.UpgradeDate;
+            }
+            lead.DPromoCode = zohoDto.PromoCodo;
+            lead.DDiscountTypeDesc = zohoDto.DiscountTypeDescription;
+            lead.Industry = zohoDto.Industry;
+        }
+
+        private void MapForUpgrade(ZohoEntityAccount account, ZohoDTO zohoDto)
+        {
+            account.Doppler = zohoDto.Doppler;
+            if (zohoDto.FirstPaymentDate == DateTime.MinValue)
+            {
+                account.DFirstPayment = null;
+            }
+            else
+            {
+                account.DFirstPayment = zohoDto.FirstPaymentDate;
+            }
+            account.DDiscountType = zohoDto.DiscountType;
+            account.DBillingSystem = zohoDto.BillingSystem;
+            if (zohoDto.UpgradeDate == DateTime.MinValue)
+            {
+                account.DUpgradeDate = null;
+            }
+            else
+            {
+                account.DUpgradeDate = zohoDto.UpgradeDate;
+            }
+            account.DPromoCode = zohoDto.PromoCodo;
+            account.DDiscountTypeDesc = zohoDto.DiscountTypeDescription;
+            account.Industry = zohoDto.Industry;
         }
     }
 }
