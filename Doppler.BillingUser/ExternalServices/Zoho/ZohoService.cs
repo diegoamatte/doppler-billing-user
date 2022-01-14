@@ -30,13 +30,13 @@ namespace Doppler.BillingUser.ExternalServices.Zoho
         private async Task RefreshTokenAsync()
         {
             var response = await _flurlZohoAuthenticationClient.Request(new UriTemplate($"{_options.Value.AuthenticationUrl}").Resolve())
-              .SetQueryParam("refresh_token", _options.Value.ZohoRefreshToken)
-              .SetQueryParam("grant_type", "refresh_token")
-              .SetQueryParam("scope", "ZohoCRM.modules.ALL,ZohoCRM.users.ALL")
-              .SetQueryParam("client_id", _options.Value.ZohoClientId)
-              .SetQueryParam("client_secret", _options.Value.ZohoClientSecret)
-               .WithHeader("Authorization", $"Zoho-oauthtoken {_options.Value.ZohoRefreshToken}")
-               .PostAsync().ReceiveJson<ZohoRefreshTokenResponse>();
+                .SetQueryParam("refresh_token", _options.Value.ZohoRefreshToken)
+                .SetQueryParam("grant_type", "refresh_token")
+                .SetQueryParam("scope", "ZohoCRM.modules.ALL,ZohoCRM.users.ALL")
+                .SetQueryParam("client_id", _options.Value.ZohoClientId)
+                .SetQueryParam("client_secret", _options.Value.ZohoClientSecret)
+                .WithHeader("Authorization", $"Zoho-oauthtoken {_options.Value.ZohoRefreshToken}")
+                .PostAsync().ReceiveJson<ZohoRefreshTokenResponse>();
 
             if (response != null)
             {
