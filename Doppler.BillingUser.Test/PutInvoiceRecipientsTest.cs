@@ -74,6 +74,7 @@ namespace Doppler.BillingUser.Test
             // Arrange
             var user = new User
             {
+                Email = "test@mail.com",
                 BillingEmails = "test@mail.com, test2@mail.com",
                 SapProperties = "{\"ContractCurrency\" : false,\"GovernmentAccount\" : false,\"Premium\" : false,\"Plus\" : false,\"ComercialPartner\" : false,\"MarketingPartner\" : false,\"OnBoarding\" : false,\"Layout\" : false,\"Datahub\" : false,\"PushNotification\" : false,\"ExclusiveIp\" : false,\"Advisory\" : false,\"Reports\" : false,\"SMS\" : false}",
                 IdResponsabileBilling = (int)ResponsabileBillingEnum.QBL
@@ -118,6 +119,7 @@ namespace Doppler.BillingUser.Test
             // Arrange
             var user = new User
             {
+                Email = "test@mail.com",
                 BillingEmails = "test@mail.com, test2@mail.com",
                 SapProperties =
                     "{\"ContractCurrency\" : false,\"GovernmentAccount\" : false,\"Premium\" : false,\"Plus\" : false,\"ComercialPartner\" : false,\"MarketingPartner\" : false,\"OnBoarding\" : false,\"Layout\" : false,\"Datahub\" : false,\"PushNotification\" : false,\"ExclusiveIp\" : false,\"Advisory\" : false,\"Reports\" : false,\"SMS\" : false}",

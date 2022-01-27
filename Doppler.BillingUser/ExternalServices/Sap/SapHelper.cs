@@ -30,7 +30,7 @@ namespace Doppler.BillingUser.ExternalServices.Sap
 
         public static bool IsMakingSenseAccount(string email)
         {
-            var excludes = new[] { "@makingsense", "@fromdoppler", "@getcs", "@dopplerrelay" };
+            var excludes = new[] { "@makingsense", "@fromdoppler", "@getcs", "@dopplerrelay", "@doppleracademy.com" };
 
             var result = excludes.Any(email.Contains);
 
