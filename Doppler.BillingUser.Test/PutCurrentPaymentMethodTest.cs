@@ -218,6 +218,7 @@ namespace Doppler.BillingUser.Test
 
             var user = new User
             {
+                Email = "test1@mail.com",
                 SapProperties = "{\"ContractCurrency\" : false,\"GovernmentAccount\" : false,\"Premium\" : false,\"Plus\" : false,\"ComercialPartner\" : false,\"MarketingPartner\" : false,\"OnBoarding\" : false,\"Layout\" : false,\"Datahub\" : false,\"PushNotification\" : false,\"ExclusiveIp\" : false,\"Advisory\" : false,\"Reports\" : false,\"SMS\" : false}",
                 CUIT = "2334345566",
                 IdConsumerType = 2,

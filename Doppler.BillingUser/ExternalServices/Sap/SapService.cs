@@ -30,17 +30,20 @@ namespace Doppler.BillingUser.ExternalServices.Sap
 
         public async Task SendUserDataToSap(SapBusinessPartner sapBusinessPartner, string resultMessage = null)
         {
-            try
+            if (!SapHelper.IsMakingSenseAccount(sapBusinessPartner.Email))
             {
-                await _flurlClient.Request(_options.Value.SapBaseUrl + _options.Value.SapCreateBusinessPartnerEndpoint)
-                    .WithHeader("Authorization", $"Bearer {_jwtTokenGenerator.GenerateSuperUserJwtToken()}")
-                    .PostJsonAsync(sapBusinessPartner);
+                try
+                {
+                    await _flurlClient.Request(_options.Value.SapBaseUrl + _options.Value.SapCreateBusinessPartnerEndpoint)
+                        .WithHeader("Authorization", $"Bearer {_jwtTokenGenerator.GenerateSuperUserJwtToken()}")
+                        .PostJsonAsync(sapBusinessPartner);
 
-                _logger.LogInformation($"User data successfully sent to DopplerSap. Iduser: {sapBusinessPartner.Id} - ClientManager: {sapBusinessPartner.IsClientManager}");
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Unexpected error sending data to DopplerSap");
+                    _logger.LogInformation($"User data successfully sent to DopplerSap. Iduser: {sapBusinessPartner.Id} - ClientManager: {sapBusinessPartner.IsClientManager}");
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Unexpected error sending data to DopplerSap");
+                }
             }
         }
         public async Task SendBillingToSap(SapBillingDto sapBilling, string email)
