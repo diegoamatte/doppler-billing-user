@@ -427,6 +427,43 @@ WHERE
             }
         }
 
+        private async Task<PaymentMethod> GetPaymentMethodByUserName(string username)
+        {
+            using var connection = await _connectionFactory.GetConnection();
+
+            var result = await connection.QueryFirstOrDefaultAsync<PaymentMethod>(@"
+
+SELECT
+    U.CCHolderFullName,
+    U.CCNumber,
+    U.CCExpMonth,
+    U.CCExpYear,
+    U.CCVerification,
+    C.[Description] AS CCType,
+    P.PaymentMethodName AS PaymentMethodName,
+    U.RazonSocial,
+    U.IdConsumerType,
+    U.CUIT as IdentificationNumber,
+    U.ResponsableIVA,
+    U.IdCCType
+FROM
+    [User] U
+LEFT JOIN
+    [CreditCardTypes] C ON C.IdCCType = U.IdCCType
+LEFT JOIN
+    [PaymentMethods] P ON P.IdPaymentMethod = U.PaymentMethod
+WHERE
+    U.Email = @email;",
+                new
+                {
+                    @email = username
+                });
+
+            result.IdConsumerType = ConsumerTypeHelper.GetConsumerType(result.IdConsumerType);
+
+            return result;
+        }
+
         public async Task<int> CreateAccountingEntriesAsync(AgreementInformation agreementInformation, CreditCard encryptedCreditCard, int userId, string authorizationNumber)
         {
             var connection = await _connectionFactory.GetConnection();
@@ -533,7 +570,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
             UserTypePlanInformation newUserTypePlan,
             Promotion promotion)
         {
-            var currentPaymentMethod = await GetCurrentPaymentMethod(user.Email);
+            var currentPaymentMethod = await GetPaymentMethodByUserName(user.Email);
             var buyCreditAgreement = new CreateAgreement
             {
                 IdUser = user.IdUser,
@@ -672,10 +709,10 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @extraEmailFee = buyCreditAgreement.BillingCredit.ExtraEmailFee,
                 @totalCreditsQty = buyCreditAgreement.BillingCredit.CreditsQty + (buyCreditAgreement.BillingCredit.ExtraCreditsPromotion ?? 0),
                 @idBillingCreditType = BillingCreditTypeFreeToIndividual,
-                @ccNumber = _encryptionService.EncryptAES256(buyCreditAgreement.CCNumber),
+                @ccNumber = buyCreditAgreement.CCNumber,
                 @ccExpMonth = buyCreditAgreement.CCExpMonth,
                 @ccExpYear = buyCreditAgreement.CCExpYear,
-                @ccVerification = _encryptionService.EncryptAES256(buyCreditAgreement.CCVerification),
+                @ccVerification = buyCreditAgreement.CCVerification,
                 @idCCType = buyCreditAgreement.IdCCType,
                 @idConsumerType = (buyCreditAgreement.IdPaymentMethod == (int)PaymentMethodEnum.MP && !buyCreditAgreement.IdConsumerType.HasValue) ?
                     (int)ConsumerTypeEnum.CF :
@@ -687,7 +724,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @discountPlanFeePromotion = buyCreditAgreement.BillingCredit.DiscountPlanFeePromotion,
                 @extraCreditsPromotion = buyCreditAgreement.BillingCredit.ExtraCreditsPromotion,
                 @subscribersQty = buyCreditAgreement.BillingCredit.SubscribersQty,
-                @ccHolderFullName = _encryptionService.EncryptAES256(buyCreditAgreement.CCHolderFullName),
+                @ccHolderFullName = buyCreditAgreement.CCHolderFullName,
                 @nroFacturacion = 0,
                 @idDiscountPlan = buyCreditAgreement.BillingCredit.IdDiscountPlan,
                 @totalMonthPlan = buyCreditAgreement.BillingCredit.MonthPlan,
@@ -699,7 +736,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @bankAccount = buyCreditAgreement.BankAccount,
                 @idResponsabileBilling = (int)ResponsabileBillingEnum.QBL,
                 @ccIdentificationType = buyCreditAgreement.CCIdentificationType,
-                @ccIdentificationNumber = buyCreditAgreement.CCIdentificationNumber,
+                @ccIdentificationNumber = CreditCardHelper.ObfuscateNumber(_encryptionService.DecryptAES256(buyCreditAgreement.CCNumber)),
                 @responsableIVA = buyCreditAgreement.ResponsableIVA,
                 @idPromotion = promotion?.IdPromotion
             });
