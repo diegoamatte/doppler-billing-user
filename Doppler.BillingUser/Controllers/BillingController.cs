@@ -45,7 +45,6 @@ namespace Doppler.BillingUser.Controllers
         private readonly IOptions<ZohoSettings> _zohoSettings;
         private readonly IZohoService _zohoService;
         private const int CurrencyTypeUsd = 0;
-        private const string userPlanTypeName = "Individual";
         private readonly JsonSerializerSettings settings = new JsonSerializerSettings
         {
             DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'Z'",
@@ -243,7 +242,7 @@ namespace Doppler.BillingUser.Controllers
                     return new BadRequestObjectResult("Invalid selected plan");
                 }
 
-                if (newPlan.IdUserType != UserTypeEnum.INDIVIDUAL)
+                if (newPlan.IdUserType != UserTypeEnum.INDIVIDUAL && newPlan.IdUserType != UserTypeEnum.MONTHLY)
                 {
                     var messageError = $"Failed at creating new agreement for user {accountname}, invalid selected plan type {newPlan.IdUserType}";
                     _logger.LogError(messageError);
@@ -286,7 +285,7 @@ namespace Doppler.BillingUser.Controllers
 
                     // TODO: Deal with first data exceptions.
                     authorizationNumber = await _paymentGateway.CreateCreditCardPayment(agreementInformation.Total.GetValueOrDefault(), encryptedCreditCard, user.IdUser);
-                    invoiceId = await _billingRepository.CreateAccountingEntriesAsync(agreementInformation, encryptedCreditCard, user.IdUser, authorizationNumber);
+                    invoiceId = await _billingRepository.CreateAccountingEntriesAsync(agreementInformation, encryptedCreditCard, user.IdUser, newPlan, authorizationNumber);
                 }
 
                 var billingCreditId = await _billingRepository.CreateBillingCreditAsync(agreementInformation, user, newPlan, promotion);
@@ -393,7 +392,7 @@ namespace Doppler.BillingUser.Controllers
                         Email = user.Email,
                         UpgradeDate = DateTime.UtcNow,
                         FirstPaymentDate = DateTime.UtcNow,
-                        Doppler = userPlanTypeName, // TODO: check for other plan types
+                        Doppler = newPlan.IdUserType == UserTypeEnum.INDIVIDUAL ? "Individual" : "Monthly", // TODO: check for other plan types
                         BillingSystem = PaymentMethodEnum.CC.ToString(),
                         OriginInbound = agreementInformation.OriginInbound
                     };
