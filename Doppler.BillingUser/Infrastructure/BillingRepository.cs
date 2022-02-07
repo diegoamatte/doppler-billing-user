@@ -32,7 +32,7 @@ namespace Doppler.BillingUser.Infrastructure
         private const int SourceTypeBuyCreditsId = 3;
         private const int CountryEnumArgentina = 10;
         private const int CurrencyTypeUsd = 0;
-        private const int BillingCreditTypeFreeToIndividual = 4;
+        private const int UpgradeRequest = 1;
 
         public BillingRepository(IDatabaseConnectionFactory connectionFactory,
             IEncryptionService encryptionService,
@@ -708,7 +708,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @activationDate = now,
                 @extraEmailFee = buyCreditAgreement.BillingCredit.ExtraEmailFee,
                 @totalCreditsQty = buyCreditAgreement.BillingCredit.CreditsQty + (buyCreditAgreement.BillingCredit.ExtraCreditsPromotion ?? 0),
-                @idBillingCreditType = BillingCreditTypeFreeToIndividual,
+                @idBillingCreditType = UpgradeRequest,
                 @ccNumber = buyCreditAgreement.CCNumber,
                 @ccExpMonth = buyCreditAgreement.CCExpMonth,
                 @ccExpYear = buyCreditAgreement.CCExpYear,

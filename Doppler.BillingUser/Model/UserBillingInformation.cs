@@ -20,5 +20,6 @@ namespace Doppler.BillingUser.Model
         public string Cuit { get; set; }
         public string OriginInbound { get; set; }
         public bool UpgradePending { get; set; }
+        public DateTime? UTCUpgrade { get; set; }
     }
 }
