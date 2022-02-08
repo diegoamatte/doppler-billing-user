@@ -8,6 +8,7 @@ using Doppler.BillingUser.Utils;
 using Newtonsoft.Json;
 using System;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,10 +30,9 @@ namespace Doppler.BillingUser.Infrastructure
         private const string AccountEntryTypeInvoice = "I";
         private const string AccountEntryTypePayment = "P";
         private const string PaymentEntryTypePayment = "P";
-        private const int SourceTypeBuyCreditsId = 3;
         private const int CountryEnumArgentina = 10;
         private const int CurrencyTypeUsd = 0;
-        private const int UpgradeRequest = 1;
+        private const int BillingCreditTypeUpgradeRequest = 1;
 
         public BillingRepository(IDatabaseConnectionFactory connectionFactory,
             IEncryptionService encryptionService,
@@ -464,7 +464,7 @@ WHERE
             return result;
         }
 
-        public async Task<int> CreateAccountingEntriesAsync(AgreementInformation agreementInformation, CreditCard encryptedCreditCard, int userId, string authorizationNumber)
+        public async Task<int> CreateAccountingEntriesAsync(AgreementInformation agreementInformation, CreditCard encryptedCreditCard, int userId, UserTypePlanInformation newPlan, string authorizationNumber)
         {
             var connection = await _connectionFactory.GetConnection();
             var invoiceId = await connection.QueryFirstOrDefaultAsync<int>(@"
@@ -499,7 +499,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @amount = agreementInformation.Total,
                 @date = DateTime.UtcNow,
                 @status = AccountingEntryStatusApproved,
-                @source = SourceTypeBuyCreditsId,
+                @source = SourceTypeHelper.SourceTypeEnumMapper(newPlan),
                 @accountingTypeDescription = AccountingEntryTypeDescriptionInvoice,
                 @invoiceNumber = 0,
                 @idAccountType = UserAccountType,
@@ -552,7 +552,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @ccExpYear = encryptedCreditCard.ExpirationYear,
                 @ccHolderName = encryptedCreditCard.HolderName,
                 @date = DateTime.UtcNow,
-                @source = SourceTypeBuyCreditsId,
+                @source = SourceTypeHelper.SourceTypeEnumMapper(newPlan),
                 @accountingTypeDescription = AccountingEntryTypeDescriptionCCPayment,
                 @idAccountType = UserAccountType,
                 @idInvoiceBillingType = InvoiceBillingTypeQBL,
@@ -708,7 +708,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @activationDate = now,
                 @extraEmailFee = buyCreditAgreement.BillingCredit.ExtraEmailFee,
                 @totalCreditsQty = buyCreditAgreement.BillingCredit.CreditsQty + (buyCreditAgreement.BillingCredit.ExtraCreditsPromotion ?? 0),
-                @idBillingCreditType = UpgradeRequest,
+                @idBillingCreditType = BillingCreditTypeUpgradeRequest,
                 @ccNumber = buyCreditAgreement.CCNumber,
                 @ccExpMonth = buyCreditAgreement.CCExpMonth,
                 @ccExpYear = buyCreditAgreement.CCExpYear,
@@ -727,7 +727,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @ccHolderFullName = buyCreditAgreement.CCHolderFullName,
                 @nroFacturacion = 0,
                 @idDiscountPlan = buyCreditAgreement.BillingCredit.IdDiscountPlan,
-                @totalMonthPlan = buyCreditAgreement.BillingCredit.MonthPlan,
+                @totalMonthPlan = buyCreditAgreement.BillingCredit.MonthPlan, // TODO: CHECK MONTHTOTAL
                 @currentMonthPlan = buyCreditAgreement.BillingCredit.MonthPlan,
                 @paymentType = buyCreditAgreement.PaymentType,
                 @cfdiUse = buyCreditAgreement.CFDIUse,
@@ -747,6 +747,21 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
         public async Task<int> CreateMovementCreditAsync(int idBillingCredit, int partialBalance, UserBillingInformation user, UserTypePlanInformation newUserTypePlan)
         {
             BillingCredit billingCredit = await GetBillingCredit(idBillingCredit);
+            string conceptEnglish;
+            string conceptSpanish;
+
+            if (newUserTypePlan.IdUserType == UserTypeEnum.INDIVIDUAL)
+            {
+                conceptEnglish = "Credits Accreditation";
+                conceptSpanish = "Acreditación de Créditos";
+            }
+            else
+            {
+                TextInfo textInfo = new CultureInfo("es", false).TextInfo;
+                var date = billingCredit.ActivationDate ?? DateTime.UtcNow;
+                conceptSpanish = "Acreditación de Emails Mes: " + textInfo.ToTitleCase(date.ToString("MMMM", CultureInfo.CreateSpecificCulture("es")));
+                conceptEnglish = "Monthly Emails Accreditation: " + date.ToString("MMMM", CultureInfo.CreateSpecificCulture("en"));
+            }
 
             var connection = await _connectionFactory.GetConnection();
             var result = await connection.QueryAsync<int>(@"
@@ -777,8 +792,8 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @creditsQty = billingCredit.TotalCreditsQty.Value,
                 @idBillingCredit = billingCredit.IdBillingCredit,
                 @partialBalance = partialBalance + billingCredit.TotalCreditsQty.Value,
-                @conceptEnglish = newUserTypePlan.IdUserType == UserTypeEnum.INDIVIDUAL ? "Credits Acreditation" : null,
-                @conceptSpanish = newUserTypePlan.IdUserType == UserTypeEnum.INDIVIDUAL ? "Acreditación de Créditos" : null,
+                @conceptEnglish = conceptEnglish,
+                @conceptSpanish = conceptSpanish,
             });
 
             return result.FirstOrDefault();
