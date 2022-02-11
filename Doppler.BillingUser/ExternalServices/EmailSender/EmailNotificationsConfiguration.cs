@@ -6,7 +6,9 @@ namespace Doppler.BillingUser.ExternalServices.EmailSender
     {
         public string AdminEmail { get; set; }
         public Dictionary<string, string> CreditsApprovedTemplateId { get; set; }
+        public Dictionary<string, string> UpgradeAccountTemplateId { get; set; }
         public string CreditsApprovedAdminTemplateId { get; set; }
+        public string UpgradeAccountTemplateAdminTemplateId { get; set; }
         public string UrlEmailImagesBase { get; set; }
     }
 }
