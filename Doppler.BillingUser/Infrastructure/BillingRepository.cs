@@ -8,6 +8,7 @@ using Doppler.BillingUser.Utils;
 using Newtonsoft.Json;
 using System;
 using System.Data;
+using System.Data.SqlClient;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
@@ -610,6 +611,20 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 ExtraCreditsPromotion = promotion?.ExtraCredits
             };
 
+            if (newUserTypePlan.IdUserType == UserTypeEnum.SUBSCRIBERS)
+            {
+                var planDiscountInformation = await GetPlanDiscountInformation(agreementInformation.DiscountId);
+
+                buyCreditAgreement.BillingCredit.IdDiscountPlan = agreementInformation.DiscountId;
+                buyCreditAgreement.BillingCredit.TotalMonthPlan = planDiscountInformation.MonthPlan;
+                buyCreditAgreement.BillingCredit.CurrentMonthPlan =
+                    (buyCreditAgreement.BillingCredit.TotalMonthPlan.HasValue
+                    && buyCreditAgreement.BillingCredit.TotalMonthPlan.Value > 1
+                    && buyCreditAgreement.BillingCredit.Date.Day > 20)
+                    ? 0 : 1;
+                buyCreditAgreement.BillingCredit.SubscribersQty = newUserTypePlan.SubscribersQty;
+            }
+
             var connection = await _connectionFactory.GetConnection();
             var result = await connection.QueryFirstOrDefaultAsync<int>(@"
 INSERT INTO [dbo].[BillingCredits]
@@ -727,8 +742,8 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @ccHolderFullName = buyCreditAgreement.CCHolderFullName,
                 @nroFacturacion = 0,
                 @idDiscountPlan = buyCreditAgreement.BillingCredit.IdDiscountPlan,
-                @totalMonthPlan = buyCreditAgreement.BillingCredit.MonthPlan, // TODO: CHECK MONTHTOTAL
-                @currentMonthPlan = buyCreditAgreement.BillingCredit.MonthPlan,
+                @totalMonthPlan = buyCreditAgreement.BillingCredit.TotalMonthPlan,
+                @currentMonthPlan = buyCreditAgreement.BillingCredit.CurrentMonthPlan,
                 @paymentType = buyCreditAgreement.PaymentType,
                 @cfdiUse = buyCreditAgreement.CFDIUse,
                 @paymentWay = buyCreditAgreement.PaymentWay,
@@ -827,6 +842,47 @@ WHERE
                 });
 
             return billingCredit;
+        }
+
+        public async Task<PlanDiscountInformation> GetPlanDiscountInformation(int discountId)
+        {
+            using var connection = await _connectionFactory.GetConnection();
+            var discountInformation = await connection.QueryFirstOrDefaultAsync<PlanDiscountInformation>(@"
+SELECT
+    DP.[IdDiscountPlan],
+    DP.[DiscountPlanFee],
+    DP.[MonthPlan],
+    DP.[ApplyPromo]
+FROM
+    [DiscountXPlan] DP
+WHERE
+    DP.[IdDiscountPlan] = @discountId AND DP.[Active] = 1",
+    new { discountId });
+
+            return discountInformation;
+        }
+
+        public async Task UpdateUserSubscriberLimitsAsync(int idUser)
+        {
+            using var connection = await _connectionFactory.GetConnection();
+            using var dtUserCheckLimits = new DataTable();
+            dtUserCheckLimits.Columns.Add(new DataColumn("IdUser", typeof(int)));
+
+            var dataRow = dtUserCheckLimits.NewRow();
+            dataRow["IdUser"] = idUser;
+            dtUserCheckLimits.Rows.Add(dataRow);
+
+            DynamicParameters parameters = new DynamicParameters();
+            parameters.Add("@Table", dtUserCheckLimits.AsTableValuedParameter("TYPEUSERTOCHECKLIMITS"));
+
+            await connection.ExecuteAsync("User_UpdateLimits", parameters, commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task<int> ActivateStandBySubscribers(int idUser)
+        {
+            using var connection = await _connectionFactory.GetConnection();
+            var result = connection.ExecuteScalar<int>("UserReactivateStandBySubscribers", new { IdUser = idUser }, commandType: CommandType.StoredProcedure);
+            return result;
         }
     }
 }
