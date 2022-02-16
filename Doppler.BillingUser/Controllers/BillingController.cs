@@ -52,6 +52,12 @@ namespace Doppler.BillingUser.Controllers
             DateTimeZoneHandling = DateTimeZoneHandling.Utc,
             NullValueHandling = NullValueHandling.Ignore
         };
+        private static readonly List<UserTypeEnum> AllowedPlanTypesForBilling = new List<UserTypeEnum>
+        {
+            UserTypeEnum.INDIVIDUAL,
+            UserTypeEnum.MONTHLY,
+            UserTypeEnum.SUBSCRIBERS
+        };
 
         public BillingController(
             ILogger<BillingController> logger,
@@ -242,7 +248,7 @@ namespace Doppler.BillingUser.Controllers
                     return new BadRequestObjectResult("Invalid selected plan");
                 }
 
-                if (newPlan.IdUserType != UserTypeEnum.INDIVIDUAL && newPlan.IdUserType != UserTypeEnum.MONTHLY)
+                if (!AllowedPlanTypesForBilling.Any(p => p == newPlan.IdUserType))
                 {
                     var messageError = $"Failed at creating new agreement for user {accountname}, invalid selected plan type {newPlan.IdUserType}";
                     _logger.LogError(messageError);
@@ -296,7 +302,22 @@ namespace Doppler.BillingUser.Controllers
                 await _userRepository.UpdateUserBillingCredit(user);
 
                 var partialBalance = await _userRepository.GetAvailableCredit(user.IdUser);
-                await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan);
+
+                if (newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS)
+                {
+                    await _billingRepository.UpdateUserSubscriberLimitsAsync(user.IdUser);
+                    var activatedStandByAmount = await _billingRepository.ActivateStandBySubscribers(user.IdUser);
+                    await _billingRepository.UpdateUserSubscriberLimitsAsync(user.IdUser);
+                    if (activatedStandByAmount > 0)
+                    {
+                        // TODO: SEND NOTIFICATION
+                        //SendActivatedStandByEmail(userModel, user.Language.Name);
+                    }
+                }
+                else
+                {
+                    await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan);
+                }
 
                 if (promotion != null)
                     await _promotionRepository.IncrementUsedTimes(promotion);

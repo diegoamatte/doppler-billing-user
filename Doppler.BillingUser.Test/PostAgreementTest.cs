@@ -736,7 +736,7 @@ namespace Doppler.BillingUser.Test
         }
 
         [Fact]
-        public async Task POST_agreement_information_should_return_bad_request_when_new_plan_type_is_not_individual_or_monthly()
+        public async Task POST_agreement_information_should_return_bad_request_when_new_plan_type_is_free()
         {
             // Arrange
             var user = new UserBillingInformation()
@@ -761,7 +761,7 @@ namespace Doppler.BillingUser.Test
             userRepositoryMock.Setup(x => x.GetUserCurrentTypePlan(It.IsAny<int>())).ReturnsAsync(null as UserTypePlanInformation);
             userRepositoryMock.Setup(x => x.GetUserNewTypePlan(It.IsAny<int>())).ReturnsAsync(new UserTypePlanInformation()
             {
-                IdUserType = UserTypeEnum.SUBSCRIBERS
+                IdUserType = UserTypeEnum.FREE
             });
 
             var client = _factory.WithWebHostBuilder(builder =>

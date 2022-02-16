@@ -25,5 +25,7 @@ namespace Doppler.BillingUser.Model
         public int? DiscountPlanFee { get; set; }
         public int? IdDiscountPlan { get; set; }
         public int? MonthPlan { get; set; }
+        public int? TotalMonthPlan { get; set; }
+        public int? CurrentMonthPlan { get; set; }
     }
 }
