@@ -330,20 +330,8 @@ namespace Doppler.BillingUser.Controllers
                         accountname);
                 }
 
-                User userInformation = await _userRepository.GetUserInformation(accountname);
-
                 //Send notifications
-                switch (newPlan.IdUserType)
-                {
-                    case UserTypeEnum.MONTHLY:
-                        SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, partialBalance, promotion, agreementInformation.Promocode);
-                        break;
-                    case UserTypeEnum.INDIVIDUAL:
-                        SendNotificationForCreditsApproved(accountname, userInformation, newPlan, user, partialBalance, promotion, agreementInformation.Promocode);
-                        break;
-                    default:
-                        break;
-                }
+                SendNotifications(accountname, newPlan, user, partialBalance, promotion, agreementInformation.Promocode, agreementInformation.DiscountId);
 
                 var message = $"Successful at creating a new agreement for: User: {accountname} - Plan: {agreementInformation.PlanId}";
                 await _slackService.SendNotification(message + (!string.IsNullOrEmpty(agreementInformation.Promocode) ? $" - Promocode {agreementInformation.Promocode}" : string.Empty));
@@ -510,6 +498,24 @@ namespace Doppler.BillingUser.Controllers
             account.Industry = zohoDto.Industry;
         }
 
+        private async void SendNotifications(string accountname, UserTypePlanInformation newPlan, UserBillingInformation user, int partialBalance, Promotion promotion, string promocode, int discountId)
+        {
+            User userInformation = await _userRepository.GetUserInformation(accountname);
+
+            switch (newPlan.IdUserType)
+            {
+                case UserTypeEnum.MONTHLY:
+                case UserTypeEnum.SUBSCRIBERS:
+                    SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId);
+                    break;
+                case UserTypeEnum.INDIVIDUAL:
+                    SendNotificationForCreditsApproved(accountname, userInformation, newPlan, user, partialBalance, promotion, promocode);
+                    break;
+                default:
+                    break;
+            }
+        }
+
         private async void SendNotificationForCreditsApproved(string accountname, User userInformation, UserTypePlanInformation newPlan, UserBillingInformation user, int partialBalance, Promotion promotion, string promocode)
         {
             var template = _emailSettings.Value.CreditsApprovedTemplateId[userInformation.Language ?? "en"];
@@ -585,8 +591,10 @@ namespace Doppler.BillingUser.Controllers
                     to: new[] { _emailSettings.Value.AdminEmail });
         }
 
-        private async void SendNotificationForUpgradePlan(string accountname, User userInformation, UserTypePlanInformation newPlan, UserBillingInformation user, int partialBalance, Promotion promotion, string promocode)
+        private async void SendNotificationForUpgradePlan(string accountname, User userInformation, UserTypePlanInformation newPlan, UserBillingInformation user, Promotion promotion, string promocode, int discountId)
         {
+            var planDiscountInformation = await _billingRepository.GetPlanDiscountInformation(discountId);
+
             var template = _emailSettings.Value.UpgradeAccountTemplateId[userInformation.Language ?? "en"];
 
             await _emailSender.SafeSendWithTemplateAsync(
@@ -603,7 +611,11 @@ namespace Doppler.BillingUser.Controllers
                         isPaymentMethodMP = user.PaymentMethod == PaymentMethodEnum.MP,
                         isPaymentMethodTransf = user.PaymentMethod == PaymentMethodEnum.TRANSF,
                         showMonthDescription = newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS,
-                        currentMonthDescription = 0, //Update it when the buy is by subscribers
+                        discountPlanFee = planDiscountInformation.DiscountPlanFee,
+                        isDiscountWith1Month = planDiscountInformation.MonthPlan == 1,
+                        isDiscountWith3Months = planDiscountInformation.MonthPlan == 3,
+                        isDiscountWith6Months = planDiscountInformation.MonthPlan == 6,
+                        isDiscountWith12Months = planDiscountInformation.MonthPlan == 12,
                         year = DateTime.UtcNow.Year
                     },
                     to: new[] { accountname });
@@ -645,7 +657,6 @@ namespace Doppler.BillingUser.Controllers
                         bankName = user.BankName,
                         bankAccount = user.BankAccount,
                         billingEmails = userInformation.BillingEmails,
-                        //userMessage = user.ExclusiveMessage, //TODO: set when the property is set in BilligCredit
                         isIndividualPlan = newPlan.IdUserType == UserTypeEnum.INDIVIDUAL,
                         isMonthlyPlan = newPlan.IdUserType == UserTypeEnum.MONTHLY,
                         isSubscribersPlan = newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS,
@@ -655,7 +666,7 @@ namespace Doppler.BillingUser.Controllers
                         isPaymentMethodCC = user.PaymentMethod == PaymentMethodEnum.CC,
                         isPaymentMethodMP = user.PaymentMethod == PaymentMethodEnum.MP,
                         isPaymentMethodTransf = user.PaymentMethod == PaymentMethodEnum.TRANSF,
-                        //discountMonthPlan = null, //TODO: Set the property when integrate with subscribers
+                        discountMonthPlan = planDiscountInformation.MonthPlan,
                         year = DateTime.UtcNow.Year
                     },
                     to: new[] { _emailSettings.Value.AdminEmail });

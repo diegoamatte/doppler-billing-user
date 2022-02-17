@@ -30,5 +30,7 @@ namespace Doppler.BillingUser.Infrastructure
         Task UpdateUserSubscriberLimitsAsync(int idUser);
 
         Task<int> ActivateStandBySubscribers(int idUser);
+
+        Task<PlanDiscountInformation> GetPlanDiscountInformation(int discountId);
     }
 }
