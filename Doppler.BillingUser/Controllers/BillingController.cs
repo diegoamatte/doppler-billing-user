@@ -299,6 +299,10 @@ namespace Doppler.BillingUser.Controllers
                 user.IdCurrentBillingCredit = billingCreditId;
                 user.OriginInbound = agreementInformation.OriginInbound;
                 user.UpgradePending = false;
+
+                if (newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS && newPlan.SubscribersQty.HasValue)
+                    user.MaxSubscribers = newPlan.SubscribersQty.Value;
+
                 await _userRepository.UpdateUserBillingCredit(user);
 
                 var partialBalance = await _userRepository.GetAvailableCredit(user.IdUser);

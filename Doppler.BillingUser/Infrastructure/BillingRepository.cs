@@ -605,7 +605,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 Approved = true,
                 Payed = true,
                 IdUserTypePlan = newUserTypePlan.IdUserTypePlan,
-                PlanFee = (double?)agreementInformation.Total,
+                PlanFee = newUserTypePlan.Fee,
                 CreditsQty = newUserTypePlan.EmailQty ?? null,
                 ExtraEmailFee = newUserTypePlan.ExtraEmailCost ?? null,
                 ExtraCreditsPromotion = promotion?.ExtraCredits
