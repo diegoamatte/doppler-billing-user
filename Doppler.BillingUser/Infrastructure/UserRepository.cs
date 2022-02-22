@@ -129,7 +129,8 @@ SET
     IdCurrentBillingCredit = @idCurrentBillingCredit,
     OriginInbound = @originInbound,
     UpgradePending = @upgradePending,
-    UTCUpgrade = @utcUpgrade
+    UTCUpgrade = @utcUpgrade,
+    MaxSubscribers = @maxSubscribers
 WHERE
     IdUser = @idUser;",
             new
@@ -140,7 +141,8 @@ WHERE
                 @utfFirstPayment = user.UTCFirstPayment ?? DateTime.UtcNow,
                 @originInbound = user.OriginInbound,
                 @upgradePending = user.UpgradePending,
-                @utcUpgrade = user.UTCUpgrade ?? DateTime.UtcNow
+                @utcUpgrade = user.UTCUpgrade ?? DateTime.UtcNow,
+                @maxSubscribers = user.MaxSubscribers
             });
 
             return result;
