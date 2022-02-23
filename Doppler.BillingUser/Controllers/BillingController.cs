@@ -509,7 +509,10 @@ namespace Doppler.BillingUser.Controllers
             switch (newPlan.IdUserType)
             {
                 case UserTypeEnum.MONTHLY:
+                    SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId);
+                    break;
                 case UserTypeEnum.SUBSCRIBERS:
+                    SendNotificationForSuscribersPlan(accountname, userInformation, newPlan);
                     SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId);
                     break;
                 case UserTypeEnum.INDIVIDUAL:
@@ -674,6 +677,23 @@ namespace Doppler.BillingUser.Controllers
                         year = DateTime.UtcNow.Year
                     },
                     to: new[] { _emailSettings.Value.AdminEmail });
+        }
+
+        private async void SendNotificationForSuscribersPlan(string accountname, User userInformation, UserTypePlanInformation newPlan)
+        {
+            var template = _emailSettings.Value.SubscribersPlanPromotionTemplateId[userInformation.Language ?? "en"];
+
+            await _emailSender.SafeSendWithTemplateAsync(
+                    templateId: template,
+                    templateModel: new
+                    {
+                        urlImagesBase = _emailSettings.Value.UrlEmailImagesBase,
+                        firstName = userInformation.FirstName,
+                        planName = newPlan.Subscribers,
+                        amount = newPlan.Fee,
+                        year = DateTime.UtcNow.Year
+                    },
+                    to: new[] { accountname });
         }
     }
 }
