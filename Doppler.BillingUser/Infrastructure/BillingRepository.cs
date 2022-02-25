@@ -881,7 +881,7 @@ WHERE
         public async Task<int> ActivateStandBySubscribers(int idUser)
         {
             using var connection = _connectionFactory.GetConnection();
-            var result = connection.ExecuteScalar<int>("UserReactivateStandBySubscribers", new { IdUser = idUser }, commandType: CommandType.StoredProcedure);
+            var result = await connection.ExecuteScalarAsync<int>("UserReactivateStandBySubscribers", new { IdUser = idUser }, commandType: CommandType.StoredProcedure);
             return result;
         }
     }
