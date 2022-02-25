@@ -15,7 +15,7 @@ namespace Doppler.BillingUser.Infrastructure
 
         public async Task IncrementUsedTimes(Promotion promocode)
         {
-            using var connection = await _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
             await connection.ExecuteAsync(@"
 UPDATE
     [Promotions]

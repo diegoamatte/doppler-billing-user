@@ -17,7 +17,7 @@ namespace Doppler.BillingUser.Infrastructure
 
         public async Task<UserBillingInformation> GetUserBillingInformation(string accountName)
         {
-            using var connection = await _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
             var user = await connection.QueryFirstOrDefaultAsync<UserBillingInformation>(@"
 SELECT
     U.IdUser,
@@ -48,7 +48,7 @@ WHERE
 
         public async Task<UserTypePlanInformation> GetUserCurrentTypePlan(int idUser)
         {
-            using var connection = await _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
             var userTypePlan = await connection.QueryFirstOrDefaultAsync<UserTypePlanInformation>(@"
 SELECT TOP 1
     UTP.[IdUserType]
@@ -72,7 +72,7 @@ ORDER BY
 
         public async Task<CreditCard> GetEncryptedCreditCard(string accountName)
         {
-            using var connection = await _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
             var encryptedCreditCard = await connection.QueryFirstOrDefaultAsync<CreditCard>(@"
 SELECT
     CCHolderFullName as HolderName,
@@ -95,7 +95,7 @@ WHERE
 
         public async Task<UserTypePlanInformation> GetUserNewTypePlan(int idUserTypePlan)
         {
-            using var connection = await _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
             var userTypePlan = await connection.QueryFirstOrDefaultAsync<UserTypePlanInformation>(@"
 SELECT
     [IdUserTypePlan],
@@ -119,7 +119,7 @@ WHERE
 
         public async Task<int> UpdateUserBillingCredit(UserBillingInformation user)
         {
-            var connection = await _connectionFactory.GetConnection();
+            var connection = _connectionFactory.GetConnection();
             var result = await connection.ExecuteAsync(@"
 UPDATE
     [dbo].[User]
@@ -150,7 +150,7 @@ WHERE
 
         public async Task<int> GetAvailableCredit(int idUser)
         {
-            using var connection = await _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
             var partialBalance = await connection.QueryFirstOrDefaultAsync<int>(@"
 SELECT
     PartialBalance
@@ -171,7 +171,7 @@ DESC",
 
         public async Task<User> GetUserInformation(string accountName)
         {
-            using var connection = await _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
             var user = await connection.QueryFirstOrDefaultAsync<User>(@"
 SELECT
     U.FirstName,

@@ -5,6 +5,6 @@ namespace Doppler.BillingUser.Infrastructure
 {
     public interface IDatabaseConnectionFactory
     {
-        Task<IDbConnection> GetConnection();
+        IDbConnection GetConnection();
     }
 }
