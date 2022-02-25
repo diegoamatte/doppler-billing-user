@@ -47,7 +47,7 @@ namespace Doppler.BillingUser.Infrastructure
         }
         public async Task<BillingInformation> GetBillingInformation(string email)
         {
-            using (IDbConnection connection = await _connectionFactory.GetConnection())
+            using (IDbConnection connection = _connectionFactory.GetConnection())
             {
                 var results = await connection.QueryAsync<BillingInformation>(@"
 SELECT
@@ -72,7 +72,7 @@ WHERE
 
         public async Task UpdateBillingInformation(string accountName, BillingInformation billingInformation)
         {
-            using var connection = await _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
 
             await connection.ExecuteAsync(@"
 UPDATE [User] SET
@@ -100,7 +100,7 @@ WHERE
 
         public async Task<PaymentMethod> GetCurrentPaymentMethod(string username)
         {
-            using var connection = await _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
 
             var result = await connection.QueryFirstOrDefaultAsync<PaymentMethod>(@"
 
@@ -144,7 +144,7 @@ WHERE
 
         public async Task<EmailRecipients> GetInvoiceRecipients(string accountName)
         {
-            using var connection = await _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
 
             var user = await connection.QueryFirstOrDefaultAsync<User>(@"
 SELECT
@@ -168,7 +168,7 @@ WHERE
 
         public async Task UpdateInvoiceRecipients(string accountName, string[] emailRecipients, int planId)
         {
-            using var connection = await _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
 
             await connection.ExecuteAsync(@"
 UPDATE
@@ -188,7 +188,7 @@ WHERE
 
         public async Task<CurrentPlan> GetCurrentPlan(string accountName)
         {
-            using var connection = await _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
 
             var currentPlan = await connection.QueryFirstOrDefaultAsync<CurrentPlan>(@"
 SELECT
@@ -222,7 +222,7 @@ WHERE
 
         public async Task<bool> UpdateCurrentPaymentMethod(string accountName, PaymentMethod paymentMethod)
         {
-            using var connection = await _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
 
             var user = await connection.QueryFirstOrDefaultAsync<User>(@"
 SELECT IdUser
@@ -276,7 +276,7 @@ WHERE Email = @email;",
 
         private async Task UpdateUserPaymentMethodByTransfer(User user, PaymentMethod paymentMethod)
         {
-            using var connection = await _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
 
             await connection.ExecuteAsync(@"
 UPDATE
@@ -304,7 +304,7 @@ WHERE
 
         private async Task UpdateUserPaymentMethod(User user, PaymentMethod paymentMethod)
         {
-            using var connection = await _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
 
             await connection.ExecuteAsync(@"
 UPDATE
@@ -340,7 +340,7 @@ WHERE
 
         private async Task SendUserDataToSap(string accountName, int planId)
         {
-            using var connection = await _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
 
             var user = await connection.QueryFirstOrDefaultAsync<User>(@"
 SELECT
@@ -430,7 +430,7 @@ WHERE
 
         private async Task<PaymentMethod> GetPaymentMethodByUserName(string username)
         {
-            using var connection = await _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
 
             var result = await connection.QueryFirstOrDefaultAsync<PaymentMethod>(@"
 
@@ -467,7 +467,7 @@ WHERE
 
         public async Task<int> CreateAccountingEntriesAsync(AgreementInformation agreementInformation, CreditCard encryptedCreditCard, int userId, UserTypePlanInformation newPlan, string authorizationNumber)
         {
-            var connection = await _connectionFactory.GetConnection();
+            var connection = _connectionFactory.GetConnection();
             var invoiceId = await connection.QueryFirstOrDefaultAsync<int>(@"
 INSERT INTO [dbo].[AccountingEntry]
     ([Date],
@@ -625,7 +625,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 buyCreditAgreement.BillingCredit.SubscribersQty = newUserTypePlan.SubscribersQty;
             }
 
-            var connection = await _connectionFactory.GetConnection();
+            var connection = _connectionFactory.GetConnection();
             var result = await connection.QueryFirstOrDefaultAsync<int>(@"
 INSERT INTO [dbo].[BillingCredits]
     ([Date],
@@ -778,7 +778,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 conceptEnglish = "Monthly Emails Accreditation: " + date.ToString("MMMM", CultureInfo.CreateSpecificCulture("en"));
             }
 
-            var connection = await _connectionFactory.GetConnection();
+            var connection = _connectionFactory.GetConnection();
             var result = await connection.QueryAsync<int>(@"
 INSERT INTO [dbo].[MovementsCredits]
     ([IdUser],
@@ -816,7 +816,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
 
         public async Task<BillingCredit> GetBillingCredit(int billingCreditId)
         {
-            using var connection = await _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
             var billingCredit = await connection.QueryFirstOrDefaultAsync<BillingCredit>(@"
 SELECT
     BC.[IdBillingCredit],
@@ -846,7 +846,7 @@ WHERE
 
         public async Task<PlanDiscountInformation> GetPlanDiscountInformation(int discountId)
         {
-            using var connection = await _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
             var discountInformation = await connection.QueryFirstOrDefaultAsync<PlanDiscountInformation>(@"
 SELECT
     DP.[IdDiscountPlan],
@@ -864,7 +864,7 @@ WHERE
 
         public async Task UpdateUserSubscriberLimitsAsync(int idUser)
         {
-            using var connection = await _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
             using var dtUserCheckLimits = new DataTable();
             dtUserCheckLimits.Columns.Add(new DataColumn("IdUser", typeof(int)));
 
@@ -880,7 +880,7 @@ WHERE
 
         public async Task<int> ActivateStandBySubscribers(int idUser)
         {
-            using var connection = await _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
             var result = connection.ExecuteScalar<int>("UserReactivateStandBySubscribers", new { IdUser = idUser }, commandType: CommandType.StoredProcedure);
             return result;
         }
