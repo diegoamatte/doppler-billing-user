@@ -358,7 +358,7 @@ namespace Doppler.BillingUser.Controllers
                         zohoDto.PromoCodo = agreementInformation.Promocode;
                         if (promotion.ExtraCredits.HasValue && promotion.ExtraCredits.Value != 0)
                             zohoDto.DiscountType = ZohoDopplerValues.Credits;
-                        else if (promotion.DiscountPlanFee.HasValue && promotion.DiscountPlanFee.Value != 0)
+                        else if (promotion.DiscountPercentage.HasValue && promotion.DiscountPercentage.Value != 0)
                             zohoDto.DiscountType = ZohoDopplerValues.Discount;
                     }
 
@@ -567,7 +567,7 @@ namespace Doppler.BillingUser.Controllers
                         country = userInformation.BillingCountryName,
                         vendor = userInformation.Vendor,
                         promotionCode = promocode,
-                        promotionCodeDiscount = promotion?.DiscountPlanFee,
+                        promotionCodeDiscount = promotion?.DiscountPercentage,
                         promotionCodeExtraCredits = promotion?.ExtraCredits,
                         razonSocial = userInformation.RazonSocial,
                         cuit = userInformation.CUIT,
@@ -619,11 +619,11 @@ namespace Doppler.BillingUser.Controllers
                         isPaymentMethodMP = user.PaymentMethod == PaymentMethodEnum.MP,
                         isPaymentMethodTransf = user.PaymentMethod == PaymentMethodEnum.TRANSF,
                         showMonthDescription = newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS,
-                        discountPlanFee = planDiscountInformation.DiscountPlanFee,
-                        isDiscountWith1Month = planDiscountInformation.MonthPlan == 1,
-                        isDiscountWith3Months = planDiscountInformation.MonthPlan == 3,
-                        isDiscountWith6Months = planDiscountInformation.MonthPlan == 6,
-                        isDiscountWith12Months = planDiscountInformation.MonthPlan == 12,
+                        discountPlanFee = planDiscountInformation != null ? planDiscountInformation.DiscountPlanFee : 0,
+                        isDiscountWith1Month = planDiscountInformation != null ? planDiscountInformation.MonthPlan == 1 : false,
+                        isDiscountWith3Months = planDiscountInformation != null ? planDiscountInformation.MonthPlan == 3 : false,
+                        isDiscountWith6Months = planDiscountInformation != null ? planDiscountInformation.MonthPlan == 6 : false,
+                        isDiscountWith12Months = planDiscountInformation != null ? planDiscountInformation.MonthPlan == 12 : false,
                         year = DateTime.UtcNow.Year
                     },
                     to: new[] { accountname });
@@ -647,7 +647,7 @@ namespace Doppler.BillingUser.Controllers
                         country = userInformation.BillingCountryName,
                         vendor = userInformation.Vendor,
                         promotionCode = promocode,
-                        promotionCodeDiscount = promotion?.DiscountPlanFee,
+                        promotionCodeDiscount = promotion?.DiscountPercentage,
                         promotionCodeExtraCredits = promotion?.ExtraCredits,
                         razonSocial = userInformation.RazonSocial,
                         cuit = userInformation.CUIT,
@@ -674,7 +674,7 @@ namespace Doppler.BillingUser.Controllers
                         isPaymentMethodCC = user.PaymentMethod == PaymentMethodEnum.CC,
                         isPaymentMethodMP = user.PaymentMethod == PaymentMethodEnum.MP,
                         isPaymentMethodTransf = user.PaymentMethod == PaymentMethodEnum.TRANSF,
-                        discountMonthPlan = planDiscountInformation.MonthPlan,
+                        discountMonthPlan = planDiscountInformation != null ? planDiscountInformation.MonthPlan : 0,
                         year = DateTime.UtcNow.Year
                     },
                     to: new[] { _emailSettings.Value.AdminEmail });

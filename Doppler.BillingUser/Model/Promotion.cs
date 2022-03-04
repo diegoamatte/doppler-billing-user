@@ -5,6 +5,6 @@ namespace Doppler.BillingUser.Model
         public int IdPromotion { get; set; }
 
         public int? ExtraCredits { get; set; }
-        public int? DiscountPlanFee { get; set; }
+        public int? DiscountPercentage { get; set; }
     }
 }
