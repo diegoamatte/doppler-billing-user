@@ -306,6 +306,7 @@ namespace Doppler.BillingUser.Controllers
                 await _userRepository.UpdateUserBillingCredit(user);
 
                 var partialBalance = await _userRepository.GetAvailableCredit(user.IdUser);
+                User userInformation = await _userRepository.GetUserInformation(accountname);
 
                 if (newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS)
                 {
@@ -314,8 +315,8 @@ namespace Doppler.BillingUser.Controllers
                     await _billingRepository.UpdateUserSubscriberLimitsAsync(user.IdUser);
                     if (activatedStandByAmount > 0)
                     {
-                        // TODO: SEND NOTIFICATION
-                        //SendActivatedStandByEmail(userModel, user.Language.Name);
+                        var lang = userInformation.Language ?? "en";
+                        await SendActivatedStandByEmail(lang, userInformation.FirstName, activatedStandByAmount, user.Email);
                     }
                 }
                 else
@@ -678,6 +679,24 @@ namespace Doppler.BillingUser.Controllers
                     },
                     to: new[] { _emailSettings.Value.AdminEmail });
         }
+
+        private async Task SendActivatedStandByEmail(string language, string fistName, int standByAmount, string sendTo)
+        {
+            var template = _emailSettings.Value.ActivatedStandByNotificationTemplateId[language];
+
+            await _emailSender.SafeSendWithTemplateAsync(
+                    templateId: template,
+                    templateModel: new
+                    {
+                        firstName = fistName,
+                        standByAmount = standByAmount,
+                        urlImagesBase = _emailSettings.Value.UrlEmailImagesBase,
+                        year = DateTime.Now.Year,
+                        isOnlyOneSubscriber = standByAmount == 1,
+                    },
+                    to: new[] { sendTo });
+        }
+
 
         private async void SendNotificationForSuscribersPlan(string accountname, User userInformation, UserTypePlanInformation newPlan)
         {

@@ -11,5 +11,6 @@ namespace Doppler.BillingUser.ExternalServices.EmailSender
         public string CreditsApprovedAdminTemplateId { get; set; }
         public string UpgradeAccountTemplateAdminTemplateId { get; set; }
         public string UrlEmailImagesBase { get; set; }
+        public Dictionary<string, string> ActivatedStandByNotificationTemplateId { get; set; }
     }
 }
