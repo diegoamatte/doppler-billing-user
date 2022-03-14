@@ -753,7 +753,10 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @paymentWay = buyCreditAgreement.PaymentWay,
                 @bankName = buyCreditAgreement.BankName,
                 @bankAccount = buyCreditAgreement.BankAccount,
-                @idResponsabileBilling = (int)ResponsabileBillingEnum.QBL,
+                @idResponsabileBilling =
+                    (user.PaymentMethod == PaymentMethodEnum.TRANSF && user.IdCountry == (int)CountryEnum.Colombia) ?
+                    (int)ResponsabileBillingEnum.BorisMarketing :
+                    (int)ResponsabileBillingEnum.QBL,
                 @ccIdentificationType = buyCreditAgreement.CCIdentificationType,
                 @ccIdentificationNumber = CreditCardHelper.ObfuscateNumber(_encryptionService.DecryptAES256(buyCreditAgreement.CCNumber)),
                 @responsableIVA = buyCreditAgreement.ResponsableIVA,
