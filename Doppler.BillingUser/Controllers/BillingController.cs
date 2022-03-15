@@ -311,7 +311,7 @@ namespace Doppler.BillingUser.Controllers
 
                 user.IdCurrentBillingCredit = billingCreditId;
                 user.OriginInbound = agreementInformation.OriginInbound;
-                user.UpgradePending = false;
+                user.UpgradePending = BillingHelper.IsUpgradePending(user, promotion);
 
                 if (newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS && newPlan.SubscribersQty.HasValue)
                     user.MaxSubscribers = newPlan.SubscribersQty.Value;
@@ -527,20 +527,29 @@ namespace Doppler.BillingUser.Controllers
         {
             User userInformation = await _userRepository.GetUserInformation(accountname);
 
-            switch (newPlan.IdUserType)
+            if (user.PaymentMethod == PaymentMethodEnum.CC)
             {
-                case UserTypeEnum.MONTHLY:
-                    SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId);
-                    break;
-                case UserTypeEnum.SUBSCRIBERS:
-                    SendNotificationForSuscribersPlan(accountname, userInformation, newPlan);
-                    SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId);
-                    break;
-                case UserTypeEnum.INDIVIDUAL:
-                    SendNotificationForCreditsApproved(accountname, userInformation, newPlan, user, partialBalance, promotion, promocode);
-                    break;
-                default:
-                    break;
+                switch (newPlan.IdUserType)
+                {
+                    case UserTypeEnum.MONTHLY:
+                        SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId);
+                        break;
+                    case UserTypeEnum.SUBSCRIBERS:
+                        SendNotificationForSuscribersPlan(accountname, userInformation, newPlan);
+                        SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId);
+                        break;
+                    case UserTypeEnum.INDIVIDUAL:
+                        SendNotificationForCreditsApproved(accountname, userInformation, newPlan, user, partialBalance, promotion, promocode);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            if (BillingHelper.IsUpgradePending(user, promotion))
+            {
+                // TODO: https://makingsense.atlassian.net/browse/DAT-846
+                // SENDNOTIFICATION - Doppler2017.AccountPreferencesService.cs Line: 2615
             }
         }
 

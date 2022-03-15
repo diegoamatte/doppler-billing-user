@@ -600,12 +600,12 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 BankAccount = user.BankAccount
             };
 
-            var now = DateTime.UtcNow;
+            DateTime now = DateTime.UtcNow;
             buyCreditAgreement.BillingCredit = new BillingCreditModel()
             {
                 Date = now,
-                PaymentDate = now,
-                ApprovedDate = now,
+                PaymentDate = user.PaymentMethod == PaymentMethodEnum.CC || BillingHelper.IsUpgradePending(user, promotion) ? now : null,
+                ActivationDate = user.PaymentMethod == PaymentMethodEnum.CC || BillingHelper.IsUpgradePending(user, promotion) ? now : null,
                 Approved = true,
                 Payed = true,
                 IdUserTypePlan = newUserTypePlan.IdUserTypePlan,
@@ -720,11 +720,11 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @idUser = buyCreditAgreement.IdUser,
                 @idPaymentMethod = buyCreditAgreement.IdPaymentMethod,
                 @planFee = buyCreditAgreement.BillingCredit.PlanFee,
-                @paymentDate = now,
+                @paymentDate = buyCreditAgreement.BillingCredit.PaymentDate,
                 @taxes = buyCreditAgreement.BillingCredit.Taxes,
                 @idCurrencyType = CurrencyTypeUsd,
                 @creditsQty = buyCreditAgreement.BillingCredit.CreditsQty,
-                @activationDate = now,
+                @activationDate = buyCreditAgreement.BillingCredit.ActivationDate,
                 @extraEmailFee = buyCreditAgreement.BillingCredit.ExtraEmailFee,
                 @totalCreditsQty = buyCreditAgreement.BillingCredit.CreditsQty + (buyCreditAgreement.BillingCredit.ExtraCreditsPromotion ?? 0),
                 @idBillingCreditType = BillingCreditTypeUpgradeRequest,

@@ -18,7 +18,7 @@ namespace Doppler.BillingUser.Model
         public double? Taxes { get; set; }
         public bool Payed { get; set; }
         public DateTime? PaymentDate { get; set; }
-        public DateTime? ApprovedDate { get; set; }
+        public DateTime? ActivationDate { get; set; }
         public int? CreditsQty { get; set; }
         public int? SubscribersQty { get; set; }
         public int? ExtraCreditsPromotion { get; set; }
