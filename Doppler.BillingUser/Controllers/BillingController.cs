@@ -421,14 +421,14 @@ namespace Doppler.BillingUser.Controllers
             var sapBilling = new SapBillingDto
             {
                 Id = billingCredit.IdUser,
-                CreditsOrSubscribersQuantity = billingCredit.CreditsQty.GetValueOrDefault(),
-                IsCustomPlan = new[] { 0, 9, 17 }.Contains(billingCredit.IdUserTypePlan),
+                CreditsOrSubscribersQuantity = newUserPlan.IdUserType == UserTypeEnum.SUBSCRIBERS ? newUserPlan.SubscribersQty.GetValueOrDefault() : billingCredit.CreditsQty.GetValueOrDefault(),
+                IsCustomPlan = (new[] { 0, 9, 17 }).Contains(billingCredit.IdUserTypePlan),
                 IsPlanUpgrade = true, // TODO: Check when the other types of purchases are implemented.
                 Currency = CurrencyTypeUsd,
-                Periodicity = null,
+                Periodicity = GetPeriodicity(newUserPlan, billingCredit),
                 PeriodMonth = billingCredit.Date.Month,
                 PeriodYear = billingCredit.Date.Year,
-                PlanFee = billingCredit.PlanFee,
+                PlanFee = newUserPlan.IdUserType == UserTypeEnum.SUBSCRIBERS ? billingCredit.PlanFee * (billingCredit.TotalMonthPlan ?? 1) : billingCredit.PlanFee,
                 Discount = billingCredit.DiscountPlanFee,
                 ExtraEmailsPeriodMonth = billingCredit.Date.Month,
                 ExtraEmailsPeriodYear = billingCredit.Date.Year,
@@ -449,6 +449,14 @@ namespace Doppler.BillingUser.Controllers
             };
 
             return sapBilling;
+        }
+
+        private int? GetPeriodicity(UserTypePlanInformation newUserPlan, BillingCredit billingCredit)
+        {
+            return newUserPlan.IdUserType == UserTypeEnum.INDIVIDUAL ?
+                null : billingCredit.TotalMonthPlan == 3 ?
+                1 : billingCredit.TotalMonthPlan == 6 ?
+                2 : billingCredit.TotalMonthPlan == 12 ? 3 : 0;
         }
 
         private void MapForUpgrade(ZohoEntityLead lead, ZohoDTO zohoDto)
