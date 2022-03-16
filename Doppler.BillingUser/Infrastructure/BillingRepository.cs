@@ -829,7 +829,8 @@ SELECT
     BC.[IdUserTypePlan],
     DP.[DiscountPlanFee],
     BC.[IdResponsabileBilling],
-    BC.[CCIdentificationType]
+    BC.[CCIdentificationType],
+    BC.TotalMonthPlan
 FROM
     [dbo].[BillingCredits] BC
         LEFT JOIN [dbo].[DiscountXPlan] DP
