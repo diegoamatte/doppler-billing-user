@@ -312,7 +312,6 @@ namespace Doppler.BillingUser.Controllers
                 {
                     await _billingRepository.UpdateUserSubscriberLimitsAsync(user.IdUser);
                     var activatedStandByAmount = await _billingRepository.ActivateStandBySubscribers(user.IdUser);
-                    await _billingRepository.UpdateUserSubscriberLimitsAsync(user.IdUser);
                     if (activatedStandByAmount > 0)
                     {
                         var lang = userInformation.Language ?? "en";
