@@ -1506,7 +1506,7 @@ namespace Doppler.BillingUser.Test
                 {
                     IdUser = 1,
                     PaymentMethod = PaymentMethodEnum.TRANSF,
-                    IdCountry = (int)CountryEnum.Colombia
+                    IdBillingCountry = (int)CountryEnum.Colombia
                 });
             userRepositoryMock.Setup(x => x.GetUserNewTypePlan(It.IsAny<int>())).ReturnsAsync(new UserTypePlanInformation()
             {

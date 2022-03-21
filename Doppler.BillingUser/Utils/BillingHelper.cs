@@ -9,10 +9,14 @@ namespace Doppler.BillingUser.Utils
         {
             if (promotion != null)
             {
-                return user.PaymentMethod == PaymentMethodEnum.TRANSF && promotion.DiscountPercentage.HasValue && promotion.DiscountPercentage.Value == 100;
+                return user.PaymentMethod == PaymentMethodEnum.TRANSF &&
+                    ((promotion.DiscountPercentage.HasValue &&
+                    promotion.DiscountPercentage.Value < 100) ||
+                    !promotion.DiscountPercentage.HasValue);
             }
 
-            return false;
+
+            return user.PaymentMethod != PaymentMethodEnum.CC;
         }
     }
 }

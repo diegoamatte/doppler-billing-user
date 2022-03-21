@@ -235,7 +235,7 @@ namespace Doppler.BillingUser.Controllers
                     return new BadRequestObjectResult("Invalid payment method");
                 }
 
-                if (user.PaymentMethod == PaymentMethodEnum.TRANSF && user.IdCountry != (int)CountryEnum.Colombia)
+                if (user.PaymentMethod == PaymentMethodEnum.TRANSF && user.IdBillingCountry != (int)CountryEnum.Colombia)
                 {
                     var messageErrorTransference = $"Failed at creating new agreement for user {accountname}, payment method {user.PaymentMethod} it's only supported for Colombia";
                     _logger.LogError(messageErrorTransference);
@@ -527,7 +527,7 @@ namespace Doppler.BillingUser.Controllers
         {
             User userInformation = await _userRepository.GetUserInformation(accountname);
 
-            if (user.PaymentMethod == PaymentMethodEnum.CC)
+            if (user.PaymentMethod == PaymentMethodEnum.CC || !BillingHelper.IsUpgradePending(user, promotion))
             {
                 switch (newPlan.IdUserType)
                 {

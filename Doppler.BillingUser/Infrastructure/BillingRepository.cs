@@ -31,7 +31,6 @@ namespace Doppler.BillingUser.Infrastructure
         private const string AccountEntryTypeInvoice = "I";
         private const string AccountEntryTypePayment = "P";
         private const string PaymentEntryTypePayment = "P";
-        private const int CountryEnumArgentina = 10;
         private const int CurrencyTypeUsd = 0;
         private const int BillingCreditTypeUpgradeRequest = 1;
 
@@ -576,23 +575,24 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
             Promotion promotion)
         {
             var currentPaymentMethod = await GetPaymentMethodByUserName(user.Email);
+
             var buyCreditAgreement = new CreateAgreement
             {
                 IdUser = user.IdUser,
-                IdCountry = user.IdCountry,
+                IdCountry = user.IdBillingCountry,
                 IdPaymentMethod = (int)user.PaymentMethod,
-                IdCCType = currentPaymentMethod.IdCCType,
-                CCExpMonth = short.Parse(currentPaymentMethod.CCExpMonth),
-                CCExpYear = short.Parse(currentPaymentMethod.CCExpYear),
-                CCHolderFullName = currentPaymentMethod.CCHolderFullName,
-                CCIdentificationType = currentPaymentMethod.CCType,
-                CCIdentificationNumber = currentPaymentMethod.CCNumber,
-                CCNumber = currentPaymentMethod.CCNumber,
-                CCVerification = currentPaymentMethod.CCVerification,
+                IdCCType = currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ? currentPaymentMethod.IdCCType : null,
+                CCExpMonth = currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ? short.Parse(currentPaymentMethod.CCExpMonth) : null,
+                CCExpYear = currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ? short.Parse(currentPaymentMethod.CCExpYear) : null,
+                CCHolderFullName = currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ? currentPaymentMethod.CCHolderFullName : null,
+                CCIdentificationType = currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ? currentPaymentMethod.CCType : null,
+                CCIdentificationNumber = currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ? currentPaymentMethod.CCNumber : null,
+                CCNumber = currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ? currentPaymentMethod.CCNumber : null,
+                CCVerification = currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ? currentPaymentMethod.CCVerification : null,
                 IdConsumerType = !string.IsNullOrEmpty(currentPaymentMethod.IdConsumerType) ? int.Parse(currentPaymentMethod.IdConsumerType) : null,
                 RazonSocial = currentPaymentMethod.RazonSocial,
                 ResponsableIVA = user.ResponsableIVA,
-                Cuit = user.IdCountry == CountryEnumArgentina ? currentPaymentMethod.IdentificationNumber : null,
+                Cuit = user.IdBillingCountry == (int)CountryEnum.Colombia ? currentPaymentMethod.IdentificationNumber : null,
                 CFDIUse = user.CFDIUse,
                 PaymentWay = user.PaymentWay,
                 PaymentType = user.PaymentType,
@@ -619,8 +619,8 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
             {
                 var planDiscountInformation = await GetPlanDiscountInformation(agreementInformation.DiscountId);
 
-                buyCreditAgreement.BillingCredit.IdDiscountPlan = agreementInformation.DiscountId;
-                buyCreditAgreement.BillingCredit.TotalMonthPlan = planDiscountInformation.MonthPlan;
+                buyCreditAgreement.BillingCredit.IdDiscountPlan = agreementInformation.DiscountId != 0 ? agreementInformation.DiscountId : null;
+                buyCreditAgreement.BillingCredit.TotalMonthPlan = planDiscountInformation?.MonthPlan;
                 buyCreditAgreement.BillingCredit.CurrentMonthPlan =
                     (buyCreditAgreement.BillingCredit.TotalMonthPlan.HasValue
                     && buyCreditAgreement.BillingCredit.TotalMonthPlan.Value > 1
@@ -754,11 +754,13 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @bankName = buyCreditAgreement.BankName,
                 @bankAccount = buyCreditAgreement.BankAccount,
                 @idResponsabileBilling =
-                    (user.PaymentMethod == PaymentMethodEnum.TRANSF && user.IdCountry == (int)CountryEnum.Colombia) ?
+                    (user.PaymentMethod == PaymentMethodEnum.TRANSF && user.IdBillingCountry == (int)CountryEnum.Colombia) ?
                     (int)ResponsabileBillingEnum.BorisMarketing :
                     (int)ResponsabileBillingEnum.QBL,
                 @ccIdentificationType = buyCreditAgreement.CCIdentificationType,
-                @ccIdentificationNumber = CreditCardHelper.ObfuscateNumber(_encryptionService.DecryptAES256(buyCreditAgreement.CCNumber)),
+                @ccIdentificationNumber = currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ?
+                    CreditCardHelper.ObfuscateNumber(_encryptionService.DecryptAES256(buyCreditAgreement.CCNumber)) :
+                    null,
                 @responsableIVA = buyCreditAgreement.ResponsableIVA,
                 @idPromotion = promotion?.IdPromotion
             });
