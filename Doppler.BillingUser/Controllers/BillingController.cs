@@ -80,7 +80,8 @@ namespace Doppler.BillingUser.Controllers
             IEmailSender emailSender,
             IOptions<EmailNotificationsConfiguration> emailSettings,
             IOptions<ZohoSettings> zohoSettings,
-            IZohoService zohoService)
+            IZohoService zohoService,
+            IEmailTemplatesService)
         {
             _logger = logger;
             _billingRepository = billingRepository;
