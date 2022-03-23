@@ -21,6 +21,7 @@ using Doppler.BillingUser.ExternalServices.Zoho;
 using Doppler.BillingUser.ExternalServices.Zoho.API;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using Doppler.BillingUser.Services;
 
 namespace Doppler.BillingUser.Controllers
 {
@@ -44,6 +45,7 @@ namespace Doppler.BillingUser.Controllers
         private readonly ISlackService _slackService;
         private readonly IOptions<ZohoSettings> _zohoSettings;
         private readonly IZohoService _zohoService;
+        private readonly IEmailTemplatesService _emailTemplatesService;
         private const int CurrencyTypeUsd = 0;
         private readonly JsonSerializerSettings settings = new JsonSerializerSettings
         {
@@ -81,7 +83,7 @@ namespace Doppler.BillingUser.Controllers
             IOptions<EmailNotificationsConfiguration> emailSettings,
             IOptions<ZohoSettings> zohoSettings,
             IZohoService zohoService,
-            IEmailTemplatesService)
+            IEmailTemplatesService emailTemplatesService)
         {
             _logger = logger;
             _billingRepository = billingRepository;
@@ -99,6 +101,7 @@ namespace Doppler.BillingUser.Controllers
             _slackService = slackService;
             _zohoSettings = zohoSettings;
             _zohoService = zohoService;
+            _emailTemplatesService = emailTemplatesService;
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
@@ -725,24 +728,6 @@ namespace Doppler.BillingUser.Controllers
                         isOnlyOneSubscriber = standByAmount == 1,
                     },
                     to: new[] { sendTo });
-        }
-
-
-        private async void SendNotificationForSuscribersPlan(string accountname, User userInformation, UserTypePlanInformation newPlan)
-        {
-            var template = _emailSettings.Value.SubscribersPlanPromotionTemplateId[userInformation.Language ?? "en"];
-
-            await _emailSender.SafeSendWithTemplateAsync(
-                    templateId: template,
-                    templateModel: new
-                    {
-                        urlImagesBase = _emailSettings.Value.UrlEmailImagesBase,
-                        firstName = userInformation.FirstName,
-                        planName = newPlan.Subscribers,
-                        amount = newPlan.Fee,
-                        year = DateTime.UtcNow.Year
-                    },
-                    to: new[] { accountname });
         }
     }
 }

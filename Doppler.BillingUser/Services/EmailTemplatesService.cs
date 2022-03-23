@@ -92,6 +92,23 @@ namespace Doppler.BillingUser.Services
 
             return adminEmail;
         }
+
+        public Task<bool> SendNotificationForSuscribersPlan(string accountname, User userInformation, UserTypePlanInformation newPlan)
+        {
+            var template = _emailSettings.Value.SubscribersPlanPromotionTemplateId[userInformation.Language ?? "en"];
+
+            return _emailSender.SafeSendWithTemplateAsync(
+                    templateId: template,
+                    templateModel: new
+                    {
+                        urlImagesBase = _emailSettings.Value.UrlEmailImagesBase,
+                        firstName = userInformation.FirstName,
+                        planName = newPlan.Subscribers,
+                        amount = newPlan.Fee,
+                        year = DateTime.UtcNow.Year
+                    },
+                    to: new[] { accountname });
+        }
     }
 }
 
