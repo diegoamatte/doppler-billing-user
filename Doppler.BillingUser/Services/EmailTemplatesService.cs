@@ -109,6 +109,23 @@ namespace Doppler.BillingUser.Services
                     },
                     to: new[] { accountname });
         }
+
+        public Task<bool> SendActivatedStandByEmail(string language, string fistName, int standByAmount, string sendTo)
+        {
+            var template = _emailSettings.Value.ActivatedStandByNotificationTemplateId[language];
+
+            return _emailSender.SafeSendWithTemplateAsync(
+                    templateId: template,
+                    templateModel: new
+                    {
+                        firstName = fistName,
+                        standByAmount = standByAmount,
+                        urlImagesBase = _emailSettings.Value.UrlEmailImagesBase,
+                        year = DateTime.Now.Year,
+                        isOnlyOneSubscriber = standByAmount == 1,
+                    },
+                    to: new[] { sendTo });
+        }
     }
 }
 

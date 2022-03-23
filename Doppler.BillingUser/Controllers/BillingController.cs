@@ -332,7 +332,7 @@ namespace Doppler.BillingUser.Controllers
                     if (activatedStandByAmount > 0)
                     {
                         var lang = userInformation.Language ?? "en";
-                        await SendActivatedStandByEmail(lang, userInformation.FirstName, activatedStandByAmount, user.Email);
+                        await _emailTemplatesService.SendActivatedStandByEmail(lang, userInformation.FirstName, activatedStandByAmount, user.Email);
                     }
                 }
                 else
@@ -711,23 +711,6 @@ namespace Doppler.BillingUser.Controllers
                         year = DateTime.UtcNow.Year
                     },
                     to: new[] { _emailSettings.Value.AdminEmail });
-        }
-
-        private async Task SendActivatedStandByEmail(string language, string fistName, int standByAmount, string sendTo)
-        {
-            var template = _emailSettings.Value.ActivatedStandByNotificationTemplateId[language];
-
-            await _emailSender.SafeSendWithTemplateAsync(
-                    templateId: template,
-                    templateModel: new
-                    {
-                        firstName = fistName,
-                        standByAmount = standByAmount,
-                        urlImagesBase = _emailSettings.Value.UrlEmailImagesBase,
-                        year = DateTime.Now.Year,
-                        isOnlyOneSubscriber = standByAmount == 1,
-                    },
-                    to: new[] { sendTo });
         }
     }
 }
