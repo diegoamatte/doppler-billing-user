@@ -197,7 +197,7 @@ SELECT
     UT.Description AS PlanType,
     T.EmailQty,
     T.SubscribersQty,
-    PartialBalance.Total AS RemainingCredits
+    (CASE WHEN T.IdUserType != 4 THEN PartialBalance.Total ELSE T.SubscribersQty - Subscribers.Total END) AS RemainingCredits
 FROM
     [BillingCredits] B
 LEFT JOIN
@@ -210,6 +210,10 @@ OUTER APPLY (SELECT TOP 1 MC.[PartialBalance] AS Total
     FROM [dbo].[MovementsCredits] MC
     WHERE MC.IdUser = (SELECT IdUser FROM [User] WHERE Email = @email)
     ORDER BY MC.[IdMovementCredit] DESC) PartialBalance
+OUTER APPLY (
+    SELECT SUM(VSBSXUA.Amount) AS Total
+    FROM [dbo].[ViewSubscribersByStatusXUserAmount] VSBSXUA WITH (NOEXPAND)
+    WHERE VSBSXUA.IdUser = (SELECT IdUser FROM [User] WHERE Email = @email)) Subscribers
 WHERE
     B.[IdUser] = (SELECT IdUser FROM [User] WHERE Email = @email) ORDER BY B.[Date] DESC;",
                 new
