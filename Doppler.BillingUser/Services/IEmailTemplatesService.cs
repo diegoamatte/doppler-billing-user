@@ -10,5 +10,6 @@ namespace Doppler.BillingUser.Services
         Task<bool> SendNotificationForSuscribersPlan(string accountname, User userInformation, UserTypePlanInformation newPlan);
         Task<bool> SendActivatedStandByEmail(string language, string fistName, int standByAmount, string sendTo);
         Task SendNotificationForUpgradePlan(string accountname, User userInformation, UserTypePlanInformation newPlan, UserBillingInformation user, Promotion promotion, string promocode, int discountId, PlanDiscountInformation planDiscountInformation);
+        Task SendNotificationForCreditsApproved(string accountname, User userInformation, UserTypePlanInformation newPlan, UserBillingInformation user, int partialBalance, Promotion promotion, string promocode);
     }
 }

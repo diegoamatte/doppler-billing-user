@@ -531,105 +531,27 @@ namespace Doppler.BillingUser.Controllers
         {
             User userInformation = await _userRepository.GetUserInformation(accountname);
 
-            if (user.PaymentMethod == PaymentMethodEnum.CC || !BillingHelper.IsUpgradePending(user, promotion))
+            switch (newPlan.IdUserType)
             {
-                switch (newPlan.IdUserType)
-                {
-                    case UserTypeEnum.MONTHLY:
-                        SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId);
-                        break;
-                    case UserTypeEnum.SUBSCRIBERS:
-                        SendNotificationForSuscribersPlan(accountname, userInformation, newPlan);
-                        SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId);
-                        break;
-                    case UserTypeEnum.INDIVIDUAL:
-                        SendNotificationForCreditsApproved(accountname, userInformation, newPlan, user, partialBalance, promotion, promocode);
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            if (BillingHelper.IsUpgradePending(user, promotion))
-            {
-                // TODO: https://makingsense.atlassian.net/browse/DAT-846
-                // SENDNOTIFICATION - Doppler2017.AccountPreferencesService.cs Line: 2615
-            }
-        }
-
-        private async void SendNotificationForCreditsApproved(string accountname, User userInformation, UserTypePlanInformation newPlan, UserBillingInformation user, int partialBalance, Promotion promotion, string promocode)
-        {
-            var template = _emailSettings.Value.CreditsApprovedTemplateId[userInformation.Language ?? "en"];
-
-            await _emailSender.SafeSendWithTemplateAsync(
-                    templateId: template,
-                    templateModel: new
+                case UserTypeEnum.MONTHLY:
                     {
-                        urlImagesBase = _emailSettings.Value.UrlEmailImagesBase,
-                        firstName = userInformation.FirstName,
-                        isIndividualPlan = newPlan.IdUserType == UserTypeEnum.INDIVIDUAL,
-                        isMonthlyPlan = newPlan.IdUserType == UserTypeEnum.MONTHLY,
-                        isSubscribersPlan = newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS,
-                        creditsQty = newPlan.EmailQty,
-                        subscribersQty = newPlan.Subscribers,
-                        amount = newPlan.Fee,
-                        isPaymentMethodCC = user.PaymentMethod == PaymentMethodEnum.CC,
-                        isPaymentMethodMP = user.PaymentMethod == PaymentMethodEnum.MP,
-                        isPaymentMethodTransf = user.PaymentMethod == PaymentMethodEnum.TRANSF,
-                        availableCreditsQty = partialBalance + newPlan.EmailQty + (promotion != null ? promotion.ExtraCredits ?? 0 : 0),
-                        year = DateTime.UtcNow.Year
-                    },
-                    to: new[] { accountname });
-
-            var templateAdmin = _emailSettings.Value.CreditsApprovedAdminTemplateId;
-
-            await _emailSender.SafeSendWithTemplateAsync(
-                    templateId: templateAdmin,
-                    templateModel: new
+                        var planDiscountInformation = await _billingRepository.GetPlanDiscountInformation(discountId);
+                        await _emailTemplatesService.SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId, planDiscountInformation);
+                    }
+                    break;
+                case UserTypeEnum.SUBSCRIBERS:
                     {
-                        urlImagesBase = _emailSettings.Value.UrlEmailImagesBase,
-                        user = accountname,
-                        client = $"{userInformation.FirstName} {userInformation.LastName}",
-                        address = userInformation.Address,
-                        phone = userInformation.PhoneNumber,
-                        company = userInformation.Company,
-                        city = userInformation.CityName,
-                        state = userInformation.BillingStateName,
-                        zipCode = userInformation.ZipCode,
-                        language = userInformation.Language,
-                        country = userInformation.BillingCountryName,
-                        vendor = userInformation.Vendor,
-                        promotionCode = promocode,
-                        promotionCodeDiscount = promotion?.DiscountPercentage,
-                        promotionCodeExtraCredits = promotion?.ExtraCredits,
-                        razonSocial = userInformation.RazonSocial,
-                        cuit = userInformation.CUIT,
-                        isConsumerCF = userInformation.IdConsumerType == (int)ConsumerTypeEnum.CF,
-                        isConsumerRFC = userInformation.IdConsumerType == (int)ConsumerTypeEnum.RFC,
-                        isConsumerRI = userInformation.IdConsumerType == (int)ConsumerTypeEnum.RI,
-                        isCfdiUseG03 = user.CFDIUse == "G03",
-                        isCfdiUseP01 = user.CFDIUse == "P01",
-                        isPaymentTypePPD = user.PaymentType == "PPD",
-                        isPaymentTypePUE = user.PaymentType == "PUE",
-                        isPaymentWayCash = user.PaymentWay == "CASH",
-                        isPaymentWayCheck = user.PaymentWay == "CHECK",
-                        isPaymentWayTransfer = user.PaymentWay == "TRANSFER",
-                        bankName = user.BankName,
-                        bankAccount = user.BankAccount,
-                        billingEmails = userInformation.BillingEmails,
-                        //userMessage = user.ExclusiveMessage, //TODO: set when the property is set in BilligCredit
-                        isIndividualPlan = newPlan.IdUserType == UserTypeEnum.INDIVIDUAL,
-                        isMonthlyPlan = newPlan.IdUserType == UserTypeEnum.MONTHLY,
-                        isSubscribersPlan = newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS,
-                        creditsQty = newPlan.EmailQty,
-                        subscribersQty = newPlan.Subscribers,
-                        amount = newPlan.Fee,
-                        isPaymentMethodCC = user.PaymentMethod == PaymentMethodEnum.CC,
-                        isPaymentMethodMP = user.PaymentMethod == PaymentMethodEnum.MP,
-                        isPaymentMethodTransf = user.PaymentMethod == PaymentMethodEnum.TRANSF,
-                        year = DateTime.UtcNow.Year
-                    },
-                    to: new[] { _emailSettings.Value.AdminEmail });
+                        await _emailTemplatesService.SendNotificationForSuscribersPlan(accountname, userInformation, newPlan);
+                        var planDiscountInformation = await _billingRepository.GetPlanDiscountInformation(discountId);
+                        await _emailTemplatesService.SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId, planDiscountInformation);
+                    }
+                    break;
+                case UserTypeEnum.INDIVIDUAL:
+                    await _emailTemplatesService.SendNotificationForCreditsApproved(accountname, userInformation, newPlan, user, partialBalance, promotion, promocode);
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }

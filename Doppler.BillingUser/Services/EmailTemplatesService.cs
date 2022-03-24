@@ -207,6 +207,83 @@ namespace Doppler.BillingUser.Services
 
             return Task.WhenAll(adminEmail, upgradeEmail);
         }
+
+        public Task SendNotificationForCreditsApproved(string accountname, User userInformation, UserTypePlanInformation newPlan, UserBillingInformation user, int partialBalance, Promotion promotion, string promocode)
+        {
+            var template = _emailSettings.Value.CreditsApprovedTemplateId[userInformation.Language ?? "en"];
+
+            var creditsEmail = _emailSender.SafeSendWithTemplateAsync(
+                    templateId: template,
+                    templateModel: new
+                    {
+                        urlImagesBase = _emailSettings.Value.UrlEmailImagesBase,
+                        firstName = userInformation.FirstName,
+                        isIndividualPlan = newPlan.IdUserType == UserTypeEnum.INDIVIDUAL,
+                        isMonthlyPlan = newPlan.IdUserType == UserTypeEnum.MONTHLY,
+                        isSubscribersPlan = newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS,
+                        creditsQty = newPlan.EmailQty,
+                        subscribersQty = newPlan.Subscribers,
+                        amount = newPlan.Fee,
+                        isPaymentMethodCC = user.PaymentMethod == PaymentMethodEnum.CC,
+                        isPaymentMethodMP = user.PaymentMethod == PaymentMethodEnum.MP,
+                        isPaymentMethodTransf = user.PaymentMethod == PaymentMethodEnum.TRANSF,
+                        availableCreditsQty = partialBalance + newPlan.EmailQty + (promotion != null ? promotion.ExtraCredits ?? 0 : 0),
+                        year = DateTime.UtcNow.Year
+                    },
+                    to: new[] { accountname });
+
+            var templateAdmin = _emailSettings.Value.CreditsApprovedAdminTemplateId;
+
+            var adminEmail = _emailSender.SafeSendWithTemplateAsync(
+                    templateId: templateAdmin,
+                    templateModel: new
+                    {
+                        urlImagesBase = _emailSettings.Value.UrlEmailImagesBase,
+                        user = accountname,
+                        client = $"{userInformation.FirstName} {userInformation.LastName}",
+                        address = userInformation.Address,
+                        phone = userInformation.PhoneNumber,
+                        company = userInformation.Company,
+                        city = userInformation.CityName,
+                        state = userInformation.BillingStateName,
+                        zipCode = userInformation.ZipCode,
+                        language = userInformation.Language,
+                        country = userInformation.BillingCountryName,
+                        vendor = userInformation.Vendor,
+                        promotionCode = promocode,
+                        promotionCodeDiscount = promotion?.DiscountPercentage,
+                        promotionCodeExtraCredits = promotion?.ExtraCredits,
+                        razonSocial = userInformation.RazonSocial,
+                        cuit = userInformation.CUIT,
+                        isConsumerCF = userInformation.IdConsumerType == (int)ConsumerTypeEnum.CF,
+                        isConsumerRFC = userInformation.IdConsumerType == (int)ConsumerTypeEnum.RFC,
+                        isConsumerRI = userInformation.IdConsumerType == (int)ConsumerTypeEnum.RI,
+                        isCfdiUseG03 = user.CFDIUse == "G03",
+                        isCfdiUseP01 = user.CFDIUse == "P01",
+                        isPaymentTypePPD = user.PaymentType == "PPD",
+                        isPaymentTypePUE = user.PaymentType == "PUE",
+                        isPaymentWayCash = user.PaymentWay == "CASH",
+                        isPaymentWayCheck = user.PaymentWay == "CHECK",
+                        isPaymentWayTransfer = user.PaymentWay == "TRANSFER",
+                        bankName = user.BankName,
+                        bankAccount = user.BankAccount,
+                        billingEmails = userInformation.BillingEmails,
+                        //userMessage = user.ExclusiveMessage, //TODO: set when the property is set in BilligCredit
+                        isIndividualPlan = newPlan.IdUserType == UserTypeEnum.INDIVIDUAL,
+                        isMonthlyPlan = newPlan.IdUserType == UserTypeEnum.MONTHLY,
+                        isSubscribersPlan = newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS,
+                        creditsQty = newPlan.EmailQty,
+                        subscribersQty = newPlan.Subscribers,
+                        amount = newPlan.Fee,
+                        isPaymentMethodCC = user.PaymentMethod == PaymentMethodEnum.CC,
+                        isPaymentMethodMP = user.PaymentMethod == PaymentMethodEnum.MP,
+                        isPaymentMethodTransf = user.PaymentMethod == PaymentMethodEnum.TRANSF,
+                        year = DateTime.UtcNow.Year
+                    },
+                    to: new[] { _emailSettings.Value.AdminEmail });
+
+            return Task.WhenAll(creditsEmail, adminEmail);
+        }
     }
 }
 
