@@ -29,13 +29,14 @@ SELECT
     U.BankAccount,
     U.CFDIUse,
     U.Email,
-    S.IdCountry,
+    S.IdCountry as IdBillingCountry,
     U.UTCFirstPayment,
-    U.OriginInbound
+    U.OriginInbound,
+    U.CUIT
 FROM
     [User] U
     INNER JOIN
-        State S ON U.IdState = S.IdState
+        State S ON U.IdBillingState = S.IdState
 WHERE
     U.Email = @email;",
                 new

@@ -7,7 +7,7 @@ namespace Doppler.BillingUser.Model
     {
         public int IdUser { get; set; }
         public PaymentMethodEnum PaymentMethod { get; set; }
-        public int IdCountry { get; set; }
+        public int IdBillingCountry { get; set; }
         public string Email { get; set; }
         public bool ResponsableIVA { get; set; }
         public string PaymentWay { get; set; }

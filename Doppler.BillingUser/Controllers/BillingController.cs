@@ -58,6 +58,11 @@ namespace Doppler.BillingUser.Controllers
             UserTypeEnum.MONTHLY,
             UserTypeEnum.SUBSCRIBERS
         };
+        private static readonly List<PaymentMethodEnum> AllowedPaymentMethodsForBilling = new List<PaymentMethodEnum>
+        {
+            PaymentMethodEnum.CC,
+            PaymentMethodEnum.TRANSF
+        };
 
         public BillingController(
             ILogger<BillingController> logger,
@@ -222,11 +227,19 @@ namespace Doppler.BillingUser.Controllers
                     return new NotFoundObjectResult("Invalid user");
                 }
 
-                if (user.PaymentMethod != PaymentMethodEnum.CC)
+                if (!AllowedPaymentMethodsForBilling.Any(p => p == user.PaymentMethod))
                 {
                     var messageError = $"Failed at creating new agreement for user {accountname}, Invalid payment method {user.PaymentMethod}";
                     _logger.LogError(messageError);
                     await _slackService.SendNotification(messageError);
+                    return new BadRequestObjectResult("Invalid payment method");
+                }
+
+                if (user.PaymentMethod == PaymentMethodEnum.TRANSF && user.IdBillingCountry != (int)CountryEnum.Colombia)
+                {
+                    var messageErrorTransference = $"Failed at creating new agreement for user {accountname}, payment method {user.PaymentMethod} it's only supported for Colombia";
+                    _logger.LogError(messageErrorTransference);
+                    await _slackService.SendNotification(messageErrorTransference);
                     return new BadRequestObjectResult("Invalid payment method");
                 }
 
@@ -275,7 +288,7 @@ namespace Doppler.BillingUser.Controllers
                 int invoiceId = 0;
                 string authorizationNumber = string.Empty;
                 CreditCard encryptedCreditCard = null;
-                if (agreementInformation.Total.GetValueOrDefault() > 0)
+                if (agreementInformation.Total.GetValueOrDefault() > 0 && user.PaymentMethod == PaymentMethodEnum.CC)
                 {
                     encryptedCreditCard = await _userRepository.GetEncryptedCreditCard(accountname);
                     if (encryptedCreditCard == null)
@@ -298,7 +311,7 @@ namespace Doppler.BillingUser.Controllers
 
                 user.IdCurrentBillingCredit = billingCreditId;
                 user.OriginInbound = agreementInformation.OriginInbound;
-                user.UpgradePending = false;
+                user.UpgradePending = BillingHelper.IsUpgradePending(user, promotion);
 
                 if (newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS && newPlan.SubscribersQty.HasValue)
                     user.MaxSubscribers = newPlan.SubscribersQty.Value;
@@ -326,7 +339,7 @@ namespace Doppler.BillingUser.Controllers
                 if (promotion != null)
                     await _promotionRepository.IncrementUsedTimes(promotion);
 
-                if (agreementInformation.Total.GetValueOrDefault() > 0)
+                if (agreementInformation.Total.GetValueOrDefault() > 0 && user.PaymentMethod == PaymentMethodEnum.CC)
                 {
                     await _sapService.SendBillingToSap(
                         await MapBillingToSapAsync(encryptedCreditCard, currentPlan, newPlan, authorizationNumber,
@@ -514,20 +527,29 @@ namespace Doppler.BillingUser.Controllers
         {
             User userInformation = await _userRepository.GetUserInformation(accountname);
 
-            switch (newPlan.IdUserType)
+            if (user.PaymentMethod == PaymentMethodEnum.CC || !BillingHelper.IsUpgradePending(user, promotion))
             {
-                case UserTypeEnum.MONTHLY:
-                    SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId);
-                    break;
-                case UserTypeEnum.SUBSCRIBERS:
-                    SendNotificationForSuscribersPlan(accountname, userInformation, newPlan);
-                    SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId);
-                    break;
-                case UserTypeEnum.INDIVIDUAL:
-                    SendNotificationForCreditsApproved(accountname, userInformation, newPlan, user, partialBalance, promotion, promocode);
-                    break;
-                default:
-                    break;
+                switch (newPlan.IdUserType)
+                {
+                    case UserTypeEnum.MONTHLY:
+                        SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId);
+                        break;
+                    case UserTypeEnum.SUBSCRIBERS:
+                        SendNotificationForSuscribersPlan(accountname, userInformation, newPlan);
+                        SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId);
+                        break;
+                    case UserTypeEnum.INDIVIDUAL:
+                        SendNotificationForCreditsApproved(accountname, userInformation, newPlan, user, partialBalance, promotion, promocode);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            if (BillingHelper.IsUpgradePending(user, promotion))
+            {
+                // TODO: https://makingsense.atlassian.net/browse/DAT-846
+                // SENDNOTIFICATION - Doppler2017.AccountPreferencesService.cs Line: 2615
             }
         }
 

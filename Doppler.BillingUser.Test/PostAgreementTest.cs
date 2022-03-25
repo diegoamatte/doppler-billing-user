@@ -1482,5 +1482,83 @@ namespace Doppler.BillingUser.Test
 
             return zohoSettingsMock;
         }
+
+        [Fact]
+        public async Task POST_agreement_should_return_Ok_when_user_payment_type_is_transfer()
+        {
+            // Arrange
+            var agreement = new
+            {
+                Total = 10,
+                PlanId = 2,
+                DiscountId = 1
+            };
+
+            var accountName = "test1@test.com";
+            var accountPlansServiceMock = new Mock<IAccountPlansService>();
+            accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
+                .ReturnsAsync(true);
+            accountPlansServiceMock.Setup(x => x.GetValidPromotionByCode(It.IsAny<string>(), It.IsAny<int>()))
+                .ReturnsAsync(new Promotion());
+            var userRepositoryMock = new Mock<IUserRepository>();
+            userRepositoryMock.Setup(x => x.GetUserBillingInformation(accountName))
+                .ReturnsAsync(new UserBillingInformation()
+                {
+                    IdUser = 1,
+                    PaymentMethod = PaymentMethodEnum.TRANSF,
+                    IdBillingCountry = (int)CountryEnum.Colombia
+                });
+            userRepositoryMock.Setup(x => x.GetUserNewTypePlan(It.IsAny<int>())).ReturnsAsync(new UserTypePlanInformation()
+            {
+                IdUserType = UserTypeEnum.SUBSCRIBERS
+            });
+            userRepositoryMock.Setup(x => x.GetUserInformation(It.IsAny<string>())).ReturnsAsync(new User()
+            {
+                Language = "es"
+            });
+
+            var billingRepositoryMock = new Mock<IBillingRepository>();
+            billingRepositoryMock.Setup(x => x.CreateAccountingEntriesAsync(It.IsAny<AgreementInformation>(), It.IsAny<CreditCard>(), It.IsAny<int>(), It.IsAny<UserTypePlanInformation>(), It.IsAny<string>())).ReturnsAsync(1);
+            billingRepositoryMock.Setup(x => x.GetBillingCredit(It.IsAny<int>())).ReturnsAsync(new BillingCredit()
+            {
+                IdBillingCredit = 1,
+                Date = new DateTime(2021, 12, 10)
+            });
+
+            billingRepositoryMock.Setup(x => x.GetPlanDiscountInformation(It.IsAny<int>())).ReturnsAsync(new PlanDiscountInformation()
+            {
+                DiscountPlanFee = 1,
+                MonthPlan = 1
+            });
+
+            var sapServiceMock = new Mock<ISapService>();
+            sapServiceMock.Setup(x => x.SendBillingToSap(It.IsAny<SapBillingDto>(), It.IsAny<string>()));
+
+            var emailSenderMock = new Mock<IEmailSender>();
+            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
+
+            var encryptionServiceMock = new Mock<IEncryptionService>();
+            encryptionServiceMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("12345");
+
+            var client = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    services.AddSingleton(encryptionServiceMock.Object);
+                    services.AddSingleton(accountPlansServiceMock.Object);
+                    services.AddSingleton(userRepositoryMock.Object);
+                    services.AddSingleton(billingRepositoryMock.Object);
+                    services.AddSingleton(sapServiceMock.Object);
+                    services.AddSingleton(emailSenderMock.Object);
+                });
+            }).CreateClient(new WebApplicationFactoryClientOptions());
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {TOKEN_ACCOUNT123_TEST1_AT_TEST_DOT_COM_EXPIRE20330518}");
+
+            // Act
+            var response = await client.PostAsJsonAsync($"accounts/{accountName}/agreements", agreement);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
     }
 }
