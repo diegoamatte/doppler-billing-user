@@ -531,26 +531,35 @@ namespace Doppler.BillingUser.Controllers
         {
             User userInformation = await _userRepository.GetUserInformation(accountname);
 
-            switch (newPlan.IdUserType)
+            if (user.PaymentMethod == PaymentMethodEnum.CC || !BillingHelper.IsUpgradePending(user, promotion))
             {
-                case UserTypeEnum.MONTHLY:
-                    {
-                        var planDiscountInformation = await _billingRepository.GetPlanDiscountInformation(discountId);
-                        await _emailTemplatesService.SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId, planDiscountInformation);
-                    }
-                    break;
-                case UserTypeEnum.SUBSCRIBERS:
-                    {
-                        await _emailTemplatesService.SendNotificationForSuscribersPlan(accountname, userInformation, newPlan);
-                        var planDiscountInformation = await _billingRepository.GetPlanDiscountInformation(discountId);
-                        await _emailTemplatesService.SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId, planDiscountInformation);
-                    }
-                    break;
-                case UserTypeEnum.INDIVIDUAL:
-                    await _emailTemplatesService.SendNotificationForCreditsApproved(accountname, userInformation, newPlan, user, partialBalance, promotion, promocode);
-                    break;
-                default:
-                    break;
+                switch (newPlan.IdUserType)
+                {
+                    case UserTypeEnum.MONTHLY:
+                        {
+                            var planDiscountInformation = await _billingRepository.GetPlanDiscountInformation(discountId);
+                            await _emailTemplatesService.SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId, planDiscountInformation);
+                        }
+                        break;
+                    case UserTypeEnum.SUBSCRIBERS:
+                        {
+                            await _emailTemplatesService.SendNotificationForSuscribersPlan(accountname, userInformation, newPlan);
+                            var planDiscountInformation = await _billingRepository.GetPlanDiscountInformation(discountId);
+                            await _emailTemplatesService.SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId, planDiscountInformation);
+                        }
+                        break;
+                    case UserTypeEnum.INDIVIDUAL:
+                        await _emailTemplatesService.SendNotificationForCreditsApproved(accountname, userInformation, newPlan, user, partialBalance, promotion, promocode);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            if (BillingHelper.IsUpgradePending(user, promotion))
+            {
+                // TODO: https://makingsense.atlassian.net/browse/DAT-846
+                // SENDNOTIFICATION - Doppler2017.AccountPreferencesService.cs Line: 2615
             }
         }
     }
