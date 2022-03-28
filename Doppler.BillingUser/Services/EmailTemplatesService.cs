@@ -17,7 +17,7 @@ namespace Doppler.BillingUser.Services
             _emailSettings = emailSettings;
             _emailSender = emailSender;
         }
-        public Task<bool> SendCheckAndTransferPurchaseNotification(string language, string fistName, string planName, double amount, string paymentMethod, int creditsQuantity, string sendTo)
+        public Task<bool> SendCheckAndTransferPurchaseNotification(string language, string fistName, string planName, double? amount, string paymentMethod, int? creditsQuantity, string sendTo)
         {
             var templateUser = _emailSettings.Value.CheckAndTransferPurchaseNotification[language];
 

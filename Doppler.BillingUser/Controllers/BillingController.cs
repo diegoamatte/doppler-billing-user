@@ -558,8 +558,10 @@ namespace Doppler.BillingUser.Controllers
 
             if (BillingHelper.IsUpgradePending(user, promotion))
             {
-                // TODO: https://makingsense.atlassian.net/browse/DAT-846
-                // SENDNOTIFICATION - Doppler2017.AccountPreferencesService.cs Line: 2615
+                var lang = userInformation.Language ?? "en";
+                var planName = newPlan.IdUserType == UserTypeEnum.MONTHLY ? newPlan.EmailQty.ToString() : newPlan.Subscribers;
+                var amount = newPlan.Fee;
+                await _emailTemplatesService.SendCheckAndTransferPurchaseNotification(lang, userInformation.FirstName, planName, amount, user.PaymentMethod.ToString(), newPlan.EmailQty, user.Email);
             }
         }
     }
