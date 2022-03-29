@@ -531,37 +531,21 @@ namespace Doppler.BillingUser.Controllers
         {
             User userInformation = await _userRepository.GetUserInformation(accountname);
 
-            if (user.PaymentMethod == PaymentMethodEnum.CC || !BillingHelper.IsUpgradePending(user, promotion))
-            {
-                switch (newPlan.IdUserType)
-                {
-                    case UserTypeEnum.MONTHLY:
-                        {
-                            var planDiscountInformation = await _billingRepository.GetPlanDiscountInformation(discountId);
-                            await _emailTemplatesService.SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId, planDiscountInformation);
-                        }
-                        break;
-                    case UserTypeEnum.SUBSCRIBERS:
-                        {
-                            await _emailTemplatesService.SendNotificationForSuscribersPlan(accountname, userInformation, newPlan);
-                            var planDiscountInformation = await _billingRepository.GetPlanDiscountInformation(discountId);
-                            await _emailTemplatesService.SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId, planDiscountInformation);
-                        }
-                        break;
-                    case UserTypeEnum.INDIVIDUAL:
-                        await _emailTemplatesService.SendNotificationForCreditsApproved(accountname, userInformation, newPlan, user, partialBalance, promotion, promocode);
-                        break;
-                    default:
-                        break;
-                }
-            }
+            bool isUpgradeApproved = (user.PaymentMethod == PaymentMethodEnum.CC || !BillingHelper.IsUpgradePending(user, promotion));
 
-            if (BillingHelper.IsUpgradePending(user, promotion))
+            if (newPlan.IdUserType == UserTypeEnum.INDIVIDUAL)
             {
-                var lang = userInformation.Language ?? "en";
-                var planName = newPlan.IdUserType == UserTypeEnum.MONTHLY ? newPlan.EmailQty.ToString() : newPlan.Subscribers;
-                var amount = newPlan.Fee;
-                await _emailTemplatesService.SendCheckAndTransferPurchaseNotification(lang, userInformation.FirstName, planName, amount, user.PaymentMethod.ToString(), newPlan.EmailQty, user.Email);
+                await _emailTemplatesService.SendNotificationForCredits(accountname, userInformation, newPlan, user, partialBalance, promotion, promocode, !isUpgradeApproved);
+            }
+            else
+            {
+                if (isUpgradeApproved && newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS)
+                {
+                    await _emailTemplatesService.SendNotificationForSuscribersPlan(accountname, userInformation, newPlan);
+                }
+
+                var planDiscountInformation = await _billingRepository.GetPlanDiscountInformation(discountId);
+                await _emailTemplatesService.SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId, planDiscountInformation, !isUpgradeApproved);
             }
         }
     }
