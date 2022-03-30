@@ -196,7 +196,7 @@ SELECT
     UT.Description AS PlanType,
     T.EmailQty,
     T.SubscribersQty,
-    (CASE WHEN T.IdUserType != 4 THEN PartialBalance.Total ELSE T.SubscribersQty - Subscribers.Total END) AS RemainingCredits
+    (CASE WHEN T.IdUserType != 4 THEN PartialBalance.Total ELSE T.SubscribersQty - ISNULL(Subscribers.Total, 0) END) AS RemainingCredits
 FROM
     [BillingCredits] B
 LEFT JOIN
