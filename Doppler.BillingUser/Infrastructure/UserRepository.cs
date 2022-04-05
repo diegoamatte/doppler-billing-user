@@ -175,6 +175,8 @@ DESC",
             using var connection = _connectionFactory.GetConnection();
             var user = await connection.QueryFirstOrDefaultAsync<User>(@"
 SELECT
+    U.IdUser,
+    U.Email,
     U.FirstName,
     U.LastName,
     U.Address,
@@ -189,7 +191,8 @@ SELECT
     U.CUIT,
     U.RazonSocial,
     U.IdConsumerType,
-    U.BillingEmails
+    U.BillingEmails,
+    BS.IdCountry as IdBillingCountry
 FROM
     [User] U
 LEFT JOIN

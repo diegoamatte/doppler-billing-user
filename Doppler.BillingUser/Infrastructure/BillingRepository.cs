@@ -223,18 +223,9 @@ WHERE
             return currentPlan;
         }
 
-        public async Task<bool> UpdateCurrentPaymentMethod(string accountName, PaymentMethod paymentMethod)
+        public async Task<bool> UpdateCurrentPaymentMethod(User user, PaymentMethod paymentMethod)
         {
             using var connection = _connectionFactory.GetConnection();
-
-            var user = await connection.QueryFirstOrDefaultAsync<User>(@"
-SELECT IdUser
-FROM [User]
-WHERE Email = @email;",
-                new
-                {
-                    @email = accountName
-                });
 
             if (paymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString())
             {
@@ -272,7 +263,10 @@ WHERE Email = @email;",
             }
 
             //Send BP to SAP
-            await SendUserDataToSap(accountName, paymentMethod.IdSelectedPlan);
+            if (paymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString())
+            {
+                await SendUserDataToSap(user.Email, paymentMethod.IdSelectedPlan);
+            }
 
             return true;
         }
@@ -290,7 +284,12 @@ SET
     IdConsumerType = (SELECT IdConsumerType FROM [ConsumerTypes] WHERE Name = @idConsumerType),
     IdResponsabileBilling = @idResponsabileBilling,
     CUIT = @cuit,
-    ResponsableIVA = @responsableIVA
+    ResponsableIVA = @responsableIVA,
+    CFDIUse = @useCFDI,
+    PaymentType = @paymentType,
+    PaymentWay = @paymentWay,
+    BankName = @bankAccount,
+    BankAccount = @bankName
 WHERE
     IdUser = @IdUser;",
                 new
@@ -299,9 +298,14 @@ WHERE
                     @paymentMethodName = paymentMethod.PaymentMethodName,
                     @razonSocial = paymentMethod.RazonSocial,
                     @idConsumerType = paymentMethod.IdConsumerType,
-                    @idResponsabileBilling = (int)ResponsabileBillingEnum.GBBISIDE,
+                    @idResponsabileBilling = user.IdBillingCountry == (int)CountryEnum.Colombia ? (int)ResponsabileBillingEnum.BorisMarketing : (int)ResponsabileBillingEnum.RC,
                     @cuit = paymentMethod.IdentificationNumber,
-                    @responsableIVA = paymentMethod.ResponsableIVA
+                    @responsableIVA = paymentMethod.ResponsableIVA,
+                    @useCFDI = user.IdBillingCountry == (int)CountryEnum.Mexico ? paymentMethod.UseCFDI : null,
+                    @paymentType = user.IdBillingCountry == (int)CountryEnum.Mexico ? paymentMethod.PaymentType : null,
+                    @paymentWay = user.IdBillingCountry == (int)CountryEnum.Mexico ? paymentMethod.PaymentWay.ToString() : null,
+                    @bankAccount = user.IdBillingCountry == (int)CountryEnum.Mexico && paymentMethod.PaymentWay == PaymentWayEnum.TRANSFER.ToString() ? paymentMethod.BankAccount : null,
+                    @bankName = user.IdBillingCountry == (int)CountryEnum.Mexico && paymentMethod.PaymentWay == PaymentWayEnum.TRANSFER.ToString() ? paymentMethod.BankName : null,
                 });
         }
 
