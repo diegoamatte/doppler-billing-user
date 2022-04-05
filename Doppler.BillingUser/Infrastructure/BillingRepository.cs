@@ -288,8 +288,8 @@ SET
     CFDIUse = @useCFDI,
     PaymentType = @paymentType,
     PaymentWay = @paymentWay,
-    BankName = @bankAccount,
-    BankAccount = @bankName
+    BankAccount = @bankAccount,
+    BankName = @bankName
 WHERE
     IdUser = @IdUser;",
                 new
