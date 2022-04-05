@@ -17,5 +17,10 @@ namespace Doppler.BillingUser.Model
         public int IdSelectedPlan { get; set; }
         public bool ResponsableIVA { get; set; }
         public int IdCCType { get; set; }
+        public string UseCFDI { get; set; }
+        public string PaymentType { get; set; }
+        public string PaymentWay { get; set; }
+        public string BankName { get; set; }
+        public string BankAccount { get; set; }
     }
 }

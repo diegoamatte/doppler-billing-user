@@ -178,14 +178,15 @@ namespace Doppler.BillingUser.Controllers
         {
             _logger.LogDebug("Update current payment method.");
 
-            var isSuccess = await _billingRepository.UpdateCurrentPaymentMethod(accountname, paymentMethod);
+            User userInformation = await _userRepository.GetUserInformation(accountname);
+            var isSuccess = await _billingRepository.UpdateCurrentPaymentMethod(userInformation, paymentMethod);
 
             if (!isSuccess)
             {
-                var messageError = $"Failed at updating payment method for user {accountname}, Invalid Credit Card";
+                var messageError = $"Failed at updating payment method for user {accountname}";
                 _logger.LogError(messageError);
                 await _slackService.SendNotification(messageError);
-                return new BadRequestObjectResult("Invalid Credit Card");
+                return new BadRequestObjectResult("Failed at updating payment");
             }
 
             return new OkObjectResult("Successfully");

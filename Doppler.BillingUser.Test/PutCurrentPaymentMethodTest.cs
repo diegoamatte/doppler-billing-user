@@ -255,8 +255,7 @@ namespace Doppler.BillingUser.Test
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            httpTest.ShouldHaveCalled(url)
-                .WithVerb(HttpMethod.Post);
+            httpTest.ShouldNotHaveCalled(url);
         }
 
         [Fact]

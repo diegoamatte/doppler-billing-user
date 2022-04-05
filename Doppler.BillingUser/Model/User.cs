@@ -42,5 +42,6 @@ namespace Doppler.BillingUser.Model
         public string Company { get; set; }
         public string Language { get; set; }
         public string BillingCountryName { get; set; }
+        public int IdBillingCountry { get; set; }
     }
 }
