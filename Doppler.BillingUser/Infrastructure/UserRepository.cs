@@ -139,10 +139,10 @@ WHERE
                 @idUser = user.IdUser,
                 @IdCurrentBillingCredit = user.IdCurrentBillingCredit,
                 @cuit = user.Cuit,
-                @utfFirstPayment = user.UTCFirstPayment ?? DateTime.UtcNow,
+                @utfFirstPayment = user.UTCFirstPayment,
                 @originInbound = user.OriginInbound,
                 @upgradePending = user.UpgradePending,
-                @utcUpgrade = user.UTCUpgrade ?? DateTime.UtcNow,
+                @utcUpgrade = user.UTCUpgrade,
                 @maxSubscribers = user.MaxSubscribers
             });
 
