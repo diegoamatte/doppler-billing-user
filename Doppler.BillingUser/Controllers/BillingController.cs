@@ -396,6 +396,7 @@ namespace Doppler.BillingUser.Controllers
 
                     try
                     {
+                        await _zohoService.RefreshTokenAsync();
                         var contact = await _zohoService.SearchZohoEntityAsync<ZohoEntityContact>("Contacts", string.Format("Email:equals:{0}", zohoDto.Email));
                         if (contact == null)
                         {
