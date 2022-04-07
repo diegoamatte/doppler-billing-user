@@ -22,6 +22,7 @@ using Doppler.BillingUser.ExternalServices.Zoho.API;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using Doppler.BillingUser.Services;
+using Doppler.BillingUser.Extensions;
 
 namespace Doppler.BillingUser.Controllers
 {
@@ -380,7 +381,7 @@ namespace Doppler.BillingUser.Controllers
                         Email = user.Email,
                         UpgradeDate = DateTime.UtcNow,
                         FirstPaymentDate = DateTime.UtcNow,
-                        Doppler = newPlan.IdUserType == UserTypeEnum.INDIVIDUAL ? "Individual" : "Monthly", // TODO: check for other plan types
+                        Doppler = newPlan.IdUserType.ToDescription(),
                         BillingSystem = PaymentMethodEnum.CC.ToString(),
                         OriginInbound = agreementInformation.OriginInbound
                     };
