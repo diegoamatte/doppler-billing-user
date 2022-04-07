@@ -379,12 +379,16 @@ namespace Doppler.BillingUser.Controllers
                     ZohoDTO zohoDto = new ZohoDTO()
                     {
                         Email = user.Email,
-                        UpgradeDate = DateTime.UtcNow,
-                        FirstPaymentDate = DateTime.UtcNow,
                         Doppler = newPlan.IdUserType.ToDescription(),
-                        BillingSystem = PaymentMethodEnum.CC.ToString(),
+                        BillingSystem = user.PaymentMethod.ToString(),
                         OriginInbound = agreementInformation.OriginInbound
                     };
+
+                    if (!user.UpgradePending)
+                    {
+                        zohoDto.UpgradeDate = DateTime.UtcNow;
+                        zohoDto.FirstPaymentDate = DateTime.UtcNow;
+                    }
 
                     if (promotion != null)
                     {
