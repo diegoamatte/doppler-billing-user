@@ -46,7 +46,6 @@ namespace Doppler.BillingUser.Controllers
         private readonly IOptions<ZohoSettings> _zohoSettings;
         private readonly IZohoService _zohoService;
         private readonly IEmailTemplatesService _emailTemplatesService;
-        private const int CurrencyTypeUsd = 0;
         private readonly JsonSerializerSettings settings = new JsonSerializerSettings
         {
             DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'Z'",
@@ -281,7 +280,6 @@ namespace Doppler.BillingUser.Controllers
                 }
 
                 var isValidTotal = await _accountPlansService.IsValidTotal(accountname, agreementInformation);
-
                 if (!isValidTotal)
                 {
                     var messageError = $"Failed at creating new agreement for user {accountname}, Total of agreement is not valid";
@@ -299,6 +297,7 @@ namespace Doppler.BillingUser.Controllers
                 int invoiceId = 0;
                 string authorizationNumber = string.Empty;
                 CreditCard encryptedCreditCard = null;
+
                 if (agreementInformation.Total.GetValueOrDefault() > 0 && user.PaymentMethod == PaymentMethodEnum.CC)
                 {
                     encryptedCreditCard = await _userRepository.GetEncryptedCreditCard(accountname);
@@ -354,9 +353,17 @@ namespace Doppler.BillingUser.Controllers
 
                 if (agreementInformation.Total.GetValueOrDefault() > 0 && user.PaymentMethod == PaymentMethodEnum.CC)
                 {
+                    var billingCredit = await _billingRepository.GetBillingCredit(billingCreditId);
+
                     await _sapService.SendBillingToSap(
-                        await MapBillingToSapAsync(encryptedCreditCard, currentPlan, newPlan, authorizationNumber,
-                            invoiceId, billingCreditId),
+                        BillingHelper.MapBillingToSapAsync(_sapSettings.Value,
+                            _encryptionService.DecryptAES256(encryptedCreditCard.Number),
+                            _encryptionService.DecryptAES256(encryptedCreditCard.HolderName),
+                            billingCredit,
+                            currentPlan,
+                            newPlan,
+                            authorizationNumber,
+                            invoiceId),
                         accountname);
                 }
 
@@ -396,7 +403,7 @@ namespace Doppler.BillingUser.Controllers
                             if (response != null)
                             {
                                 var lead = response.Data.FirstOrDefault();
-                                MapForUpgrade(lead, zohoDto);
+                                BillingHelper.MapForUpgrade(lead, zohoDto);
                                 var body = JsonConvert.SerializeObject(new ZohoUpdateModel<ZohoEntityLead> { Data = new List<ZohoEntityLead> { lead } }, settings);
                                 await _zohoService.UpdateZohoEntityAsync(body, lead.Id, "Leads");
                             }
@@ -409,7 +416,7 @@ namespace Doppler.BillingUser.Controllers
                                 if (response != null)
                                 {
                                     var account = response.Data.FirstOrDefault();
-                                    MapForUpgrade(account, zohoDto);
+                                    BillingHelper.MapForUpgrade(account, zohoDto);
                                     var body = JsonConvert.SerializeObject(new ZohoUpdateModel<ZohoEntityAccount> { Data = new List<ZohoEntityAccount> { account } }, settings);
                                     await _zohoService.UpdateZohoEntityAsync(body, account.Id, "Accounts");
                                 }
@@ -436,104 +443,6 @@ namespace Doppler.BillingUser.Controllers
                     StatusCode = 500
                 };
             }
-        }
-
-        private async Task<SapBillingDto> MapBillingToSapAsync(CreditCard creditCard, UserTypePlanInformation currentUserPlan, UserTypePlanInformation newUserPlan, string authorizationNumber, int invoidId, int billingCreditId)
-        {
-            var billingCredit = await _billingRepository.GetBillingCredit(billingCreditId);
-            var cardNumber = _encryptionService.DecryptAES256(creditCard.Number);
-
-            var sapBilling = new SapBillingDto
-            {
-                Id = billingCredit.IdUser,
-                CreditsOrSubscribersQuantity = newUserPlan.IdUserType == UserTypeEnum.SUBSCRIBERS ? newUserPlan.SubscribersQty.GetValueOrDefault() : billingCredit.CreditsQty.GetValueOrDefault(),
-                IsCustomPlan = (new[] { 0, 9, 17 }).Contains(billingCredit.IdUserTypePlan),
-                IsPlanUpgrade = true, // TODO: Check when the other types of purchases are implemented.
-                Currency = CurrencyTypeUsd,
-                Periodicity = GetPeriodicity(newUserPlan, billingCredit),
-                PeriodMonth = billingCredit.Date.Month,
-                PeriodYear = billingCredit.Date.Year,
-                PlanFee = newUserPlan.IdUserType == UserTypeEnum.SUBSCRIBERS ? billingCredit.PlanFee * (billingCredit.TotalMonthPlan ?? 1) : billingCredit.PlanFee,
-                Discount = billingCredit.DiscountPlanFee,
-                ExtraEmailsPeriodMonth = billingCredit.Date.Month,
-                ExtraEmailsPeriodYear = billingCredit.Date.Year,
-                ExtraEmailsFee = 0,
-                IsFirstPurchase = currentUserPlan == null,
-                PlanType = (int)newUserPlan.IdUserType,
-                CardHolder = _encryptionService.DecryptAES256(creditCard.HolderName),
-                CardType = billingCredit.CCIdentificationType,
-                CardNumber = cardNumber[^4..],
-                CardErrorCode = "100",
-                CardErrorDetail = "Successfully approved",
-                TransactionApproved = true,
-                TransferReference = authorizationNumber,
-                InvoiceId = invoidId,
-                PaymentDate = billingCredit.Date.ToHourOffset(_sapSettings.Value.TimeZoneOffset),
-                InvoiceDate = billingCredit.Date.ToHourOffset(_sapSettings.Value.TimeZoneOffset),
-                BillingSystemId = billingCredit.IdResponsabileBilling
-            };
-
-            return sapBilling;
-        }
-
-        private int? GetPeriodicity(UserTypePlanInformation newUserPlan, BillingCredit billingCredit)
-        {
-            return newUserPlan.IdUserType == UserTypeEnum.INDIVIDUAL ?
-                null : billingCredit.TotalMonthPlan == 3 ?
-                1 : billingCredit.TotalMonthPlan == 6 ?
-                2 : billingCredit.TotalMonthPlan == 12 ? 3 : 0;
-        }
-
-        private void MapForUpgrade(ZohoEntityLead lead, ZohoDTO zohoDto)
-        {
-            lead.Doppler = zohoDto.Doppler;
-            if (zohoDto.FirstPaymentDate == DateTime.MinValue)
-            {
-                lead.DFirstPayment = null;
-            }
-            else
-            {
-                lead.DFirstPayment = zohoDto.FirstPaymentDate;
-            }
-            lead.DDiscountType = zohoDto.DiscountType;
-            lead.DBillingSystem = zohoDto.BillingSystem;
-            if (zohoDto.UpgradeDate == DateTime.MinValue)
-            {
-                lead.DUpgradeDate = null;
-            }
-            else
-            {
-                lead.DUpgradeDate = zohoDto.UpgradeDate;
-            }
-            lead.DPromoCode = zohoDto.PromoCodo;
-            lead.DDiscountTypeDesc = zohoDto.DiscountTypeDescription;
-            lead.Industry = zohoDto.Industry;
-        }
-
-        private void MapForUpgrade(ZohoEntityAccount account, ZohoDTO zohoDto)
-        {
-            account.Doppler = zohoDto.Doppler;
-            if (zohoDto.FirstPaymentDate == DateTime.MinValue)
-            {
-                account.DFirstPayment = null;
-            }
-            else
-            {
-                account.DFirstPayment = zohoDto.FirstPaymentDate;
-            }
-            account.DDiscountType = zohoDto.DiscountType;
-            account.DBillingSystem = zohoDto.BillingSystem;
-            if (zohoDto.UpgradeDate == DateTime.MinValue)
-            {
-                account.DUpgradeDate = null;
-            }
-            else
-            {
-                account.DUpgradeDate = zohoDto.UpgradeDate;
-            }
-            account.DPromoCode = zohoDto.PromoCodo;
-            account.DDiscountTypeDesc = zohoDto.DiscountTypeDescription;
-            account.Industry = zohoDto.Industry;
         }
 
         private async void SendNotifications(string accountname, UserTypePlanInformation newPlan, UserBillingInformation user, int partialBalance, Promotion promotion, string promocode, int discountId)
