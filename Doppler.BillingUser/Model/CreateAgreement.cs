@@ -28,5 +28,6 @@ namespace Doppler.BillingUser.Model
         public string PaymentType { get; set; }
         public string BankName { get; set; }
         public string BankAccount { get; set; }
+        public int IdResponsabileBilling { get; set; }
     }
 }

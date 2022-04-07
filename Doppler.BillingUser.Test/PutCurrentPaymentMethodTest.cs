@@ -201,7 +201,7 @@ namespace Doppler.BillingUser.Test
         }
 
         [Fact]
-        public async Task PUT_Current_payment_Transfer_method_should_sent_to_sap_with_right_value_based_on_body_information()
+        public async Task PUT_Current_payment_Transfer_method_should_not_sent_to_sap_with_right_value_based_on_body_information()
         {
             // Arrange
             const int userId = 1;

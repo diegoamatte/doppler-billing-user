@@ -33,6 +33,7 @@ namespace Doppler.BillingUser.Infrastructure
         private const string PaymentEntryTypePayment = "P";
         private const int CurrencyTypeUsd = 0;
         private const int BillingCreditTypeUpgradeRequest = 1;
+        private const int MexicoIva = 16;
 
         public BillingRepository(IDatabaseConnectionFactory connectionFactory,
             IEncryptionService encryptionService,
@@ -467,8 +468,6 @@ WHERE
                     @email = username
                 });
 
-            result.IdConsumerType = ConsumerTypeHelper.GetConsumerType(result.IdConsumerType);
-
             return result;
         }
 
@@ -596,7 +595,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 IdConsumerType = !string.IsNullOrEmpty(currentPaymentMethod.IdConsumerType) ? int.Parse(currentPaymentMethod.IdConsumerType) : null,
                 RazonSocial = currentPaymentMethod.RazonSocial,
                 ResponsableIVA = user.ResponsableIVA,
-                Cuit = user.IdBillingCountry == (int)CountryEnum.Colombia ? currentPaymentMethod.IdentificationNumber : null,
+                Cuit = (user.IdBillingCountry == (int)CountryEnum.Colombia || user.IdBillingCountry == (int)CountryEnum.Mexico) ? currentPaymentMethod.IdentificationNumber : null,
                 CFDIUse = user.CFDIUse,
                 PaymentWay = user.PaymentWay,
                 PaymentType = user.PaymentType,
@@ -616,7 +615,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 PlanFee = newUserTypePlan.Fee,
                 CreditsQty = newUserTypePlan.EmailQty ?? null,
                 ExtraEmailFee = newUserTypePlan.ExtraEmailCost ?? null,
-                ExtraCreditsPromotion = promotion?.ExtraCredits
+                ExtraCreditsPromotion = promotion?.ExtraCredits,
             };
 
             if (newUserTypePlan.IdUserType == UserTypeEnum.SUBSCRIBERS)
@@ -631,6 +630,14 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                     && buyCreditAgreement.BillingCredit.Date.Day > 20)
                     ? 0 : 1;
                 buyCreditAgreement.BillingCredit.SubscribersQty = newUserTypePlan.SubscribersQty;
+            }
+
+            //Calculate the BillingSystem
+            buyCreditAgreement.IdResponsabileBilling = CalculateBillingSystem(user);
+
+            if ((user.PaymentMethod == PaymentMethodEnum.TRANSF && user.IdBillingCountry == (int)CountryEnum.Mexico))
+            {
+                buyCreditAgreement.BillingCredit.Taxes = Convert.ToDouble(agreementInformation.Total * MexicoIva / 100);
             }
 
             var connection = _connectionFactory.GetConnection();
@@ -757,10 +764,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @paymentWay = buyCreditAgreement.PaymentWay,
                 @bankName = buyCreditAgreement.BankName,
                 @bankAccount = buyCreditAgreement.BankAccount,
-                @idResponsabileBilling =
-                    (user.PaymentMethod == PaymentMethodEnum.TRANSF && user.IdBillingCountry == (int)CountryEnum.Colombia) ?
-                    (int)ResponsabileBillingEnum.BorisMarketing :
-                    (int)ResponsabileBillingEnum.QBL,
+                @idResponsabileBilling = buyCreditAgreement.IdResponsabileBilling,
                 @ccIdentificationType = buyCreditAgreement.CCIdentificationType,
                 @ccIdentificationNumber = currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ?
                     CreditCardHelper.ObfuscateNumber(_encryptionService.DecryptAES256(buyCreditAgreement.CCNumber)) :
@@ -897,6 +901,25 @@ WHERE
             using var connection = _connectionFactory.GetConnection();
             var result = await connection.ExecuteScalarAsync<int>("UserReactivateStandBySubscribers", new { IdUser = idUser }, commandType: CommandType.StoredProcedure);
             return result;
+        }
+
+        private int CalculateBillingSystem(UserBillingInformation user)
+        {
+            var billingSystem = (int)ResponsabileBillingEnum.QBL;
+
+            switch (user.PaymentMethod)
+            {
+                case PaymentMethodEnum.CC:
+                    billingSystem = (int)ResponsabileBillingEnum.QBL;
+                    break;
+                case PaymentMethodEnum.TRANSF:
+                    billingSystem = (user.IdBillingCountry == (int)CountryEnum.Colombia) ? (int)ResponsabileBillingEnum.BorisMarketing : (int)ResponsabileBillingEnum.RC;
+                    break;
+                default:
+                    break;
+            }
+
+            return billingSystem;
         }
     }
 }

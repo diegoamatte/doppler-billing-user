@@ -66,6 +66,12 @@ namespace Doppler.BillingUser.Controllers
             PaymentMethodEnum.TRANSF
         };
 
+        private static readonly List<CountryEnum> AllowedCountriesForTransfer = new List<CountryEnum>
+        {
+            CountryEnum.Colombia,
+            CountryEnum.Mexico
+        };
+
         public BillingController(
             ILogger<BillingController> logger,
             IBillingRepository billingRepository,
@@ -240,9 +246,9 @@ namespace Doppler.BillingUser.Controllers
                     return new BadRequestObjectResult("Invalid payment method");
                 }
 
-                if (user.PaymentMethod == PaymentMethodEnum.TRANSF && user.IdBillingCountry != (int)CountryEnum.Colombia)
+                if (user.PaymentMethod == PaymentMethodEnum.TRANSF && !AllowedCountriesForTransfer.Any(p => (int)p == user.IdBillingCountry))
                 {
-                    var messageErrorTransference = $"Failed at creating new agreement for user {accountname}, payment method {user.PaymentMethod} it's only supported for Colombia";
+                    var messageErrorTransference = $"Failed at creating new agreement for user {accountname}, payment method {user.PaymentMethod} it's only supported for {AllowedCountriesForTransfer.Select(p => p)}";
                     _logger.LogError(messageErrorTransference);
                     await _slackService.SendNotification(messageErrorTransference);
                     return new BadRequestObjectResult("Invalid payment method");
@@ -317,6 +323,8 @@ namespace Doppler.BillingUser.Controllers
                 user.IdCurrentBillingCredit = billingCreditId;
                 user.OriginInbound = agreementInformation.OriginInbound;
                 user.UpgradePending = BillingHelper.IsUpgradePending(user, promotion);
+                user.UTCFirstPayment = !user.UpgradePending ? DateTime.UtcNow : null;
+                user.UTCUpgrade = user.UTCFirstPayment;
 
                 if (newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS && newPlan.SubscribersQty.HasValue)
                     user.MaxSubscribers = newPlan.SubscribersQty.Value;
