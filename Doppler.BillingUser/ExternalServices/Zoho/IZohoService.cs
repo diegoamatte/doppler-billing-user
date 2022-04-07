@@ -7,5 +7,7 @@ namespace Doppler.BillingUser.ExternalServices.Zoho
     {
         Task<T> SearchZohoEntityAsync<T>(string moduleName, string criteria);
         Task<ZohoUpdateResponse> UpdateZohoEntityAsync(string body, string entityId, string moduleName);
+
+        Task RefreshTokenAsync();
     }
 }

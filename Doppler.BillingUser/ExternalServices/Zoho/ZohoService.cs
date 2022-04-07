@@ -21,13 +21,9 @@ namespace Doppler.BillingUser.ExternalServices.Zoho
             _options = options;
             _flurlZohoClient = flurlClientFac.Get(_options.Value.BaseUrl);
             _flurlZohoAuthenticationClient = flurlClientFac.Get(_options.Value.AuthenticationUrl);
-            if (string.IsNullOrEmpty(accessToken))
-            {
-                RefreshTokenAsync();
-            }
         }
 
-        private async Task RefreshTokenAsync()
+        public async Task RefreshTokenAsync()
         {
             var response = await _flurlZohoAuthenticationClient.Request(new UriTemplate($"{_options.Value.AuthenticationUrl}").Resolve())
                 .SetQueryParam("refresh_token", _options.Value.ZohoRefreshToken)
