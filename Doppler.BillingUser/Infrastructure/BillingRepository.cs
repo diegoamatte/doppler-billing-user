@@ -116,7 +116,12 @@ SELECT
     U.IdConsumerType,
     U.CUIT as IdentificationNumber,
     U.ResponsableIVA,
-    U.IdCCType
+    U.IdCCType,
+    U.CFDIUse AS UseCFDI,
+    U.PaymentType,
+    U.PaymentWay,
+    U.BankAccount,
+    U.BankName
 FROM
     [User] U
 LEFT JOIN
