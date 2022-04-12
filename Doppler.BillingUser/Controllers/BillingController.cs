@@ -346,7 +346,10 @@ namespace Doppler.BillingUser.Controllers
                 }
                 else
                 {
-                    await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan);
+                    if (!user.UpgradePending)
+                    {
+                        await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan);
+                    }
                 }
 
                 if (promotion != null)
