@@ -269,7 +269,8 @@ WHERE
             }
 
             //Send BP to SAP
-            if (paymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString())
+            if (paymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ||
+                (paymentMethod.PaymentMethodName == PaymentMethodEnum.TRANSF.ToString() && user.IdBillingCountry == (int)CountryEnum.Argentina))
             {
                 await SendUserDataToSap(user.Email, paymentMethod.IdSelectedPlan);
             }
@@ -304,7 +305,7 @@ WHERE
                     @paymentMethodName = paymentMethod.PaymentMethodName,
                     @razonSocial = paymentMethod.RazonSocial,
                     @idConsumerType = paymentMethod.IdConsumerType,
-                    @idResponsabileBilling = user.IdBillingCountry == (int)CountryEnum.Colombia ? (int)ResponsabileBillingEnum.BorisMarketing : (int)ResponsabileBillingEnum.RC,
+                    @idResponsabileBilling = CalculateBillingSystemByTransfer(user.IdBillingCountry),
                     @cuit = paymentMethod.IdentificationNumber,
                     @responsableIVA = paymentMethod.ResponsableIVA,
                     @useCFDI = user.IdBillingCountry == (int)CountryEnum.Mexico ? paymentMethod.UseCFDI : null,
@@ -925,6 +926,17 @@ WHERE
             }
 
             return billingSystem;
+        }
+
+        private int CalculateBillingSystemByTransfer(int idBillingCountry)
+        {
+            return idBillingCountry switch
+            {
+                (int)CountryEnum.Colombia => (int)ResponsabileBillingEnum.BorisMarketing,
+                (int)CountryEnum.Mexico => (int)ResponsabileBillingEnum.RC,
+                (int)CountryEnum.Argentina => (int)ResponsabileBillingEnum.GBBISIDE,
+                _ => (int)ResponsabileBillingEnum.GBBISIDE,
+            };
         }
     }
 }
