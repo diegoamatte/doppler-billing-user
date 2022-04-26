@@ -46,7 +46,7 @@ namespace Doppler.BillingUser.Utils
                 PlanType = (int)newUserPlan.IdUserType,
                 CardHolder = cardHolderName,
                 CardType = billingCredit.CCIdentificationType,
-                CardNumber = cardNumber[^4..],
+                CardNumber = !string.IsNullOrEmpty(cardNumber) ? cardNumber[^4..] : string.Empty,
                 CardErrorCode = "100",
                 CardErrorDetail = "Successfully approved",
                 TransactionApproved = true,
@@ -54,7 +54,8 @@ namespace Doppler.BillingUser.Utils
                 InvoiceId = invoicedId,
                 PaymentDate = billingCredit.Date.ToHourOffset(timeZoneOffset.TimeZoneOffset),
                 InvoiceDate = billingCredit.Date.ToHourOffset(timeZoneOffset.TimeZoneOffset),
-                BillingSystemId = billingCredit.IdResponsabileBilling
+                BillingSystemId = billingCredit.IdResponsabileBilling,
+                FiscalID = billingCredit.Cuit
             };
 
             return sapBilling;

@@ -16,5 +16,6 @@ namespace Doppler.BillingUser.Model
         public int IdResponsabileBilling { get; set; }
         public string CCIdentificationType { get; set; }
         public int? TotalMonthPlan { get; set; }
+        public string Cuit { get; set; }
     }
 }

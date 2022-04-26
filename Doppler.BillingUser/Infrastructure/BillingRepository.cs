@@ -34,6 +34,7 @@ namespace Doppler.BillingUser.Infrastructure
         private const int CurrencyTypeUsd = 0;
         private const int BillingCreditTypeUpgradeRequest = 1;
         private const int MexicoIva = 16;
+        private const int ArgentinaIva = 21;
 
         public BillingRepository(IDatabaseConnectionFactory connectionFactory,
             IEncryptionService encryptionService,
@@ -601,7 +602,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 IdConsumerType = !string.IsNullOrEmpty(currentPaymentMethod.IdConsumerType) ? int.Parse(currentPaymentMethod.IdConsumerType) : null,
                 RazonSocial = currentPaymentMethod.RazonSocial,
                 ResponsableIVA = user.ResponsableIVA,
-                Cuit = (user.IdBillingCountry == (int)CountryEnum.Colombia || user.IdBillingCountry == (int)CountryEnum.Mexico) ? currentPaymentMethod.IdentificationNumber : null,
+                Cuit = currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.TRANSF.ToString() ? currentPaymentMethod.IdentificationNumber : null,
                 CFDIUse = user.CFDIUse,
                 PaymentWay = user.PaymentWay,
                 PaymentType = user.PaymentType,
@@ -641,9 +642,11 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
             //Calculate the BillingSystem
             buyCreditAgreement.IdResponsabileBilling = CalculateBillingSystem(user);
 
-            if ((user.PaymentMethod == PaymentMethodEnum.TRANSF && user.IdBillingCountry == (int)CountryEnum.Mexico))
+            if (user.PaymentMethod == PaymentMethodEnum.TRANSF &&
+                (user.IdBillingCountry == (int)CountryEnum.Mexico || user.IdBillingCountry == (int)CountryEnum.Argentina))
             {
-                buyCreditAgreement.BillingCredit.Taxes = Convert.ToDouble(agreementInformation.Total * MexicoIva / 100);
+                int iva = (user.IdBillingCountry == (int)CountryEnum.Mexico) ? MexicoIva : ArgentinaIva;
+                buyCreditAgreement.BillingCredit.Taxes = Convert.ToDouble(agreementInformation.Total * iva / 100);
             }
 
             var connection = _connectionFactory.GetConnection();
@@ -853,7 +856,8 @@ SELECT
     DP.[DiscountPlanFee],
     BC.[IdResponsabileBilling],
     BC.[CCIdentificationType],
-    BC.TotalMonthPlan
+    BC.TotalMonthPlan,
+    BC.CUIT As Cuit
 FROM
     [dbo].[BillingCredits] BC
         LEFT JOIN [dbo].[DiscountXPlan] DP
@@ -919,7 +923,7 @@ WHERE
                     billingSystem = (int)ResponsabileBillingEnum.QBL;
                     break;
                 case PaymentMethodEnum.TRANSF:
-                    billingSystem = (user.IdBillingCountry == (int)CountryEnum.Colombia) ? (int)ResponsabileBillingEnum.BorisMarketing : (int)ResponsabileBillingEnum.RC;
+                    billingSystem = CalculateBillingSystemByTransfer(user.IdBillingCountry);
                     break;
                 default:
                     break;
