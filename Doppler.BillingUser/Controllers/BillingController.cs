@@ -69,7 +69,8 @@ namespace Doppler.BillingUser.Controllers
         private static readonly List<CountryEnum> AllowedCountriesForTransfer = new List<CountryEnum>
         {
             CountryEnum.Colombia,
-            CountryEnum.Mexico
+            CountryEnum.Mexico,
+            CountryEnum.Argentina
         };
 
         public BillingController(
@@ -355,14 +356,17 @@ namespace Doppler.BillingUser.Controllers
                 if (promotion != null)
                     await _promotionRepository.IncrementUsedTimes(promotion);
 
-                if (agreementInformation.Total.GetValueOrDefault() > 0 && user.PaymentMethod == PaymentMethodEnum.CC)
+                if ((agreementInformation.Total.GetValueOrDefault() > 0 && user.PaymentMethod == PaymentMethodEnum.CC) ||
+                    (user.PaymentMethod == PaymentMethodEnum.TRANSF && user.IdBillingCountry == (int)CountryEnum.Argentina))
                 {
                     var billingCredit = await _billingRepository.GetBillingCredit(billingCreditId);
+                    var cardNumber = user.PaymentMethod == PaymentMethodEnum.CC ? _encryptionService.DecryptAES256(encryptedCreditCard.Number) : "";
+                    var holderName = user.PaymentMethod == PaymentMethodEnum.CC ? _encryptionService.DecryptAES256(encryptedCreditCard.HolderName) : "";
 
                     await _sapService.SendBillingToSap(
                         BillingHelper.MapBillingToSapAsync(_sapSettings.Value,
-                            _encryptionService.DecryptAES256(encryptedCreditCard.Number),
-                            _encryptionService.DecryptAES256(encryptedCreditCard.HolderName),
+                            cardNumber,
+                            holderName,
                             billingCredit,
                             currentPlan,
                             newPlan,
