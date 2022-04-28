@@ -279,6 +279,57 @@ WHERE
             return true;
         }
 
+        public async Task SetEmptyPaymentMethod(int idUser)
+        {
+            using var connection = _connectionFactory.GetConnection();
+
+            await connection.ExecuteAsync(@"
+UPDATE
+    [USER]
+SET
+    CCHolderFullName = @ccHolderFullName,
+    CCNumber = @ccNumber,
+    CCExpMonth = @ccExpMonth,
+    CCExpYear = @ccExpYear,
+    CCVerification = @ccVerification,
+    IdCCType = @idCCType,
+    PaymentMethod = (SELECT IdPaymentMethod FROM [PaymentMethods] WHERE PaymentMethodName = @paymentMethodName),
+    RazonSocial = @razonSocial,
+    IdConsumerType = (SELECT IdConsumerType FROM [ConsumerTypes] WHERE Name = @idConsumerType),
+    IdResponsabileBilling = @idResponsabileBilling,
+    CUIT = @cuit,
+    ResponsableIVA = @responsableIVA,
+    CFDIUse = @useCFDI,
+    PaymentType = @paymentType,
+    PaymentWay = @paymentWay,
+    BankAccount = @bankAccount,
+    BankName = @bankName
+WHERE
+    IdUser = @IdUser;",
+            new
+            {
+                idUser,
+                @ccHolderFullName = string.Empty,
+                @ccNumber = string.Empty,
+                @ccExpMonth = (int?)null,
+                @ccExpYear = (int?)null,
+                @ccVerification = string.Empty,
+                @idCCType = (string)null,
+                @paymentMethodName = PaymentMethodEnum.NONE.ToString(),
+                @razonSocial = string.Empty,
+                @idConsumerType = string.Empty,
+                @idResponsabileBilling = (int?)null,
+                @cuit = string.Empty,
+                @responsableIVA = (bool?)null,
+                @useCFDI = string.Empty,
+                @paymentType = string.Empty,
+                @paymentWay = string.Empty,
+                @bankAccount = string.Empty,
+                @bankName = string.Empty
+            });
+        }
+
+
         private async Task UpdateUserPaymentMethodByTransfer(User user, PaymentMethod paymentMethod)
         {
             using var connection = _connectionFactory.GetConnection();

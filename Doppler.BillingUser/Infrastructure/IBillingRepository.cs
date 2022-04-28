@@ -32,5 +32,7 @@ namespace Doppler.BillingUser.Infrastructure
         Task<int> ActivateStandBySubscribers(int idUser);
 
         Task<PlanDiscountInformation> GetPlanDiscountInformation(int discountId);
+
+        Task SetEmptyPaymentMethod(int idUser);
     }
 }
