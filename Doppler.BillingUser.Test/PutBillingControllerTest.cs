@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Dapper;
 using Doppler.BillingUser.Encryption;
+using Doppler.BillingUser.Enums;
+using Doppler.BillingUser.Infrastructure;
 using Doppler.BillingUser.Model;
 using Doppler.BillingUser.Test.Utils;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -86,9 +88,13 @@ namespace Doppler.BillingUser.Test
 
             var requestContent = new StringContent(JsonConvert.SerializeObject(contactInformation), Encoding.UTF8, "application/json");
 
-            var mockConnection = new Mock<DbConnection>();
+            var billingRepositoryMock = new Mock<IBillingRepository>();
+            billingRepositoryMock.Setup(x => x.GetBillingInformation("test1@test.com"))
+                .ReturnsAsync(contactInformation);
 
+            var mockConnection = new Mock<DbConnection>();
             mockConnection.SetupDapperAsync(c => c.ExecuteAsync(null, null, null, null, null)).ReturnsAsync(expectedRows);
+
             var encryptedMock = new Mock<IEncryptionService>();
             encryptedMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("TEST");
 
@@ -97,6 +103,88 @@ namespace Doppler.BillingUser.Test
                 builder.ConfigureTestServices(services =>
                 {
                     services.SetupConnectionFactory(mockConnection.Object);
+                    services.AddSingleton(billingRepositoryMock.Object);
+                    services.AddSingleton(encryptedMock.Object);
+                });
+
+            }).CreateClient(new WebApplicationFactoryClientOptions());
+
+            var request = new HttpRequestMessage(HttpMethod.Put, "accounts/test1@test.com/billing-information")
+            {
+                Headers =
+                {
+                    {
+                        "Authorization", $"Bearer {TokenAccount123Test1AtTestDotComExpire20330518}"
+                    }
+                },
+                Content = requestContent
+            };
+
+            // Act
+            var response = await client.SendAsync(request);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task PUT_billing_information_with_different_countrye_should_update_right_value_based_on_body_information_and_also_update_payment_method()
+        {
+            // Arrange
+            const int expectedRows = 1;
+
+            var contactInformation = new BillingInformation
+            {
+                Firstname = "Test First Name",
+                Lastname = "Test Last Name",
+                Phone = "5555555",
+                Address = "Test Address",
+                City = "Test City",
+                Province = "Test ProvinceAh pe",
+                ZipCode = "ZipCode",
+                Country = "Test Country"
+            };
+
+            var currentBillingInformation = new BillingInformation
+            {
+                Firstname = "Test First Name",
+                Lastname = "Test Last Name",
+                Phone = "5555555",
+                Address = "Test Address",
+                City = "Test City",
+                Province = "Test ProvinceAh pe",
+                ZipCode = "ZipCode",
+                Country = "co"
+            };
+
+            var requestContent = new StringContent(JsonConvert.SerializeObject(contactInformation), Encoding.UTF8, "application/json");
+
+            var billingRepositoryMock = new Mock<IBillingRepository>();
+            billingRepositoryMock.Setup(x => x.GetBillingInformation("test1@test.com"))
+                .ReturnsAsync(currentBillingInformation);
+            billingRepositoryMock.Setup(x => x.GetCurrentPaymentMethod("test1@test.com"))
+                .ReturnsAsync(new PaymentMethod { PaymentMethodName = PaymentMethodEnum.TRANSF.ToString() });
+
+            var userRepositoryMock = new Mock<IUserRepository>();
+            userRepositoryMock.Setup(x => x.GetUserInformation(It.IsAny<string>())).ReturnsAsync(new User()
+            {
+                Language = "es",
+                IdUser = 1
+            });
+
+            var mockConnection = new Mock<DbConnection>();
+            mockConnection.SetupDapperAsync(c => c.ExecuteAsync(null, null, null, null, null)).ReturnsAsync(expectedRows);
+
+            var encryptedMock = new Mock<IEncryptionService>();
+            encryptedMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("TEST");
+
+            var client = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    services.SetupConnectionFactory(mockConnection.Object);
+                    services.AddSingleton(billingRepositoryMock.Object);
+                    services.AddSingleton(userRepositoryMock.Object);
                     services.AddSingleton(encryptedMock.Object);
                 });
 

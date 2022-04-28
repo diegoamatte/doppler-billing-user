@@ -26,7 +26,7 @@ using Doppler.BillingUser.Extensions;
 
 namespace Doppler.BillingUser.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [ApiController]
     public class BillingController
     {
@@ -135,7 +135,20 @@ namespace Doppler.BillingUser.Controllers
                 return new BadRequestObjectResult(results.ToString("-"));
             }
 
+            var currentBillingInformation = await _billingRepository.GetBillingInformation(accountname);
+
             await _billingRepository.UpdateBillingInformation(accountname, billingInformation);
+
+            if (currentBillingInformation != null && currentBillingInformation.Country.ToLower() != billingInformation.Country.ToLower())
+            {
+                var currentPaymentMethod = await _billingRepository.GetCurrentPaymentMethod(accountname);
+
+                if (currentPaymentMethod != null & currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.TRANSF.ToString())
+                {
+                    var userInformation = await _userRepository.GetUserInformation(accountname);
+                    await _billingRepository.SetEmptyPaymentMethod(userInformation.IdUser);
+                }
+            }
 
             return new OkObjectResult("Successfully");
         }
