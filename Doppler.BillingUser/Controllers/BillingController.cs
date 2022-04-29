@@ -26,7 +26,7 @@ using Doppler.BillingUser.Extensions;
 
 namespace Doppler.BillingUser.Controllers
 {
-    //[Authorize]
+    [Authorize]
     [ApiController]
     public class BillingController
     {
