@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using Flurl.Http.Testing;
 using Microsoft.Extensions.Options;
 using Xunit;
+using Doppler.BillingUser.Enums;
 
 namespace Doppler.BillingUser.Test
 {
@@ -317,6 +318,63 @@ namespace Doppler.BillingUser.Test
 
             // Assert
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task PUT_Current_payment_Mercadopago_method_should_update_right_value_based_on_body_information()
+        {
+            // Arrange
+            var currentPaymentMethod = new
+            {
+                CCHolderFullName = "Test Holder Name",
+                CCNumber = "5555 5555 5555 5555",
+                CCVerification = "222",
+                CCExpMonth = "12",
+                CCExpYear = "25",
+                CCType = "Mastercard",
+                PaymentMethodName = PaymentMethodEnum.MP.ToString(),
+                IdSelectedPlan = 13,
+                IdentificationNumber = "2334345566"
+            };
+
+            var user = new User
+            {
+                Email = "test1@mail.com",
+                SapProperties = "{\"ContractCurrency\" : false,\"GovernmentAccount\" : false,\"Premium\" : false,\"Plus\" : false,\"ComercialPartner\" : false,\"MarketingPartner\" : false,\"OnBoarding\" : false,\"Layout\" : false,\"Datahub\" : false,\"PushNotification\" : false,\"ExclusiveIp\" : false,\"Advisory\" : false,\"Reports\" : false,\"SMS\" : false}",
+                CUIT = "2334345566",
+                IdConsumerType = 2,
+                IdResponsabileBilling = (int)ResponsabileBillingEnum.Mercadopago,
+                FirstName = "firstName"
+            };
+
+            var mockConnection = new Mock<DbConnection>();
+            mockConnection.SetupDapperAsync(c => c.QueryFirstOrDefaultAsync<User>(null, null, null, null, null)).ReturnsAsync(user);
+
+            var encryptedMock = new Mock<IEncryptionService>();
+            encryptedMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("TEST");
+
+            var factory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    services.SetupConnectionFactory(mockConnection.Object);
+                    services.AddSingleton(encryptedMock.Object);
+                    services.AddSingleton(GetSapSettingsMock().Object);
+                });
+
+            });
+            factory.Server.PreserveExecutionContext = true;
+            var client = factory.CreateClient(new WebApplicationFactoryClientOptions());
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {TokenAccount123Test1AtTestDotComExpire20330518}");
+            var httpTest = new HttpTest();
+            const string url = "https://localhost:5000/businesspartner/createorupdatebusinesspartner";
+
+            // Act
+            var response = await client.PutAsJsonAsync("accounts/test1@test.com/payment-methods/current", currentPaymentMethod);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            httpTest.ShouldHaveCalled(url);
         }
 
         private static Mock<IOptions<SapSettings>> GetSapSettingsMock()
