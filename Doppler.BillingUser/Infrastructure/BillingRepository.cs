@@ -35,6 +35,7 @@ namespace Doppler.BillingUser.Infrastructure
         private const int BillingCreditTypeUpgradeRequest = 1;
         private const int MexicoIva = 16;
         private const int ArgentinaIva = 21;
+        private const string FinalConsumer = "CF";
 
         public BillingRepository(IDatabaseConnectionFactory connectionFactory,
             IEncryptionService encryptionService,
@@ -262,7 +263,23 @@ WHERE
             }
             else if (paymentMethod.PaymentMethodName == PaymentMethodEnum.MP.ToString())
             {
-                return true;
+                var creditCard = new CreditCard
+                {
+                    Number = _encryptionService.EncryptAES256(paymentMethod.CCNumber.Replace(" ", "")),
+                    HolderName = _encryptionService.EncryptAES256(paymentMethod.CCHolderFullName),
+                    ExpirationMonth = int.Parse(paymentMethod.CCExpMonth),
+                    ExpirationYear = int.Parse(paymentMethod.CCExpYear),
+                    Code = _encryptionService.EncryptAES256(paymentMethod.CCVerification)
+                };
+
+                var cultureInfo = Thread.CurrentThread.CurrentCulture;
+                var textInfo = cultureInfo.TextInfo;
+
+                paymentMethod.CCType = textInfo.ToTitleCase(paymentMethod.CCType);
+
+                //TODO: Integrate with the Mercadopago API: Create the customer in Mercadopago and then set the customerId in the user table
+                //Update user payment method in DB
+                await UpdateUserPaymentMethodByMercadopago(user, paymentMethod, creditCard);
             }
             else if (paymentMethod.PaymentMethodName == PaymentMethodEnum.TRANSF.ToString())
             {
@@ -271,6 +288,7 @@ WHERE
 
             //Send BP to SAP
             if (paymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ||
+                paymentMethod.PaymentMethodName == PaymentMethodEnum.MP.ToString() ||
                 (paymentMethod.PaymentMethodName == PaymentMethodEnum.TRANSF.ToString() && user.IdBillingCountry == (int)CountryEnum.Argentina))
             {
                 await SendUserDataToSap(user.Email, paymentMethod.IdSelectedPlan);
@@ -404,6 +422,44 @@ WHERE
             });
         }
 
+        private async Task UpdateUserPaymentMethodByMercadopago(User user, PaymentMethod paymentMethod, CreditCard creditCard)
+        {
+            using var connection = _connectionFactory.GetConnection();
+
+            await connection.ExecuteAsync(@"
+UPDATE
+    [USER]
+SET
+    CCHolderFullName = @ccHolderFullName,
+    CCNumber = @ccNumber,
+    CCExpMonth = @ccExpMonth,
+    CCExpYear = @ccExpYear,
+    CCVerification = @ccVerification,
+    IdCCType = @idCCType,
+    PaymentMethod = (SELECT IdPaymentMethod FROM [PaymentMethods] WHERE PaymentMethodName = @paymentMethodName),
+    RazonSocial = @razonSocial,
+    IdConsumerType = (SELECT IdConsumerType FROM [ConsumerTypes] WHERE Name = @idConsumerType),
+    IdResponsabileBilling = @idResponsabileBilling,
+    CUIT = @cuit
+WHERE
+    IdUser = @IdUser;",
+            new
+            {
+                user.IdUser,
+                @ccHolderFullName = creditCard.HolderName,
+                @ccNumber = creditCard.Number,
+                @ccExpMonth = creditCard.ExpirationMonth,
+                @ccExpYear = creditCard.ExpirationYear,
+                @ccVerification = creditCard.Code,
+                @idCCType = Enum.Parse<CardTypeEnum>(paymentMethod.CCType, true),
+                @paymentMethodName = paymentMethod.PaymentMethodName,
+                @razonSocial = paymentMethod.RazonSocial,
+                @idConsumerType = paymentMethod.IdConsumerType ?? FinalConsumer,
+                @idResponsabileBilling = (int)ResponsabileBillingEnum.Mercadopago,
+                @cuit = paymentMethod.IdentificationNumber,
+            });
+        }
+
         private async Task SendUserDataToSap(string accountName, int planId)
         {
             using var connection = _connectionFactory.GetConnection();
@@ -454,7 +510,7 @@ WHERE
                     @idUserTypePlan = planId
                 });
 
-            if (user.IdResponsabileBilling is (int)ResponsabileBillingEnum.QBL or (int)ResponsabileBillingEnum.GBBISIDE)
+            if (user.IdResponsabileBilling is (int)ResponsabileBillingEnum.QBL or (int)ResponsabileBillingEnum.GBBISIDE or (int)ResponsabileBillingEnum.Mercadopago)
             {
                 var sapDto = new SapBusinessPartner
                 {
