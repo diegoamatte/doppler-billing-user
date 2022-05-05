@@ -101,6 +101,7 @@ namespace Doppler.BillingUser
             services.Configure<ZohoSettings>(Configuration.GetSection(nameof(ZohoSettings)));
             services.AddScoped<IZohoService, ZohoService>();
             services.AddScoped<IEmailTemplatesService, EmailTemplatesService>();
+            services.AddScoped<ICurrencyRepository, CurrencyRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
