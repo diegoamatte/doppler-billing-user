@@ -2,7 +2,7 @@ using System;
 
 namespace Doppler.BillingUser.Model
 {
-    public class CreateAgreement
+    public class BillingCreditAgreement
     {
         public int IdUser { get; set; }
         public BillingCreditModel BillingCredit { get; set; }
@@ -29,5 +29,6 @@ namespace Doppler.BillingUser.Model
         public string BankName { get; set; }
         public string BankAccount { get; set; }
         public int IdResponsabileBilling { get; set; }
+        public int? IdPromotion { get; set; }
     }
 }

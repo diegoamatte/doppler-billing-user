@@ -91,6 +91,14 @@ namespace Doppler.BillingUser.Test
                 PlanId = 2
             };
 
+            var currentPaymentMethod = new PaymentMethod
+            {
+                CCExpMonth = "1",
+                CCExpYear = "2022",
+                CCHolderFullName = "Test",
+                CCNumber = "411111111111"
+            };
+
             var creditCard = new CreditCard()
             {
                 CardType = CardTypeEnum.Visa,
@@ -131,6 +139,7 @@ namespace Doppler.BillingUser.Test
 
             var billingRepositoryMock = new Mock<IBillingRepository>();
             billingRepositoryMock.Setup(x => x.CreateAccountingEntriesAsync(It.IsAny<AccountingEntry>(), It.IsAny<AccountingEntry>())).ReturnsAsync(1);
+            billingRepositoryMock.Setup(x => x.GetPaymentMethodByUserName(It.IsAny<string>())).ReturnsAsync(currentPaymentMethod);
             billingRepositoryMock.Setup(x => x.GetBillingCredit(It.IsAny<int>())).ReturnsAsync(new BillingCredit()
             {
                 IdBillingCredit = 1,
@@ -238,6 +247,14 @@ namespace Doppler.BillingUser.Test
                 total = 15
             };
 
+            var currentPaymentMethod = new PaymentMethod
+            {
+                CCExpMonth = "1",
+                CCExpYear = "2022",
+                CCHolderFullName = "Test",
+                CCNumber = "411111111111"
+            };
+
             var accountName = "test1@test.com";
             var accountPlansServiceMock = new Mock<IAccountPlansService>();
             accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
@@ -284,12 +301,8 @@ namespace Doppler.BillingUser.Test
 
             var billingRepositoryMock = new Mock<IBillingRepository>();
             billingRepositoryMock.Setup(x => x.CreateAccountingEntriesAsync(It.IsAny<AccountingEntry>(), It.IsAny<AccountingEntry>())).ReturnsAsync(invoiceId);
-            billingRepositoryMock.Setup(x => x.CreateBillingCreditAsync(
-                    It.IsAny<AgreementInformation>(),
-                    It.IsAny<UserBillingInformation>(),
-                    It.IsAny<UserTypePlanInformation>(),
-                    It.IsAny<Promotion>()))
-                .ReturnsAsync(billingCreditId);
+            billingRepositoryMock.Setup(x => x.CreateBillingCreditAsync(It.IsAny<BillingCreditAgreement>())).ReturnsAsync(billingCreditId);
+            billingRepositoryMock.Setup(x => x.GetPaymentMethodByUserName(It.IsAny<string>())).ReturnsAsync(currentPaymentMethod);
             billingRepositoryMock.Setup(x => x.CreateMovementCreditAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<UserBillingInformation>(), It.IsAny<UserTypePlanInformation>())).ReturnsAsync(movementCreditId);
             billingRepositoryMock.Setup(x => x.GetBillingCredit(It.IsAny<int>())).ReturnsAsync(new BillingCredit()
             {
@@ -500,6 +513,14 @@ namespace Doppler.BillingUser.Test
                 total = 0
             };
 
+            var currentPaymentMethod = new PaymentMethod
+            {
+                CCExpMonth = "1",
+                CCExpYear = "2022",
+                CCHolderFullName = "Test",
+                CCNumber = "411111111111"
+            };
+
             var accountName = "test1@test.com";
             var accountPlansServiceMock = new Mock<IAccountPlansService>();
             accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
@@ -526,12 +547,8 @@ namespace Doppler.BillingUser.Test
 
             var billingRepositoryMock = new Mock<IBillingRepository>();
             billingRepositoryMock.Setup(x => x.CreateAccountingEntriesAsync(It.IsAny<AccountingEntry>(), It.IsAny<AccountingEntry>())).ReturnsAsync(invoiceId);
-            billingRepositoryMock.Setup(x => x.CreateBillingCreditAsync(
-                    It.IsAny<AgreementInformation>(),
-                    It.IsAny<UserBillingInformation>(),
-                    It.IsAny<UserTypePlanInformation>(),
-                    It.IsAny<Promotion>()))
-                .ReturnsAsync(billingCreditId);
+            billingRepositoryMock.Setup(x => x.GetPaymentMethodByUserName(It.IsAny<string>())).ReturnsAsync(currentPaymentMethod);
+            billingRepositoryMock.Setup(x => x.CreateBillingCreditAsync(It.IsAny<BillingCreditAgreement>())).ReturnsAsync(billingCreditId);
             billingRepositoryMock.Setup(x => x.CreateMovementCreditAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<UserBillingInformation>(), It.IsAny<UserTypePlanInformation>())).ReturnsAsync(movementCreditId);
             userRepositoryMock.Setup(x => x.GetUserInformation(It.IsAny<string>())).ReturnsAsync(new User()
             {
@@ -541,11 +558,14 @@ namespace Doppler.BillingUser.Test
             var emailSenderMock = new Mock<IEmailSender>();
             emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
 
+            var encryptionServiceMock = new Mock<IEncryptionService>();
+            encryptionServiceMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("12345");
+
             var client = _factory.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureTestServices(services =>
                 {
-                    services.AddSingleton(Mock.Of<IEncryptionService>());
+                    services.AddSingleton(encryptionServiceMock.Object);
                     services.AddSingleton(accountPlansServiceMock.Object);
                     services.AddSingleton(userRepositoryMock.Object);
                     services.AddSingleton(billingRepositoryMock.Object);
@@ -840,6 +860,14 @@ namespace Doppler.BillingUser.Test
                 total = 0
             };
 
+            var currentPaymentMethod = new PaymentMethod
+            {
+                CCExpMonth = "1",
+                CCExpYear = "2022",
+                CCHolderFullName = "Test",
+                CCNumber = "411111111111"
+            };
+
             var accountName = "test1@test.com";
             var accountPlansServiceMock = new Mock<IAccountPlansService>();
             accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
@@ -870,22 +898,21 @@ namespace Doppler.BillingUser.Test
 
             var billingRepositoryMock = new Mock<IBillingRepository>();
             billingRepositoryMock.Setup(x => x.CreateAccountingEntriesAsync(It.IsAny<AccountingEntry>(), It.IsAny<AccountingEntry>())).ReturnsAsync(invoiceId);
-            billingRepositoryMock.Setup(x => x.CreateBillingCreditAsync(
-                    It.IsAny<AgreementInformation>(),
-                    It.IsAny<UserBillingInformation>(),
-                    It.IsAny<UserTypePlanInformation>(),
-                    It.IsAny<Promotion>()))
-                .ReturnsAsync(billingCreditId);
+            billingRepositoryMock.Setup(x => x.GetPaymentMethodByUserName(It.IsAny<string>())).ReturnsAsync(currentPaymentMethod);
+            billingRepositoryMock.Setup(x => x.CreateBillingCreditAsync(It.IsAny<BillingCreditAgreement>())).ReturnsAsync(billingCreditId);
             billingRepositoryMock.Setup(x => x.CreateMovementCreditAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<UserBillingInformation>(), It.IsAny<UserTypePlanInformation>())).ReturnsAsync(movementCreditId);
 
             var emailSenderMock = new Mock<IEmailSender>();
             emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
 
+            var encryptionServiceMock = new Mock<IEncryptionService>();
+            encryptionServiceMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("12345");
+
             var client = _factory.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureTestServices(services =>
                 {
-                    services.AddSingleton(Mock.Of<IEncryptionService>());
+                    services.AddSingleton(encryptionServiceMock.Object);
                     services.AddSingleton(accountPlansServiceMock.Object);
                     services.AddSingleton(userRepositoryMock.Object);
                     services.AddSingleton(billingRepositoryMock.Object);
@@ -914,12 +941,22 @@ namespace Doppler.BillingUser.Test
                 planId = 1,
                 total = 2
             };
+
+            var currentPaymentMethod = new PaymentMethod
+            {
+                CCExpMonth = "1",
+                CCExpYear = "2022",
+                CCHolderFullName = "Test",
+                CCNumber = "411111111111"
+            };
+
             var billingRepositoryMock = new Mock<IBillingRepository>();
             billingRepositoryMock.Setup(x => x.GetBillingCredit(It.IsAny<int>())).ReturnsAsync(new BillingCredit()
             {
                 IdBillingCredit = 1,
                 Date = new DateTime(2021, 12, 10)
             });
+            billingRepositoryMock.Setup(x => x.GetPaymentMethodByUserName(It.IsAny<string>())).ReturnsAsync(currentPaymentMethod);
 
             var userRepositoryMock = new Mock<IUserRepository>();
             userRepositoryMock.Setup(x => x.GetUserBillingInformation(accountName))
@@ -1042,7 +1079,18 @@ namespace Doppler.BillingUser.Test
                 total = 0,
                 promocode = "promocode-test"
             };
+
+            var currentPaymentMethod = new PaymentMethod
+            {
+                CCExpMonth = "1",
+                CCExpYear = "2022",
+                CCHolderFullName = "Test",
+                CCNumber = "411111111111"
+            };
+
             var billingRepositoryMock = new Mock<IBillingRepository>();
+            billingRepositoryMock.Setup(x => x.GetPaymentMethodByUserName(It.IsAny<string>())).ReturnsAsync(currentPaymentMethod);
+
             var accountPlansServiceMock = new Mock<IAccountPlansService>();
             accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
                 .ReturnsAsync(true);
@@ -1071,11 +1119,14 @@ namespace Doppler.BillingUser.Test
             var emailSenderMock = new Mock<IEmailSender>();
             emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
 
+            var encryptionServiceMock = new Mock<IEncryptionService>();
+            encryptionServiceMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("12345");
+
             var factory = _factory.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureTestServices(services =>
                 {
-                    services.AddSingleton(Mock.Of<IEncryptionService>());
+                    services.AddSingleton(encryptionServiceMock.Object);
                     services.AddSingleton(accountPlansServiceMock.Object);
                     services.AddSingleton(userRepositoryMock.Object);
                     services.AddSingleton(billingRepositoryMock.Object);
@@ -1104,7 +1155,18 @@ namespace Doppler.BillingUser.Test
                 total = 0,
                 promocode = "promocode-test"
             };
+
+            var currentPaymentMethod = new PaymentMethod
+            {
+                CCExpMonth = "1",
+                CCExpYear = "2022",
+                CCHolderFullName = "Test",
+                CCNumber = "411111111111"
+            };
+
             var billingRepositoryMock = new Mock<IBillingRepository>();
+            billingRepositoryMock.Setup(x => x.GetPaymentMethodByUserName(It.IsAny<string>())).ReturnsAsync(currentPaymentMethod);
+
             var accountPlansServiceMock = new Mock<IAccountPlansService>();
             accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
                 .ReturnsAsync(true);
@@ -1133,12 +1195,15 @@ namespace Doppler.BillingUser.Test
             var emailSenderMock = new Mock<IEmailSender>();
             emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
 
+            var encryptionServiceMock = new Mock<IEncryptionService>();
+            encryptionServiceMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("12345");
+
             var promotionRepositoryMock = new Mock<IPromotionRepository>();
             var factory = _factory.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureTestServices(services =>
                 {
-                    services.AddSingleton(Mock.Of<IEncryptionService>());
+                    services.AddSingleton(encryptionServiceMock.Object);
                     services.AddSingleton(accountPlansServiceMock.Object);
                     services.AddSingleton(userRepositoryMock.Object);
                     services.AddSingleton(billingRepositoryMock.Object);
@@ -1239,6 +1304,14 @@ namespace Doppler.BillingUser.Test
                 total = 15
             };
 
+            var currentPaymentMethod = new PaymentMethod
+            {
+                CCExpMonth = "1",
+                CCExpYear = "2022",
+                CCHolderFullName = "Test",
+                CCNumber = "411111111111"
+            };
+
             var accountName = "test1@test.com";
             var accountPlansServiceMock = new Mock<IAccountPlansService>();
             accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
@@ -1285,12 +1358,8 @@ namespace Doppler.BillingUser.Test
 
             var billingRepositoryMock = new Mock<IBillingRepository>();
             billingRepositoryMock.Setup(x => x.CreateAccountingEntriesAsync(It.IsAny<AccountingEntry>(), It.IsAny<AccountingEntry>())).ReturnsAsync(invoiceId);
-            billingRepositoryMock.Setup(x => x.CreateBillingCreditAsync(
-                    It.IsAny<AgreementInformation>(),
-                    It.IsAny<UserBillingInformation>(),
-                    It.IsAny<UserTypePlanInformation>(),
-                    It.IsAny<Promotion>()))
-                .ReturnsAsync(billingCreditId);
+            billingRepositoryMock.Setup(x => x.GetPaymentMethodByUserName(It.IsAny<string>())).ReturnsAsync(currentPaymentMethod);
+            billingRepositoryMock.Setup(x => x.CreateBillingCreditAsync(It.IsAny<BillingCreditAgreement>())).ReturnsAsync(billingCreditId);
             billingRepositoryMock.Setup(x => x.CreateMovementCreditAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<UserBillingInformation>(), It.IsAny<UserTypePlanInformation>())).ReturnsAsync(movementCreditId);
             billingRepositoryMock.Setup(x => x.GetBillingCredit(It.IsAny<int>())).ReturnsAsync(new BillingCredit()
             {
@@ -1364,6 +1433,14 @@ namespace Doppler.BillingUser.Test
                 DiscountId = 1
             };
 
+            var currentPaymentMethod = new PaymentMethod
+            {
+                CCExpMonth = "1",
+                CCExpYear = "2022",
+                CCHolderFullName = "Test",
+                CCNumber = "411111111111"
+            };
+
             var creditCard = new CreditCard()
             {
                 CardType = CardTypeEnum.Visa,
@@ -1404,6 +1481,7 @@ namespace Doppler.BillingUser.Test
 
             var billingRepositoryMock = new Mock<IBillingRepository>();
             billingRepositoryMock.Setup(x => x.CreateAccountingEntriesAsync(It.IsAny<AccountingEntry>(), It.IsAny<AccountingEntry>())).ReturnsAsync(1);
+            billingRepositoryMock.Setup(x => x.GetPaymentMethodByUserName(It.IsAny<string>())).ReturnsAsync(currentPaymentMethod);
             billingRepositoryMock.Setup(x => x.GetBillingCredit(It.IsAny<int>())).ReturnsAsync(new BillingCredit()
             {
                 IdBillingCredit = 1,
@@ -1494,6 +1572,14 @@ namespace Doppler.BillingUser.Test
                 DiscountId = 1
             };
 
+            var currentPaymentMethod = new PaymentMethod
+            {
+                CCExpMonth = "1",
+                CCExpYear = "2022",
+                CCHolderFullName = "Test",
+                CCNumber = "411111111111"
+            };
+
             var accountName = "test1@test.com";
             var accountPlansServiceMock = new Mock<IAccountPlansService>();
             accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
@@ -1519,6 +1605,7 @@ namespace Doppler.BillingUser.Test
 
             var billingRepositoryMock = new Mock<IBillingRepository>();
             billingRepositoryMock.Setup(x => x.CreateAccountingEntriesAsync(It.IsAny<AccountingEntry>(), It.IsAny<AccountingEntry>())).ReturnsAsync(1);
+            billingRepositoryMock.Setup(x => x.GetPaymentMethodByUserName(It.IsAny<string>())).ReturnsAsync(currentPaymentMethod);
             billingRepositoryMock.Setup(x => x.GetBillingCredit(It.IsAny<int>())).ReturnsAsync(new BillingCredit()
             {
                 IdBillingCredit = 1,

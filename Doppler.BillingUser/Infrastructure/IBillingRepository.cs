@@ -20,7 +20,7 @@ namespace Doppler.BillingUser.Infrastructure
 
         Task<CurrentPlan> GetCurrentPlan(string accountName);
 
-        Task<int> CreateBillingCreditAsync(AgreementInformation agreementInformation, UserBillingInformation user, UserTypePlanInformation newUserTypePlan, Promotion promotion);
+        Task<int> CreateBillingCreditAsync(BillingCreditAgreement buyCreditAgreement);
 
         Task<int> CreateMovementCreditAsync(int idBillingCredit, int partialBalance, UserBillingInformation user, UserTypePlanInformation newUserTypePlan);
 
@@ -35,5 +35,7 @@ namespace Doppler.BillingUser.Infrastructure
         Task SetEmptyPaymentMethod(int idUser);
 
         Task<int> CreateAccountingEntriesAsync(AccountingEntry invoiceEntry, AccountingEntry paymentEntry);
+
+        Task<PaymentMethod> GetPaymentMethodByUserName(string username);
     }
 }

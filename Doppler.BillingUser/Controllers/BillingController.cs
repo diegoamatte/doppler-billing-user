@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using Doppler.BillingUser.Services;
 using Doppler.BillingUser.Extensions;
 using Doppler.BillingUser.Mappers;
+using Doppler.BillingUser.Mappers.BillingCredit;
 
 namespace Doppler.BillingUser.Controllers
 {
@@ -342,7 +343,9 @@ namespace Doppler.BillingUser.Controllers
                     invoiceId = await _billingRepository.CreateAccountingEntriesAsync(invoiceEntry, paymentEntry);
                 }
 
-                var billingCreditId = await _billingRepository.CreateBillingCreditAsync(agreementInformation, user, newPlan, promotion);
+                var billingCreditMapper = GetBillingCreditMapper(user.PaymentMethod);
+                var billingCreditAgreement = await billingCreditMapper.MapToBillingCreditAgreement(agreementInformation, user, newPlan, promotion);
+                var billingCreditId = await _billingRepository.CreateBillingCreditAsync(billingCreditAgreement);
 
                 user.IdCurrentBillingCredit = billingCreditId;
                 user.OriginInbound = agreementInformation.OriginInbound;
@@ -524,6 +527,20 @@ namespace Doppler.BillingUser.Controllers
             {
                 case PaymentMethodEnum.CC:
                     return new AccountingEntryForCreditCardMapper();
+                default:
+                    _logger.LogError($"The paymentMethod '{paymentMethod}' does not have a mapper.");
+                    throw new ArgumentException($"The paymentMethod '{paymentMethod}' does not have a mapper.");
+            }
+        }
+
+        private IBillingCreditMapper GetBillingCreditMapper(PaymentMethodEnum paymentMethod)
+        {
+            switch (paymentMethod)
+            {
+                case PaymentMethodEnum.CC:
+                    return new BillingCreditForCreditCardMapper(_billingRepository, _encryptionService);
+                case PaymentMethodEnum.TRANSF:
+                    return new BillingCreditForTransferMapper(_billingRepository);
                 default:
                     _logger.LogError($"The paymentMethod '{paymentMethod}' does not have a mapper.");
                     throw new ArgumentException($"The paymentMethod '{paymentMethod}' does not have a mapper.");
