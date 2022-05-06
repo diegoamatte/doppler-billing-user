@@ -12,19 +12,18 @@ namespace Doppler.BillingUser.Utils
     {
         private const int CurrencyTypeUsd = 0;
 
-        public static bool IsUpgradePending(UserBillingInformation user, Promotion promotion)
+        public static bool IsUpgradePending(UserBillingInformation user, Promotion promotion, CreditCardPayment creditCardPayment)
         {
-            if (promotion != null)
+            return user.PaymentMethod switch
             {
-                return user.PaymentMethod == PaymentMethodEnum.TRANSF &&
-                    ((promotion.DiscountPercentage.HasValue &&
-                    promotion.DiscountPercentage.Value < 100) ||
-                    !promotion.DiscountPercentage.HasValue);
-            }
-
-
-            return user.PaymentMethod != PaymentMethodEnum.CC;
+                PaymentMethodEnum.CC => false,
+                PaymentMethodEnum.TRANSF => promotion == null || (promotion.DiscountPercentage.HasValue && promotion.DiscountPercentage.Value < 100) || !promotion.DiscountPercentage.HasValue,
+                PaymentMethodEnum.MP => creditCardPayment?.Status == PaymentStatusEnum.Pending ||
+                                        promotion == null || (promotion.DiscountPercentage.HasValue && promotion.DiscountPercentage.Value < 100) || !promotion.DiscountPercentage.HasValue,
+                _ => true,
+            };
         }
+
         public static SapBillingDto MapBillingToSapAsync(SapSettings timeZoneOffset, string cardNumber, string cardHolderName, BillingCredit billingCredit, UserTypePlanInformation currentUserPlan, UserTypePlanInformation newUserPlan, string authorizationNumber, int invoicedId)
         {
             var sapBilling = new SapBillingDto
@@ -38,7 +37,9 @@ namespace Doppler.BillingUser.Utils
                 PeriodMonth = billingCredit.Date.Month,
                 PeriodYear = billingCredit.Date.Year,
                 PlanFee = newUserPlan.IdUserType == UserTypeEnum.SUBSCRIBERS ? billingCredit.PlanFee * (billingCredit.TotalMonthPlan ?? 1) : billingCredit.PlanFee,
-                Discount = billingCredit.DiscountPlanFee,
+                Discount = (billingCredit.DiscountPlanFee) +
+                    billingCredit.DiscountPlanFeeAdmin.GetValueOrDefault() +
+                    billingCredit.DiscountPlanFeePromotion.GetValueOrDefault(),
                 ExtraEmailsPeriodMonth = billingCredit.Date.Month,
                 ExtraEmailsPeriodYear = billingCredit.Date.Year,
                 ExtraEmailsFee = 0,
@@ -121,6 +122,5 @@ namespace Doppler.BillingUser.Utils
             account.DDiscountTypeDesc = zohoDto.DiscountTypeDescription;
             account.Industry = zohoDto.Industry;
         }
-
     }
 }

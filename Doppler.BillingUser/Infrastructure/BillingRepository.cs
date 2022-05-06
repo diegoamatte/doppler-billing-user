@@ -791,7 +791,9 @@ SELECT
     BC.[IdResponsabileBilling],
     BC.[CCIdentificationType],
     BC.TotalMonthPlan,
-    BC.CUIT As Cuit
+    BC.CUIT As Cuit,
+    BC.DiscountPlanFeeAdmin,
+    BC.DiscountPlanFeePromotion
 FROM
     [dbo].[BillingCredits] BC
         LEFT JOIN [dbo].[DiscountXPlan] DP
@@ -862,7 +864,11 @@ INSERT INTO [dbo].[AccountingEntry]
     [AccountingTypeDescription],
     [IdClient],
     [IdAccountType],
-    [IdInvoiceBillingType])
+    [IdInvoiceBillingType],
+    [IdCurrencyType],
+    [CurrencyRate],
+    [Taxes]
+    )
 VALUES
     (@date,
     @amount,
@@ -874,7 +880,10 @@ VALUES
     @accountingTypeDescription,
     @idClient,
     @idAccountType,
-    @idInvoiceBillingType);
+    @idInvoiceBillingType,
+    @idCurrencyType,
+    @currencyRate,
+    @taxes);
 SELECT CAST(SCOPE_IDENTITY() AS INT)",
             new
             {
@@ -888,7 +897,10 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @idAccountType = invoiceEntry.IdAccountType,
                 @idInvoiceBillingType = invoiceEntry.IdInvoiceBillingType,
                 @authorizationNumber = invoiceEntry.AuthorizationNumber,
-                @accountEntryType = invoiceEntry.AccountEntryType
+                @accountEntryType = invoiceEntry.AccountEntryType,
+                @idCurrencyType = invoiceEntry.IdCurrencyType,
+                @currencyRate = invoiceEntry.CurrencyRate,
+                @taxes = invoiceEntry.Taxes
             });
 
             if (paymentEntry != null)
@@ -948,25 +960,6 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
             }
 
             return invoiceId;
-        }
-
-        private int CalculateBillingSystem(UserBillingInformation user)
-        {
-            var billingSystem = (int)ResponsabileBillingEnum.QBL;
-
-            switch (user.PaymentMethod)
-            {
-                case PaymentMethodEnum.CC:
-                    billingSystem = (int)ResponsabileBillingEnum.QBL;
-                    break;
-                case PaymentMethodEnum.TRANSF:
-                    billingSystem = CalculateBillingSystemByTransfer(user.IdBillingCountry);
-                    break;
-                default:
-                    break;
-            }
-
-            return billingSystem;
         }
 
         private int CalculateBillingSystemByTransfer(int idBillingCountry)
