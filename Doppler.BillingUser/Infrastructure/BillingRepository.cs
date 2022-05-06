@@ -585,106 +585,6 @@ WHERE
             return result;
         }
 
-        public async Task<int> CreateAccountingEntriesAsync(AgreementInformation agreementInformation, CreditCard encryptedCreditCard, int userId, UserTypePlanInformation newPlan, string authorizationNumber)
-        {
-            var connection = _connectionFactory.GetConnection();
-            var invoiceId = await connection.QueryFirstOrDefaultAsync<int>(@"
-INSERT INTO [dbo].[AccountingEntry]
-    ([Date],
-    [Amount],
-    [Status],
-    [Source],
-    [AuthorizationNumber],
-    [InvoiceNumber],
-    [AccountEntryType],
-    [AccountingTypeDescription],
-    [IdClient],
-    [IdAccountType],
-    [IdInvoiceBillingType])
-VALUES
-    (@date,
-    @amount,
-    @status,
-    @source,
-    @authorizationNumber,
-    @invoiceNumber,
-    @accountEntryType,
-    @accountingTypeDescription,
-    @idClient,
-    @idAccountType,
-    @idInvoiceBillingType);
-SELECT CAST(SCOPE_IDENTITY() AS INT)",
-            new
-            {
-                @idClient = userId,
-                @amount = agreementInformation.Total,
-                @date = DateTime.UtcNow,
-                @status = AccountingEntryStatusApproved,
-                @source = SourceTypeHelper.SourceTypeEnumMapper(newPlan),
-                @accountingTypeDescription = AccountingEntryTypeDescriptionInvoice,
-                @invoiceNumber = 0,
-                @idAccountType = UserAccountType,
-                @idInvoiceBillingType = InvoiceBillingTypeQBL,
-                @authorizationNumber = authorizationNumber,
-                @accountEntryType = AccountEntryTypeInvoice
-            });
-
-            await connection.QueryFirstOrDefaultAsync<int>(@"
-INSERT INTO [dbo].[AccountingEntry]
-    ([IdClient],
-    [IdInvoice],
-    [Amount],
-    [CCNumber],
-    [CCExpMonth],
-    [CCExpYear],
-    [CCHolderName],
-    [Date],
-    [Source],
-    [AccountingTypeDescription],
-    [IdAccountType],
-    [IdInvoiceBillingType],
-    [AccountEntryType],
-    [AuthorizationNumber],
-    [PaymentEntryType])
-VALUES
-    (@idClient,
-    @idInvoice,
-    @amount,
-    @ccCNumber,
-    @ccExpMonth,
-    @ccExpYear,
-    @ccHolderName,
-    @date,
-    @source,
-    @accountingTypeDescription,
-    @idAccountType,
-    @idInvoiceBillingType,
-    @accountEntryType,
-    @authorizationNumber,
-    @paymentEntryType);
-SELECT CAST(SCOPE_IDENTITY() AS INT)",
-            new
-            {
-                @idClient = userId,
-                @idInvoice = invoiceId,
-                @amount = agreementInformation.Total,
-                @ccCNumber = encryptedCreditCard.Number,
-                @ccExpMonth = encryptedCreditCard.ExpirationMonth,
-                @ccExpYear = encryptedCreditCard.ExpirationYear,
-                @ccHolderName = encryptedCreditCard.HolderName,
-                @date = DateTime.UtcNow,
-                @source = SourceTypeHelper.SourceTypeEnumMapper(newPlan),
-                @accountingTypeDescription = AccountingEntryTypeDescriptionCCPayment,
-                @idAccountType = UserAccountType,
-                @idInvoiceBillingType = InvoiceBillingTypeQBL,
-                @accountEntryType = AccountEntryTypePayment,
-                @authorizationNumber = authorizationNumber,
-                @paymentEntryType = PaymentEntryTypePayment
-            });
-
-            return invoiceId;
-        }
-
         public async Task<int> CreateBillingCreditAsync(
             AgreementInformation agreementInformation,
             UserBillingInformation user,
@@ -1018,6 +918,109 @@ WHERE
             using var connection = _connectionFactory.GetConnection();
             var result = await connection.ExecuteScalarAsync<int>("UserReactivateStandBySubscribers", new { IdUser = idUser }, commandType: CommandType.StoredProcedure);
             return result;
+        }
+
+        public async Task<int> CreateAccountingEntriesAsync(AccountingEntry invoiceEntry, AccountingEntry paymentEntry)
+        {
+            var connection = _connectionFactory.GetConnection();
+            var invoiceId = await connection.QueryFirstOrDefaultAsync<int>(@"
+INSERT INTO [dbo].[AccountingEntry]
+    ([Date],
+    [Amount],
+    [Status],
+    [Source],
+    [AuthorizationNumber],
+    [InvoiceNumber],
+    [AccountEntryType],
+    [AccountingTypeDescription],
+    [IdClient],
+    [IdAccountType],
+    [IdInvoiceBillingType])
+VALUES
+    (@date,
+    @amount,
+    @status,
+    @source,
+    @authorizationNumber,
+    @invoiceNumber,
+    @accountEntryType,
+    @accountingTypeDescription,
+    @idClient,
+    @idAccountType,
+    @idInvoiceBillingType);
+SELECT CAST(SCOPE_IDENTITY() AS INT)",
+            new
+            {
+                @idClient = invoiceEntry.IdClient,
+                @amount = invoiceEntry.Amount,
+                @date = invoiceEntry.Date,
+                @status = invoiceEntry.Status,
+                @source = invoiceEntry.Source,
+                @accountingTypeDescription = invoiceEntry.AccountingTypeDescription,
+                @invoiceNumber = 0,
+                @idAccountType = invoiceEntry.IdAccountType,
+                @idInvoiceBillingType = invoiceEntry.IdInvoiceBillingType,
+                @authorizationNumber = invoiceEntry.AuthorizationNumber,
+                @accountEntryType = invoiceEntry.AccountEntryType
+            });
+
+            if (paymentEntry != null)
+            {
+                await connection.QueryFirstOrDefaultAsync<int>(@"
+INSERT INTO [dbo].[AccountingEntry]
+    ([IdClient],
+    [IdInvoice],
+    [Amount],
+    [CCNumber],
+    [CCExpMonth],
+    [CCExpYear],
+    [CCHolderName],
+    [Date],
+    [Source],
+    [AccountingTypeDescription],
+    [IdAccountType],
+    [IdInvoiceBillingType],
+    [AccountEntryType],
+    [AuthorizationNumber],
+    [PaymentEntryType])
+VALUES
+    (@idClient,
+    @idInvoice,
+    @amount,
+    @ccCNumber,
+    @ccExpMonth,
+    @ccExpYear,
+    @ccHolderName,
+    @date,
+    @source,
+    @accountingTypeDescription,
+    @idAccountType,
+    @idInvoiceBillingType,
+    @accountEntryType,
+    @authorizationNumber,
+    @paymentEntryType);
+SELECT CAST(SCOPE_IDENTITY() AS INT)",
+                new
+                {
+                    @idClient = paymentEntry.IdClient,
+                    @idInvoice = invoiceId,
+                    @amount = paymentEntry.Amount,
+                    @ccCNumber = paymentEntry.CcCNumber,
+                    @ccExpMonth = paymentEntry.CcExpMonth,
+                    @ccExpYear = paymentEntry.CcExpYear,
+                    @ccHolderName = paymentEntry.CcHolderName,
+                    @date = paymentEntry.Date,
+                    @source = paymentEntry.Source,
+                    @accountingTypeDescription = paymentEntry.AccountingTypeDescription,
+                    @idAccountType = paymentEntry.IdAccountType,
+                    @idInvoiceBillingType = paymentEntry.IdInvoiceBillingType,
+                    @accountEntryType = paymentEntry.AccountEntryType,
+                    @authorizationNumber = paymentEntry.AuthorizationNumber,
+                    @paymentEntryType = paymentEntry.PaymentEntryType
+                });
+            }
+
+            return invoiceId;
         }
 
         private int CalculateBillingSystem(UserBillingInformation user)

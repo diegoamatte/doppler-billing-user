@@ -23,6 +23,7 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using Doppler.BillingUser.Services;
 using Doppler.BillingUser.Extensions;
+using Doppler.BillingUser.Mappers;
 
 namespace Doppler.BillingUser.Controllers
 {
@@ -327,9 +328,18 @@ namespace Doppler.BillingUser.Controllers
                         };
                     }
 
-                    // TODO: Deal with first data exceptions.
-                    authorizationNumber = await _paymentGateway.CreateCreditCardPayment(agreementInformation.Total.GetValueOrDefault(), encryptedCreditCard, user.IdUser);
-                    invoiceId = await _billingRepository.CreateAccountingEntriesAsync(agreementInformation, encryptedCreditCard, user.IdUser, newPlan, authorizationNumber);
+                    var payment = await CreateCreditCardPayment(agreementInformation.Total.Value, user.IdUser, accountname, user.PaymentMethod);
+                    var accountEntyMapper = GetAccountingEntryMapper(user.PaymentMethod);
+
+                    AccountingEntry invoiceEntry = accountEntyMapper.MapToInvoiceAccountingEntry(agreementInformation.Total.Value, user, encryptedCreditCard, newPlan, payment);
+                    AccountingEntry paymentEntry = null;
+
+                    if (payment.Status == PaymentStatusEnum.Approved)
+                    {
+                        paymentEntry = accountEntyMapper.MapToPaymentAccountingEntry(agreementInformation.Total.Value, user, encryptedCreditCard, newPlan, payment);
+                    }
+
+                    invoiceId = await _billingRepository.CreateAccountingEntriesAsync(invoiceEntry, paymentEntry);
                 }
 
                 var billingCreditId = await _billingRepository.CreateBillingCreditAsync(agreementInformation, user, newPlan, promotion);
@@ -490,6 +500,33 @@ namespace Doppler.BillingUser.Controllers
 
                 var planDiscountInformation = await _billingRepository.GetPlanDiscountInformation(discountId);
                 await _emailTemplatesService.SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId, planDiscountInformation, !isUpgradeApproved);
+            }
+        }
+
+        private async Task<CreditCardPayment> CreateCreditCardPayment(decimal total, int userId, string accountname, PaymentMethodEnum paymentMethod)
+        {
+            var encryptedCreditCard = await _userRepository.GetEncryptedCreditCard(accountname);
+
+            switch (paymentMethod)
+            {
+                case PaymentMethodEnum.CC:
+                    var authorizationNumber = await _paymentGateway.CreateCreditCardPayment(total, encryptedCreditCard, userId);
+                    return new CreditCardPayment { Status = PaymentStatusEnum.Approved, AuthorizationNumber = authorizationNumber };
+
+                default:
+                    return new CreditCardPayment { Status = PaymentStatusEnum.Approved };
+            }
+        }
+
+        private IAccountingEntryMapper GetAccountingEntryMapper(PaymentMethodEnum paymentMethod)
+        {
+            switch (paymentMethod)
+            {
+                case PaymentMethodEnum.CC:
+                    return new AccountingEntryForCreditCardMapper();
+                default:
+                    _logger.LogError($"The paymentMethod '{paymentMethod}' does not have a mapper.");
+                    throw new ArgumentException($"The paymentMethod '{paymentMethod}' does not have a mapper.");
             }
         }
     }
