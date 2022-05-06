@@ -550,7 +550,7 @@ WHERE
             }
         }
 
-        private async Task<PaymentMethod> GetPaymentMethodByUserName(string username)
+        public async Task<PaymentMethod> GetPaymentMethodByUserName(string username)
         {
             using var connection = _connectionFactory.GetConnection();
 
@@ -585,77 +585,8 @@ WHERE
             return result;
         }
 
-        public async Task<int> CreateBillingCreditAsync(
-            AgreementInformation agreementInformation,
-            UserBillingInformation user,
-            UserTypePlanInformation newUserTypePlan,
-            Promotion promotion)
+        public async Task<int> CreateBillingCreditAsync(BillingCreditAgreement buyCreditAgreement)
         {
-            var currentPaymentMethod = await GetPaymentMethodByUserName(user.Email);
-
-            var buyCreditAgreement = new CreateAgreement
-            {
-                IdUser = user.IdUser,
-                IdCountry = user.IdBillingCountry,
-                IdPaymentMethod = (int)user.PaymentMethod,
-                IdCCType = currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ? currentPaymentMethod.IdCCType : null,
-                CCExpMonth = currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ? short.Parse(currentPaymentMethod.CCExpMonth) : null,
-                CCExpYear = currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ? short.Parse(currentPaymentMethod.CCExpYear) : null,
-                CCHolderFullName = currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ? currentPaymentMethod.CCHolderFullName : null,
-                CCIdentificationType = currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ? currentPaymentMethod.CCType : null,
-                CCIdentificationNumber = currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ? currentPaymentMethod.CCNumber : null,
-                CCNumber = currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ? currentPaymentMethod.CCNumber : null,
-                CCVerification = currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ? currentPaymentMethod.CCVerification : null,
-                IdConsumerType = !string.IsNullOrEmpty(currentPaymentMethod.IdConsumerType) ? int.Parse(currentPaymentMethod.IdConsumerType) : null,
-                RazonSocial = currentPaymentMethod.RazonSocial,
-                ResponsableIVA = user.ResponsableIVA,
-                Cuit = currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.TRANSF.ToString() ? currentPaymentMethod.IdentificationNumber : null,
-                CFDIUse = user.CFDIUse,
-                PaymentWay = user.PaymentWay,
-                PaymentType = user.PaymentType,
-                BankName = user.BankName,
-                BankAccount = user.BankAccount
-            };
-
-            DateTime now = DateTime.UtcNow;
-            buyCreditAgreement.BillingCredit = new BillingCreditModel()
-            {
-                Date = now,
-                PaymentDate = user.PaymentMethod == PaymentMethodEnum.CC || !BillingHelper.IsUpgradePending(user, promotion) ? now : null,
-                ActivationDate = user.PaymentMethod == PaymentMethodEnum.CC || !BillingHelper.IsUpgradePending(user, promotion) ? now : null,
-                Approved = user.PaymentMethod == PaymentMethodEnum.CC || !BillingHelper.IsUpgradePending(user, promotion),
-                Payed = user.PaymentMethod == PaymentMethodEnum.CC || !BillingHelper.IsUpgradePending(user, promotion),
-                IdUserTypePlan = newUserTypePlan.IdUserTypePlan,
-                PlanFee = newUserTypePlan.Fee,
-                CreditsQty = newUserTypePlan.EmailQty ?? null,
-                ExtraEmailFee = newUserTypePlan.ExtraEmailCost ?? null,
-                ExtraCreditsPromotion = promotion?.ExtraCredits,
-            };
-
-            if (newUserTypePlan.IdUserType == UserTypeEnum.SUBSCRIBERS)
-            {
-                var planDiscountInformation = await GetPlanDiscountInformation(agreementInformation.DiscountId);
-
-                buyCreditAgreement.BillingCredit.IdDiscountPlan = agreementInformation.DiscountId != 0 ? agreementInformation.DiscountId : null;
-                buyCreditAgreement.BillingCredit.TotalMonthPlan = planDiscountInformation?.MonthPlan;
-                buyCreditAgreement.BillingCredit.CurrentMonthPlan =
-                    (buyCreditAgreement.BillingCredit.TotalMonthPlan.HasValue
-                    && buyCreditAgreement.BillingCredit.TotalMonthPlan.Value > 1
-                    && buyCreditAgreement.BillingCredit.Date.Day > 20)
-                    ? 0 : 1;
-                buyCreditAgreement.BillingCredit.SubscribersQty = newUserTypePlan.SubscribersQty;
-            }
-
-            //Calculate the BillingSystem
-            buyCreditAgreement.IdResponsabileBilling = CalculateBillingSystem(user);
-
-            if (user.PaymentMethod == PaymentMethodEnum.TRANSF &&
-                (user.IdBillingCountry == (int)CountryEnum.Mexico || user.IdBillingCountry == (int)CountryEnum.Argentina))
-            {
-                int iva = (user.IdBillingCountry == (int)CountryEnum.Mexico) ? MexicoIva : ArgentinaIva;
-                buyCreditAgreement.BillingCredit.Taxes = Convert.ToDouble(agreementInformation.Total * iva / 100);
-            }
-
             var connection = _connectionFactory.GetConnection();
             var result = await connection.QueryFirstOrDefaultAsync<int>(@"
 INSERT INTO [dbo].[BillingCredits]
@@ -743,7 +674,7 @@ VALUES (
 SELECT CAST(SCOPE_IDENTITY() AS INT)",
             new
             {
-                @date = now,
+                @date = DateTime.UtcNow,
                 @idUser = buyCreditAgreement.IdUser,
                 @idPaymentMethod = buyCreditAgreement.IdPaymentMethod,
                 @planFee = buyCreditAgreement.BillingCredit.PlanFee,
@@ -760,9 +691,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @ccExpYear = buyCreditAgreement.CCExpYear,
                 @ccVerification = buyCreditAgreement.CCVerification,
                 @idCCType = buyCreditAgreement.IdCCType,
-                @idConsumerType = (buyCreditAgreement.IdPaymentMethod == (int)PaymentMethodEnum.MP && !buyCreditAgreement.IdConsumerType.HasValue) ?
-                    (int)ConsumerTypeEnum.CF :
-                    buyCreditAgreement.IdConsumerType,
+                @idConsumerType = buyCreditAgreement.IdConsumerType,
                 @razonSocial = buyCreditAgreement.RazonSocial,
                 @cuit = buyCreditAgreement.Cuit ?? buyCreditAgreement.Rfc,
                 @exclusiveMessage = buyCreditAgreement.ExclusiveMessage,
@@ -782,11 +711,9 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @bankAccount = buyCreditAgreement.BankAccount,
                 @idResponsabileBilling = buyCreditAgreement.IdResponsabileBilling,
                 @ccIdentificationType = buyCreditAgreement.CCIdentificationType,
-                @ccIdentificationNumber = currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ?
-                    CreditCardHelper.ObfuscateNumber(_encryptionService.DecryptAES256(buyCreditAgreement.CCNumber)) :
-                    null,
+                @ccIdentificationNumber = buyCreditAgreement.CCIdentificationNumber,
                 @responsableIVA = buyCreditAgreement.ResponsableIVA,
-                @idPromotion = promotion?.IdPromotion
+                @idPromotion = buyCreditAgreement.IdPromotion
             });
 
             return result;

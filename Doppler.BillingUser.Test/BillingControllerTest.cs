@@ -50,6 +50,14 @@ namespace Doppler.BillingUser.Test
                 Email = "test1@test.com"
             };
 
+            var currentPaymentMethod = new PaymentMethod
+            {
+                CCExpMonth = "1",
+                CCExpYear = "2022",
+                CCHolderFullName = "Test",
+                CCNumber = "411111111111"
+            };
+
             var templateId = "35ef4282-fd2b-45fa-8b9f-aec5082777d9";
             IEnumerable<string> to = new[] { user.Email };
 
@@ -75,14 +83,8 @@ namespace Doppler.BillingUser.Test
             var billingCreditId = 1;
 
             var billingRepositoryMock = new Mock<IBillingRepository>();
-            billingRepositoryMock
-                .Setup(x => x.CreateBillingCreditAsync(
-                    It.IsAny<AgreementInformation>(),
-                    It.IsAny<UserBillingInformation>(),
-                    It.IsAny<UserTypePlanInformation>(),
-                    It.IsAny<Promotion>()))
-                .ReturnsAsync(billingCreditId);
-
+            billingRepositoryMock.Setup(x => x.CreateBillingCreditAsync(It.IsAny<BillingCreditAgreement>())).ReturnsAsync(billingCreditId);
+            billingRepositoryMock.Setup(x => x.GetPaymentMethodByUserName(It.IsAny<string>())).ReturnsAsync(currentPaymentMethod);
             billingRepositoryMock
                 .Setup(x => x.ActivateStandBySubscribers(0))
                 .ReturnsAsync(100);
