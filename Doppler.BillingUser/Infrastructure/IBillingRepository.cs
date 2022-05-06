@@ -18,7 +18,6 @@ namespace Doppler.BillingUser.Infrastructure
 
         Task UpdateInvoiceRecipients(string accountName, string[] emailRecipients, int planId);
 
-        Task<int> CreateAccountingEntriesAsync(AgreementInformation agreementInformation, CreditCard encryptedCreditCard, int userId, UserTypePlanInformation newPlan, string authorizationNumber);
         Task<CurrentPlan> GetCurrentPlan(string accountName);
 
         Task<int> CreateBillingCreditAsync(AgreementInformation agreementInformation, UserBillingInformation user, UserTypePlanInformation newUserTypePlan, Promotion promotion);
@@ -34,5 +33,7 @@ namespace Doppler.BillingUser.Infrastructure
         Task<PlanDiscountInformation> GetPlanDiscountInformation(int discountId);
 
         Task SetEmptyPaymentMethod(int idUser);
+
+        Task<int> CreateAccountingEntriesAsync(AccountingEntry invoiceEntry, AccountingEntry paymentEntry);
     }
 }
