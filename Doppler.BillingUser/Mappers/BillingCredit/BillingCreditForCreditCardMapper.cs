@@ -56,6 +56,7 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
                 CreditsQty = newUserTypePlan.EmailQty ?? null,
                 ExtraEmailFee = newUserTypePlan.ExtraEmailCost ?? null,
                 ExtraCreditsPromotion = promotion?.ExtraCredits,
+                DiscountPlanFeePromotion = promotion?.DiscountPercentage
             };
 
             if (newUserTypePlan.IdUserType == UserTypeEnum.SUBSCRIBERS)
