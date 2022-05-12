@@ -17,5 +17,7 @@ namespace Doppler.BillingUser.Model
         public string CCIdentificationType { get; set; }
         public int? TotalMonthPlan { get; set; }
         public string Cuit { get; set; }
+        public int? DiscountPlanFeeAdmin { get; set; }
+        public int? DiscountPlanFeePromotion { get; set; }
     }
 }

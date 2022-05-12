@@ -21,5 +21,8 @@ namespace Doppler.BillingUser.Model
         public int CcExpYear { get; set; }
         public string CcHolderName { get; set; }
         public string PaymentEntryType { get; set; }
+        public int IdCurrencyType { get; set; }
+        public decimal? CurrencyRate { get; set; }
+        public decimal? Taxes { get; set; }
     }
 }

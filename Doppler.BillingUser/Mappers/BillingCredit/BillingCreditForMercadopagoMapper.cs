@@ -1,3 +1,4 @@
+using Doppler.BillingUser.Encryption;
 using Doppler.BillingUser.Enums;
 using Doppler.BillingUser.Infrastructure;
 using Doppler.BillingUser.Model;
@@ -7,16 +8,19 @@ using System.Threading.Tasks;
 
 namespace Doppler.BillingUser.Mappers.BillingCredit
 {
-    public class BillingCreditForTransferMapper : IBillingCreditMapper
+    public class BillingCreditForMercadopagoMapper : IBillingCreditMapper
     {
         private readonly IBillingRepository _billingRepository;
+        private readonly ICurrencyRepository _currencyRepository;
+        private readonly IEncryptionService _encryptionService;
 
-        private const int MexicoIva = 16;
-        private const int ArgentinaIva = 21;
+        private const int CF = 1;
 
-        public BillingCreditForTransferMapper(IBillingRepository billingRepository)
+        public BillingCreditForMercadopagoMapper(IBillingRepository billingRepository, ICurrencyRepository currencyRepository, IEncryptionService encryptionService)
         {
             _billingRepository = billingRepository;
+            _currencyRepository = currencyRepository;
+            _encryptionService = encryptionService;
         }
 
         public async Task<BillingCreditAgreement> MapToBillingCreditAgreement(AgreementInformation agreementInformation, UserBillingInformation user, UserTypePlanInformation newUserTypePlan, Promotion promotion, CreditCardPayment payment)
@@ -28,23 +32,18 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
                 IdUser = user.IdUser,
                 IdCountry = user.IdBillingCountry,
                 IdPaymentMethod = (int)user.PaymentMethod,
-                IdCCType = null,
-                CCExpMonth = null,
-                CCExpYear = null,
-                CCHolderFullName = null,
-                CCIdentificationType = null,
-                CCIdentificationNumber = null,
-                CCNumber = null,
-                CCVerification = null,
-                IdConsumerType = !string.IsNullOrEmpty(currentPaymentMethod.IdConsumerType) ? int.Parse(currentPaymentMethod.IdConsumerType) : null,
+                IdCCType = currentPaymentMethod.IdCCType,
+                CCExpMonth = short.Parse(currentPaymentMethod.CCExpMonth),
+                CCExpYear = short.Parse(currentPaymentMethod.CCExpYear),
+                CCHolderFullName = currentPaymentMethod.CCHolderFullName,
+                CCIdentificationType = currentPaymentMethod.CCType,
+                CCIdentificationNumber = CreditCardHelper.ObfuscateNumber(_encryptionService.DecryptAES256(currentPaymentMethod.CCNumber)),
+                CCNumber = currentPaymentMethod.CCNumber,
+                CCVerification = currentPaymentMethod.CCVerification,
+                IdConsumerType = CF,
                 RazonSocial = currentPaymentMethod.RazonSocial,
                 ResponsableIVA = user.ResponsableIVA,
                 Cuit = currentPaymentMethod.IdentificationNumber,
-                CFDIUse = user.CFDIUse,
-                PaymentWay = user.PaymentWay,
-                PaymentType = user.PaymentType,
-                BankName = user.BankName,
-                BankAccount = user.BankAccount,
                 IdPromotion = promotion?.IdPromotion
             };
 
@@ -80,28 +79,24 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
                 buyCreditAgreement.BillingCredit.SubscribersQty = newUserTypePlan.SubscribersQty;
             }
 
-            //Calculate the BillingSystem
-            buyCreditAgreement.IdResponsabileBilling = CalculateBillingSystemByTransfer(user.IdBillingCountry);
-
-            if (user.PaymentMethod == PaymentMethodEnum.TRANSF &&
-                (user.IdBillingCountry == (int)CountryEnum.Mexico || user.IdBillingCountry == (int)CountryEnum.Argentina))
+            if (agreementInformation.Total != 0)
             {
-                int iva = (user.IdBillingCountry == (int)CountryEnum.Mexico) ? MexicoIva : ArgentinaIva;
-                buyCreditAgreement.BillingCredit.Taxes = Convert.ToDouble(agreementInformation.Total * iva / 100);
+                var rate = await _currencyRepository.GetCurrencyRateAsync((int)CurrencyTypeEnum.UsS, (int)CurrencyTypeEnum.sARG, DateTime.UtcNow);
+                var amount = await _currencyRepository.ConvertCurrencyAsync((int)CurrencyTypeEnum.UsS, (int)CurrencyTypeEnum.sARG, agreementInformation.Total.Value, DateTime.UtcNow, rate);
+                var taxes = CalculateInvoiceTaxes(amount);
+                buyCreditAgreement.BillingCredit.Taxes = (double)await _currencyRepository.ConvertCurrencyAsync((int)CurrencyTypeEnum.sARG, (int)CurrencyTypeEnum.UsS, taxes, DateTime.UtcNow, (1 / rate));
             }
+
+
+            buyCreditAgreement.IdResponsabileBilling = (int)ResponsabileBillingEnum.Mercadopago;
 
             return buyCreditAgreement;
         }
 
-        private int CalculateBillingSystemByTransfer(int idBillingCountry)
+        private static decimal CalculateInvoiceTaxes(decimal amount)
         {
-            return idBillingCountry switch
-            {
-                (int)CountryEnum.Colombia => (int)ResponsabileBillingEnum.BorisMarketing,
-                (int)CountryEnum.Mexico => (int)ResponsabileBillingEnum.RC,
-                (int)CountryEnum.Argentina => (int)ResponsabileBillingEnum.GBBISIDE,
-                _ => (int)ResponsabileBillingEnum.GBBISIDE,
-            };
+            decimal coefficient = 0.21m;
+            return amount * coefficient;
         }
     }
 }

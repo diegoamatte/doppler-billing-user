@@ -2,6 +2,7 @@ using Doppler.BillingUser.ExternalServices.FirstData;
 using Doppler.BillingUser.Model;
 using Doppler.BillingUser.Utils;
 using System;
+using System.Threading.Tasks;
 
 namespace Doppler.BillingUser.Mappers
 {
@@ -15,9 +16,9 @@ namespace Doppler.BillingUser.Mappers
         private const string AccountEntryTypePayment = "P";
         private const string PaymentEntryTypePayment = "P";
 
-        public AccountingEntry MapToInvoiceAccountingEntry(decimal total, UserBillingInformation user, CreditCard encryptedCreditCard, UserTypePlanInformation newPlan, CreditCardPayment payment)
+        public Task<AccountingEntry> MapToInvoiceAccountingEntry(decimal total, UserBillingInformation user, UserTypePlanInformation newPlan, CreditCardPayment payment)
         {
-            return new AccountingEntry
+            return Task.FromResult(new AccountingEntry
             {
                 IdClient = user.IdUser,
                 Amount = total,
@@ -30,28 +31,28 @@ namespace Doppler.BillingUser.Mappers
                 IdInvoiceBillingType = InvoiceBillingTypeQBL,
                 AuthorizationNumber = payment.AuthorizationNumber,
                 AccountEntryType = AccountEntryTypeInvoice
-            };
+            });
         }
 
-        public AccountingEntry MapToPaymentAccountingEntry(decimal total, UserBillingInformation user, CreditCard encryptedCreditCard, UserTypePlanInformation newPlan, CreditCardPayment payment)
+        public Task<AccountingEntry> MapToPaymentAccountingEntry(AccountingEntry invoiceEntry, CreditCard encryptedCreditCard)
         {
-            return new AccountingEntry
+            return Task.FromResult(new AccountingEntry
             {
-                IdClient = user.IdUser,
-                Amount = total,
+                IdClient = invoiceEntry.IdClient,
+                Amount = invoiceEntry.Amount,
                 CcCNumber = encryptedCreditCard.Number,
                 CcExpMonth = encryptedCreditCard.ExpirationMonth,
                 CcExpYear = encryptedCreditCard.ExpirationYear,
                 CcHolderName = encryptedCreditCard.HolderName,
                 Date = DateTime.UtcNow,
-                Source = SourceTypeHelper.SourceTypeEnumMapper(newPlan),
+                Source = invoiceEntry.Source,
                 AccountingTypeDescription = AccountingEntryTypeDescriptionCCPayment,
                 IdAccountType = UserAccountType,
                 IdInvoiceBillingType = InvoiceBillingTypeQBL,
                 AccountEntryType = AccountEntryTypePayment,
-                AuthorizationNumber = payment.AuthorizationNumber,
+                AuthorizationNumber = invoiceEntry.AuthorizationNumber,
                 PaymentEntryType = PaymentEntryTypePayment
-            };
+            });
         }
     }
 }
