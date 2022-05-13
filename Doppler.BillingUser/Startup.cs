@@ -20,6 +20,7 @@ using Doppler.BillingUser.ExternalServices.Slack;
 using Flurl.Http.Configuration;
 using Doppler.BillingUser.ExternalServices.Zoho;
 using Doppler.BillingUser.Services;
+using Doppler.BillingUser.ExternalServices.Mercadopago;
 
 namespace Doppler.BillingUser
 {
@@ -102,6 +103,8 @@ namespace Doppler.BillingUser
             services.AddScoped<IZohoService, ZohoService>();
             services.AddScoped<IEmailTemplatesService, EmailTemplatesService>();
             services.AddScoped<ICurrencyRepository, CurrencyRepository>();
+            services.AddScoped<IMercadopagoService, MercadopagoService>();
+            services.Configure<MercadopagoSettings>(Configuration.GetSection(nameof(MercadopagoSettings)));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -1,5 +1,4 @@
 using Doppler.BillingUser.Enums;
-using Doppler.BillingUser.ExternalServices.FirstData;
 using Doppler.BillingUser.Infrastructure;
 using Doppler.BillingUser.Model;
 using Doppler.BillingUser.Utils;
@@ -15,7 +14,7 @@ namespace Doppler.BillingUser.Mappers
         private const string AccountingEntryTypeDescriptionInvoice = "Invoice";
         private const int UserAccountType = 1;
         private const string AccountEntryTypeInvoice = "I";
-        private const string AccountingEntryTypeDescriptionMpPayment = "CC Payment";
+        private const string AccountingEntryTypeDescriptionMpPayment = "MP Payment";
         private const string AccountEntryTypePayment = "P";
         private const string PaymentEntryTypePayment = "P";
 
