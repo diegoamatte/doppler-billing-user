@@ -388,7 +388,7 @@ namespace Doppler.BillingUser.Controllers
 
                 if (agreementInformation.Total.GetValueOrDefault() > 0 &&
                     ((user.PaymentMethod == PaymentMethodEnum.CC) ||
-                    (user.PaymentMethod == PaymentMethodEnum.MP) ||
+                    (user.PaymentMethod == PaymentMethodEnum.MP && payment.Status == PaymentStatusEnum.Approved) ||
                     (user.PaymentMethod == PaymentMethodEnum.TRANSF && user.IdBillingCountry == (int)CountryEnum.Argentina)))
                 {
                     var billingCredit = await _billingRepository.GetBillingCredit(billingCreditId);
