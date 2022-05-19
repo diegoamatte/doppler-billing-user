@@ -59,8 +59,12 @@ FROM
     [dbo].[UserTypesPlans] UTP
     ON
     BC.IdUserTypePlan = UTP.IdUserTypePlan
+INNER JOIN
+    [dbo].[User] U
+    ON
+    U.[IdUser] = BC.[IdUser]
 WHERE
-    BC.[IdUser] = @idUser
+    BC.[IdUser] = @idUser AND U.UpgradePending IS NOT NULL
 ORDER BY
     BC.[Date] DESC;",
                 new
