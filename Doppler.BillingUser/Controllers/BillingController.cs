@@ -203,20 +203,30 @@ namespace Doppler.BillingUser.Controllers
         [HttpPut("/accounts/{accountname}/payment-methods/current")]
         public async Task<IActionResult> UpdateCurrentPaymentMethod(string accountname, [FromBody] PaymentMethod paymentMethod)
         {
-            _logger.LogDebug("Update current payment method.");
-
-            User userInformation = await _userRepository.GetUserInformation(accountname);
-            var isSuccess = await _billingRepository.UpdateCurrentPaymentMethod(userInformation, paymentMethod);
-
-            if (!isSuccess)
+            try
             {
-                var messageError = $"Failed at updating payment method for user {accountname}";
-                _logger.LogError(messageError);
-                await _slackService.SendNotification(messageError);
-                return new BadRequestObjectResult("Failed at updating payment");
-            }
+                _logger.LogDebug("Update current payment method.");
 
-            return new OkObjectResult("Successfully");
+                User userInformation = await _userRepository.GetUserInformation(accountname);
+                var isSuccess = await _billingRepository.UpdateCurrentPaymentMethod(userInformation, paymentMethod);
+
+                if (!isSuccess)
+                {
+                    var messageError = $"Failed at updating payment method for user {accountname}";
+                    _logger.LogError(messageError);
+                    await _slackService.SendNotification(messageError);
+                    return new BadRequestObjectResult("Failed at updating payment");
+                }
+
+                return new OkObjectResult("Successfully");
+            }
+            catch (DopplerApplicationException e)
+            {
+                var messageError = $"Failed at updating payment method for user {accountname} with exception {e.Message}";
+                _logger.LogError(e, messageError);
+                await _slackService.SendNotification(messageError);
+                return new BadRequestObjectResult(e.Message);
+            }
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
