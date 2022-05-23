@@ -808,6 +808,37 @@ WHERE
             return billingCredit;
         }
 
+        public async Task<AccountingEntry> GetInvoice(int idClient, string authorizationNumber)
+        {
+            var connection = _connectionFactory.GetConnection();
+            var invoice = await connection.QueryFirstOrDefaultAsync<AccountingEntry>(@"
+SELECT
+    AE.[Date],
+    AE.[Amount],
+    AE.[Status],
+    AE.[Source],
+    AE.[AuthorizationNumber],
+    AE.[InvoiceNumber],
+    AE.[AccountEntryType],
+    AE.[AccountingTypeDescription],
+    AE.[IdClient],
+    AE.[IdAccountType],
+    AE.[IdInvoiceBillingType],
+    AE.[IdCurrencyType],
+    AE.[CurrencyRate],
+    AE.[Taxes]
+FROM
+    [dbo].[AccountingEntry] AE
+WHERE
+    idClient = @idClient AND authorizationNumber = @authorizationNumber",
+                new
+                {
+                    @idClient = idClient,
+                    @authorizationNumber = authorizationNumber
+                });
+            return invoice;
+        }
+
         public async Task<PlanDiscountInformation> GetPlanDiscountInformation(int discountId)
         {
             using var connection = _connectionFactory.GetConnection();
