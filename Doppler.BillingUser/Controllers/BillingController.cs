@@ -490,6 +490,20 @@ namespace Doppler.BillingUser.Controllers
             }
         }
 
+        [Authorize(Policies.ONLY_SUPERUSER)]
+        [HttpPut("/accounts/{accountname}/purchase-intention")]
+        public async Task<IActionResult> UpdateLastPurchaseIntentionDate(string accountname)
+        {
+            var result = await _userRepository.UpdateUserPurchaseIntentionDate(accountname);
+
+            if (result.Equals(0))
+            {
+                return new BadRequestObjectResult("Failed updating purchase intention. Invalid account.");
+            }
+
+            return new OkObjectResult("Successfully");
+        }
+
         private async void SendNotifications(string accountname, UserTypePlanInformation newPlan, UserBillingInformation user, int partialBalance, Promotion promotion, string promocode, int discountId, CreditCardPayment payment)
         {
             User userInformation = await _userRepository.GetUserInformation(accountname);
