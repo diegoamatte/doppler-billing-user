@@ -490,7 +490,7 @@ namespace Doppler.BillingUser.Controllers
             }
         }
 
-        [Authorize(Policies.ONLY_SUPERUSER)]
+        [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
         [HttpPut("/accounts/{accountname}/purchase-intention")]
         public async Task<IActionResult> UpdateLastPurchaseIntentionDate(string accountname)
         {
