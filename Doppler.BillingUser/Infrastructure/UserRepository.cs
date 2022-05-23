@@ -216,5 +216,24 @@ WHERE
 
             return user;
         }
+
+        public async Task<int> UpdateUserPurchaseIntentionDate(string accountName)
+        {
+            var connection = _connectionFactory.GetConnection();
+            var result = await connection.ExecuteAsync(@"
+UPDATE
+    [dbo].[User]
+SET
+    LastPurchaseIntentionDate = @date
+WHERE
+    Email = @accountName;",
+            new
+            {
+                accountName,
+                @date = DateTime.UtcNow
+            });
+
+            return result;
+        }
     }
 }
