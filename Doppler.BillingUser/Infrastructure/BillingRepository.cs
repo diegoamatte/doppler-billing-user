@@ -962,6 +962,23 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
             return invoiceId;
         }
 
+        public async Task UpdateInvoiceStatus(int id, string status)
+        {
+            var connection = _connectionFactory.GetConnection();
+            await connection.ExecuteAsync(@"
+UPDATE
+    [dbo].[AccountingEntry]
+SET
+    Status = @Status
+WHERE
+    IdAccountingEntry = @Id;",
+            new
+            {
+                @Id = id,
+                @Status = status,
+            });
+        }
+
         private int CalculateBillingSystemByTransfer(int idBillingCountry)
         {
             return idBillingCountry switch
