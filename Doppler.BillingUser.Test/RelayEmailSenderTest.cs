@@ -18,7 +18,7 @@ namespace Doppler.BillingUser.Test
         public async Task SendWithTemplateAsync()
         {
             // Arrange
-            var apiKey = It.IsAny<string>();
+            var apiKey = "apiKey";
             var relayAccountId = It.IsAny<int>();
             var relayAccountName = It.IsAny<string>();
             var relayUserEmail = "salesrelay@dopplerrelay.com";
