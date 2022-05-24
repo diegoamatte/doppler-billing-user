@@ -37,5 +37,7 @@ namespace Doppler.BillingUser.Infrastructure
         Task<int> CreateAccountingEntriesAsync(AccountingEntry invoiceEntry, AccountingEntry paymentEntry);
 
         Task<PaymentMethod> GetPaymentMethodByUserName(string username);
+
+        Task UpdateInvoiceStatus(int id, string status);
     }
 }
