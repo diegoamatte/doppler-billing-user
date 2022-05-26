@@ -962,6 +962,65 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
             return invoiceId;
         }
 
+        public async Task<int> CreatePaymentEntryAsync(int invoiceId, AccountingEntry paymentEntry)
+        {
+            var connection = _connectionFactory.GetConnection();
+            var IdAccountingEntry = await connection.QueryFirstOrDefaultAsync<int>(@"
+INSERT INTO [dbo].[AccountingEntry]
+    ([IdClient],
+    [IdInvoice],
+    [Amount],
+    [CCNumber],
+    [CCExpMonth],
+    [CCExpYear],
+    [CCHolderName],
+    [Date],
+    [Source],
+    [AccountingTypeDescription],
+    [IdAccountType],
+    [IdInvoiceBillingType],
+    [AccountEntryType],
+    [AuthorizationNumber],
+    [PaymentEntryType])
+VALUES
+    (@idClient,
+    @idInvoice,
+    @amount,
+    @ccCNumber,
+    @ccExpMonth,
+    @ccExpYear,
+    @ccHolderName,
+    @date,
+    @source,
+    @accountingTypeDescription,
+    @idAccountType,
+    @idInvoiceBillingType,
+    @accountEntryType,
+    @authorizationNumber,
+    @paymentEntryType);
+SELECT CAST(SCOPE_IDENTITY() AS INT)",
+            new
+            {
+                @idClient = paymentEntry.IdClient,
+                @idInvoice = invoiceId,
+                @amount = paymentEntry.Amount,
+                @ccCNumber = paymentEntry.CcCNumber,
+                @ccExpMonth = paymentEntry.CcExpMonth,
+                @ccExpYear = paymentEntry.CcExpYear,
+                @ccHolderName = paymentEntry.CcHolderName,
+                @date = paymentEntry.Date,
+                @source = paymentEntry.Source,
+                @accountingTypeDescription = paymentEntry.AccountingTypeDescription,
+                @idAccountType = paymentEntry.IdAccountType,
+                @idInvoiceBillingType = paymentEntry.IdInvoiceBillingType,
+                @accountEntryType = paymentEntry.AccountEntryType,
+                @authorizationNumber = paymentEntry.AuthorizationNumber,
+                @paymentEntryType = paymentEntry.PaymentEntryType
+            });
+
+            return IdAccountingEntry;
+        }
+
         public async Task UpdateInvoiceStatus(int id, string status)
         {
             var connection = _connectionFactory.GetConnection();
