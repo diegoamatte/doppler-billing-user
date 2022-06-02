@@ -921,7 +921,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @idClient = invoiceEntry.IdClient,
                 @amount = invoiceEntry.Amount,
                 @date = invoiceEntry.Date,
-                @status = invoiceEntry.Status,
+                @status = invoiceEntry.Status.ToString(),
                 @source = invoiceEntry.Source,
                 @accountingTypeDescription = invoiceEntry.AccountingTypeDescription,
                 @invoiceNumber = 0,
@@ -1052,7 +1052,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
             return IdAccountingEntry;
         }
 
-        public async Task UpdateInvoiceStatus(int id, string status)
+        public async Task UpdateInvoiceStatus(int id, PaymentStatusEnum status)
         {
             var connection = _connectionFactory.GetConnection();
             await connection.ExecuteAsync(@"
@@ -1065,7 +1065,7 @@ WHERE
             new
             {
                 @Id = id,
-                @Status = status,
+                @Status = status.ToString(),
             });
         }
 
