@@ -124,7 +124,7 @@ WHERE
 
         public async Task<int> UpdateUserBillingCredit(UserBillingInformation user)
         {
-            var connection = _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
             var result = await connection.ExecuteAsync(@"
 UPDATE
     [dbo].[User]
@@ -219,7 +219,7 @@ WHERE
 
         public async Task<int> UpdateUserPurchaseIntentionDate(string accountName)
         {
-            var connection = _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
             var result = await connection.ExecuteAsync(@"
 UPDATE
     [dbo].[User]

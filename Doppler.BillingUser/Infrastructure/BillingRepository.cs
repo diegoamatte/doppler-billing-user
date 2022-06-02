@@ -49,9 +49,9 @@ namespace Doppler.BillingUser.Infrastructure
         }
         public async Task<BillingInformation> GetBillingInformation(string email)
         {
-            using (IDbConnection connection = _connectionFactory.GetConnection())
-            {
-                var results = await connection.QueryAsync<BillingInformation>(@"
+            using var connection = _connectionFactory.GetConnection();
+
+            var results = await connection.QueryAsync<BillingInformation>(@"
 SELECT
     U.BillingFirstName AS Firstname,
     U.BillingLastName AS Lastname,
@@ -67,9 +67,8 @@ FROM
     LEFT JOIN [Country] CO ON S.IdCountry = CO.IdCountry
 WHERE
     U.Email = @email",
-                    new { email });
-                return results.FirstOrDefault();
-            }
+                new { email });
+            return results.FirstOrDefault();
         }
 
         public async Task UpdateBillingInformation(string accountName, BillingInformation billingInformation)
@@ -587,7 +586,7 @@ WHERE
 
         public async Task<int> CreateBillingCreditAsync(BillingCreditAgreement buyCreditAgreement)
         {
-            var connection = _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
             var result = await connection.QueryFirstOrDefaultAsync<int>(@"
 INSERT INTO [dbo].[BillingCredits]
     ([Date],
@@ -738,7 +737,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 conceptEnglish = "Monthly Emails Accreditation: " + date.ToString("MMMM", CultureInfo.CreateSpecificCulture("en"));
             }
 
-            var connection = _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
             var result = await connection.QueryAsync<int>(@"
 INSERT INTO [dbo].[MovementsCredits]
     ([IdUser],
@@ -810,7 +809,7 @@ WHERE
 
         public async Task<AccountingEntry> GetInvoice(int idClient, string authorizationNumber)
         {
-            var connection = _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
             var invoice = await connection.QueryFirstOrDefaultAsync<AccountingEntry>(@"
 SELECT
     AE.[Date],
@@ -882,7 +881,7 @@ WHERE
 
         public async Task<int> CreateAccountingEntriesAsync(AccountingEntry invoiceEntry, AccountingEntry paymentEntry)
         {
-            var connection = _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
             var invoiceId = await connection.QueryFirstOrDefaultAsync<int>(@"
 INSERT INTO [dbo].[AccountingEntry]
     ([Date],
@@ -995,7 +994,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
 
         public async Task<int> CreatePaymentEntryAsync(int invoiceId, AccountingEntry paymentEntry)
         {
-            var connection = _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
             var IdAccountingEntry = await connection.QueryFirstOrDefaultAsync<int>(@"
 INSERT INTO [dbo].[AccountingEntry]
     ([IdClient],
@@ -1054,7 +1053,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
 
         public async Task UpdateInvoiceStatus(int id, PaymentStatusEnum status)
         {
-            var connection = _connectionFactory.GetConnection();
+            using var connection = _connectionFactory.GetConnection();
             await connection.ExecuteAsync(@"
 UPDATE
     [dbo].[AccountingEntry]
