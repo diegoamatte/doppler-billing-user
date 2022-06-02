@@ -28,7 +28,6 @@ namespace Doppler.BillingUser.Mappers
         {
             decimal rate = 1;
             decimal invoiceTaxes = 0;
-            string status = payment.Status.ToString();
 
             if (total != 0)
             {
@@ -39,7 +38,7 @@ namespace Doppler.BillingUser.Mappers
             }
             else
             {
-                status = PaymentStatusEnum.Approved.ToString();
+                payment.Status = PaymentStatusEnum.Approved;
             }
 
             return new AccountingEntry
@@ -50,7 +49,7 @@ namespace Doppler.BillingUser.Mappers
                 Taxes = invoiceTaxes,
                 Amount = total,
                 Date = DateTime.UtcNow,
-                Status = status,
+                Status = payment.Status,
                 Source = SourceTypeHelper.SourceTypeEnumMapper(newPlan),
                 AccountingTypeDescription = AccountingEntryTypeDescriptionInvoice,
                 InvoiceNumber = 0,
