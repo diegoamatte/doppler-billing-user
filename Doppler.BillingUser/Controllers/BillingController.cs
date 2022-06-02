@@ -495,7 +495,8 @@ namespace Doppler.BillingUser.Controllers
                 await _slackService.SendNotification(messageError);
                 return new ObjectResult("Failed at creating new agreement")
                 {
-                    StatusCode = 500
+                    StatusCode = 500,
+                    Value = e.Message,
                 };
             }
         }
