@@ -24,9 +24,9 @@ namespace Doppler.BillingUser.Test
             var relayUserEmail = "salesrelay@dopplerrelay.com";
             var templateId = It.IsAny<string>();
             var demoData = It.IsAny<string>();
-            var toEmail = "email@gmail.com";
-            var replyToAddress = "email@gmail.com";
-            var bccEmail = "copy@copy.com";
+            var toEmail = "email@example.com";
+            var replyToAddress = "email@example.com";
+            var bccEmail = "copy@example.com";
             var expectedUrl = $"https://api.dopplerrelay.com/accounts/{relayAccountId}/templates/{templateId}/message";
 
             var configuration = new RelayEmailSenderSettings()
