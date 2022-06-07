@@ -32,7 +32,7 @@ namespace Doppler.BillingUser.Test
             httpTest.RespondWithJson(new MercadoPagoPayment
             {
                 Id = 1,
-                Status = "approved",
+                Status = Enums.MercadoPagoPaymentStatusEnum.Approved,
                 StatusDetail = "Accredited",
             });
 

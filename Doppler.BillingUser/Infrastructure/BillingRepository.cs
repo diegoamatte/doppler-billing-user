@@ -812,6 +812,7 @@ WHERE
             using var connection = _connectionFactory.GetConnection();
             var invoice = await connection.QueryFirstOrDefaultAsync<AccountingEntry>(@"
 SELECT
+    AE.[IdAccountingEntry],
     AE.[Date],
     AE.[Amount],
     AE.[Status],
