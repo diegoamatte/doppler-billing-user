@@ -311,14 +311,15 @@ namespace Doppler.BillingUser.Controllers
                     return new BadRequestObjectResult("Invalid selected plan type");
                 }
 
-                var isValidTotal = await _accountPlansService.IsValidTotal(accountname, agreementInformation);
-                if (!isValidTotal)
-                {
-                    var messageError = $"Failed at creating new agreement for user {accountname}, Total of agreement is not valid";
-                    _logger.LogError(messageError);
-                    await _slackService.SendNotification(messageError);
-                    return new BadRequestObjectResult("Total of agreement is not valid");
-                }
+                //TODO: Check the current error
+                //var isValidTotal = await _accountPlansService.IsValidTotal(accountname, agreementInformation);
+                //if (!isValidTotal)
+                //{
+                //    var messageError = $"Failed at creating new agreement for user {accountname}, Total of agreement is not valid";
+                //    _logger.LogError(messageError);
+                //    await _slackService.SendNotification(messageError);
+                //    return new BadRequestObjectResult("Total of agreement is not valid");
+                //}
 
                 Promotion promotion = null;
                 if (!string.IsNullOrEmpty(agreementInformation.Promocode))
