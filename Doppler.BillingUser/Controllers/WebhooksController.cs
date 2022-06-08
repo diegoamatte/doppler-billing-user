@@ -3,6 +3,7 @@ using Doppler.BillingUser.ExternalServices.MercadoPagoApi;
 using Doppler.BillingUser.Infrastructure;
 using Doppler.BillingUser.Mappers;
 using Doppler.BillingUser.Mappers.PaymentStatus;
+using Doppler.BillingUser.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
@@ -18,6 +19,7 @@ namespace Doppler.BillingUser.Controllers
         private readonly IUserRepository _userRepository;
         private readonly IMercadoPagoService _mercadoPagoService;
         private readonly IPaymentStatusMapper _paymentStatusMapper;
+        private readonly IEmailTemplatesService _emailTemplatesService;
         private readonly string PAYMENT_UPDATED = "payment.updated";
 
         public WebhooksController(
@@ -26,7 +28,8 @@ namespace Doppler.BillingUser.Controllers
             IBillingRepository billingRepository,
             IUserRepository userRepository,
             IMercadoPagoService mercadoPagoService,
-            IPaymentStatusMapper paymentStatusMapper)
+            IPaymentStatusMapper paymentStatusMapper,
+            IEmailTemplatesService emailTemplatesService)
         {
             _billingRepository = billingRepository;
             _currencyRepository = currencyRepository;
@@ -34,6 +37,7 @@ namespace Doppler.BillingUser.Controllers
             _userRepository = userRepository;
             _mercadoPagoService = mercadoPagoService;
             _paymentStatusMapper = paymentStatusMapper;
+            _emailTemplatesService = emailTemplatesService;
         }
 
         [HttpPost("/accounts/{accountname}/integration/mercadopagonotification")]
@@ -83,11 +87,12 @@ namespace Doppler.BillingUser.Controllers
                 var paymentEntry = await accountingEntryMapper.MapToPaymentAccountingEntry(invoice, encryptedCreditCard);
                 await _billingRepository.UpdateInvoiceStatus(invoice.IdAccountingEntry, PaymentStatusEnum.Approved);
                 await _billingRepository.CreatePaymentEntryAsync(invoice.IdAccountingEntry, paymentEntry);
+
+                await _emailTemplatesService.SendNotificationForMercadoPagoPaymentApproved(user.IdUser, user.Email);
             }
 
             return new OkObjectResult("Successful");
         }
 
-        // TODO: Send emails
     }
 }
