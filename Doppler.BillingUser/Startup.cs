@@ -21,6 +21,7 @@ using Flurl.Http.Configuration;
 using Doppler.BillingUser.ExternalServices.Zoho;
 using Doppler.BillingUser.Services;
 using Doppler.BillingUser.ExternalServices.MercadoPagoApi;
+using Doppler.BillingUser.Mappers.PaymentStatus;
 
 namespace Doppler.BillingUser
 {
@@ -105,6 +106,7 @@ namespace Doppler.BillingUser
             services.AddScoped<ICurrencyRepository, CurrencyRepository>();
             services.Configure<MercadoPagoSettings>(Configuration.GetSection(nameof(MercadoPagoSettings)));
             services.AddScoped<IMercadoPagoService, MercadoPagoService>();
+            services.AddScoped<IPaymentStatusMapper, PaymentStatusMapper>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
