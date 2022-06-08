@@ -53,7 +53,7 @@ namespace Doppler.BillingUser.Controllers
             var invoice = await _billingRepository.GetInvoice(user.IdUser, notification.Data.Id.ToString());
             if (invoice is null)
             {
-                _logger.LogError("Invoice with authorization number: {0} was not found.", notification.Data.Id);
+                _logger.LogError("Invoice with authorization number: {authorizationNumber} was not found.", notification.Data.Id);
                 return new NotFoundObjectResult("Invoice not found");
             }
 
@@ -69,7 +69,7 @@ namespace Doppler.BillingUser.Controllers
             {
                 if (invoice.Status == PaymentStatusEnum.Approved)
                 {
-                    _logger.LogError($"The payment associated to the invoiceId {invoice.IdAccountingEntry} was rejected. Reason: {payment.StatusDetail}");
+                    _logger.LogError("The payment associated to the invoiceId {invoiceId} was rejected. Reason: {reason}", invoice.IdAccountingEntry, payment.StatusDetail);
                 }
 
                 await _billingRepository.UpdateInvoiceStatus(invoice.IdAccountingEntry, status);
@@ -84,8 +84,10 @@ namespace Doppler.BillingUser.Controllers
                 await _billingRepository.UpdateInvoiceStatus(invoice.IdAccountingEntry, PaymentStatusEnum.Approved);
                 await _billingRepository.CreatePaymentEntryAsync(invoice.IdAccountingEntry, paymentEntry);
             }
+
             return new OkObjectResult("Successful");
         }
+
         // TODO: Send emails
     }
 }
