@@ -234,7 +234,7 @@ namespace Doppler.BillingUser.Services
                         bankMessage,
                         year = DateTime.UtcNow.Year
                     },
-                    to: new[] { _emailSettings.Value.CommercialEmail });
+                    to: new[] { _emailSettings.Value.CommercialEmail, _emailSettings.Value.BillingEmail });
         }
     }
 }
