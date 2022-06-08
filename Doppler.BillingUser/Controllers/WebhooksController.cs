@@ -84,8 +84,10 @@ namespace Doppler.BillingUser.Controllers
                 await _billingRepository.UpdateInvoiceStatus(invoice.IdAccountingEntry, PaymentStatusEnum.Approved);
                 await _billingRepository.CreatePaymentEntryAsync(invoice.IdAccountingEntry, paymentEntry);
             }
+
             return new OkObjectResult("Successful");
         }
+
         // TODO: Send emails
     }
 }
