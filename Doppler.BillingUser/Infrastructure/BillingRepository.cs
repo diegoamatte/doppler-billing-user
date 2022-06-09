@@ -952,7 +952,10 @@ INSERT INTO [dbo].[AccountingEntry]
     [IdInvoiceBillingType],
     [AccountEntryType],
     [AuthorizationNumber],
-    [PaymentEntryType])
+    [PaymentEntryType],
+    [IdCurrencyType],
+    [CurrencyRate],
+    [Taxes])
 VALUES
     (@idClient,
     @idInvoice,
@@ -968,7 +971,10 @@ VALUES
     @idInvoiceBillingType,
     @accountEntryType,
     @authorizationNumber,
-    @paymentEntryType);
+    @paymentEntryType
+    @idCurrencyType,
+    @currencyRate,
+    @taxes);
 SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 new
                 {
@@ -986,7 +992,10 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                     @idInvoiceBillingType = paymentEntry.IdInvoiceBillingType,
                     @accountEntryType = paymentEntry.AccountEntryType,
                     @authorizationNumber = paymentEntry.AuthorizationNumber,
-                    @paymentEntryType = paymentEntry.PaymentEntryType
+                    @paymentEntryType = paymentEntry.PaymentEntryType,
+                    @idCurrencyType = paymentEntry.IdCurrencyType,
+                    @currencyRate = paymentEntry.CurrencyRate,
+                    @taxes = paymentEntry.Taxes
                 });
             }
 
@@ -1012,7 +1021,10 @@ INSERT INTO [dbo].[AccountingEntry]
     [IdInvoiceBillingType],
     [AccountEntryType],
     [AuthorizationNumber],
-    [PaymentEntryType])
+    [PaymentEntryType],
+    [IdCurrencyType],
+    [CurrencyRate],
+    [Taxes])
 VALUES
     (@idClient,
     @idInvoice,
@@ -1028,7 +1040,10 @@ VALUES
     @idInvoiceBillingType,
     @accountEntryType,
     @authorizationNumber,
-    @paymentEntryType);
+    @paymentEntryType,
+    @idCurrencyType,
+    @currencyRate,
+    @taxes);
 SELECT CAST(SCOPE_IDENTITY() AS INT)",
             new
             {
@@ -1046,7 +1061,10 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @idInvoiceBillingType = paymentEntry.IdInvoiceBillingType,
                 @accountEntryType = paymentEntry.AccountEntryType,
                 @authorizationNumber = paymentEntry.AuthorizationNumber,
-                @paymentEntryType = paymentEntry.PaymentEntryType
+                @paymentEntryType = paymentEntry.PaymentEntryType,
+                @idCurrencyType = paymentEntry.IdCurrencyType,
+                @currencyRate = paymentEntry.CurrencyRate,
+                @taxes = paymentEntry.Taxes
             });
 
             return IdAccountingEntry;
