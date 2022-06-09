@@ -971,7 +971,7 @@ VALUES
     @idInvoiceBillingType,
     @accountEntryType,
     @authorizationNumber,
-    @paymentEntryType
+    @paymentEntryType,
     @idCurrencyType,
     @currencyRate,
     @taxes);
