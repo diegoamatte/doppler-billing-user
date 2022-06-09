@@ -10,5 +10,6 @@ namespace Doppler.BillingUser.Services
         Task SendNotificationForUpgradePlan(string accountname, User userInformation, UserTypePlanInformation newPlan, UserBillingInformation user, Promotion promotion, string promocode, int discountId, PlanDiscountInformation planDiscountInformation, bool isUpgradePending);
         Task SendNotificationForCredits(string accountname, User userInformation, UserTypePlanInformation newPlan, UserBillingInformation user, int partialBalance, Promotion promotion, string promocode, bool isUpgradePending);
         Task SendNotificationForFailedCreditCardTransaction(int userId, string errorCode, string errorMessage, string transactionCTR, string bankMessage);
+        Task SendNotificationForMercadoPagoPaymentApproved(int userId, string accountname);
     }
 }
