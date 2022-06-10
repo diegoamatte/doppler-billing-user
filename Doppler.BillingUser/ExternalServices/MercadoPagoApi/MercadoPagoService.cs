@@ -67,7 +67,7 @@ namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
                 if (payment.Status is MercadoPagoPaymentStatusEnum.Rejected or
                     MercadoPagoPaymentStatusEnum.Cancelled or
                     MercadoPagoPaymentStatusEnum.Refunded or
-                    MercadoPagoPaymentStatusEnum.ChargedBack)
+                    MercadoPagoPaymentStatusEnum.Charged_Back)
                 {
                     var errorCode = PaymentErrorCode.DeclinedPaymentTransaction;
                     var errorMessage = payment.StatusDetail;

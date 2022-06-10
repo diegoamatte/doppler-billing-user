@@ -20,12 +20,12 @@ namespace Doppler.BillingUser.Enums
         /// <summary>
         /// Payment is being reviewed.
         /// </summary>
-        InProcess,
+        In_Process,
 
         /// <summary>
         /// Users have initiated a dispute.
         /// </summary>
-        InMediation,
+        In_Mediation,
 
         /// <summary>
         /// Payment was rejected. The user may retry payment.
@@ -46,6 +46,6 @@ namespace Doppler.BillingUser.Enums
         /// <summary>
         /// Was made a chargeback in the buyer’s credit card.
         /// </summary>
-        ChargedBack
+        Charged_Back
     }
 }
