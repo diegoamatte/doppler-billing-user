@@ -3,6 +3,7 @@ using Doppler.BillingUser.Encryption;
 using Doppler.BillingUser.Enums;
 using Doppler.BillingUser.ExternalServices.FirstData;
 using Doppler.BillingUser.ExternalServices.MercadoPagoApi;
+using Doppler.BillingUser.Services;
 using Flurl.Http;
 using Flurl.Http.Configuration;
 using Flurl.Http.Testing;
@@ -18,6 +19,7 @@ namespace Doppler.BillingUser.Test
     public class MercadoPagoServiceTest
     {
         private readonly string _accountname;
+        private readonly int _userId;
         private readonly int _paymentId;
         private readonly decimal _total;
         private readonly CreditCard _creditCard;
@@ -25,6 +27,7 @@ namespace Doppler.BillingUser.Test
         public MercadoPagoServiceTest()
         {
             _accountname = "test@example.com";
+            _userId = 1;
             _paymentId = 1;
             _total = 100;
 
@@ -77,7 +80,8 @@ namespace Doppler.BillingUser.Test
                 Mock.Of<IJwtTokenGenerator>(),
                 new DefaultFlurlClientFactory(),
                 Mock.Of<ILogger<MercadoPagoService>>(),
-                Mock.Of<IEncryptionService>());
+                Mock.Of<IEncryptionService>(),
+                Mock.Of<IEmailTemplatesService>());
 
             using var httpTest = new HttpTest();
             httpTest.RespondWithJson(new MercadoPagoPayment
@@ -106,7 +110,8 @@ namespace Doppler.BillingUser.Test
                 Mock.Of<IJwtTokenGenerator>(),
                 new DefaultFlurlClientFactory(),
                 Mock.Of<ILogger<MercadoPagoService>>(),
-                Mock.Of<IEncryptionService>());
+                Mock.Of<IEncryptionService>(),
+                Mock.Of<IEmailTemplatesService>());
 
             // Act
             using var httpTest = new HttpTest();
@@ -129,7 +134,8 @@ namespace Doppler.BillingUser.Test
                 Mock.Of<IJwtTokenGenerator>(),
                 new DefaultFlurlClientFactory(),
                 Mock.Of<ILogger<MercadoPagoService>>(),
-                GetEncryptionServiceMock().Object);
+                GetEncryptionServiceMock().Object,
+                Mock.Of<IEmailTemplatesService>());
 
             using var httpTest = new HttpTest();
             httpTest.RespondWithJson(new MercadoPagoPayment
@@ -138,7 +144,7 @@ namespace Doppler.BillingUser.Test
             });
 
             // Act
-            var paymentCreated = await service.CreatePayment(_accountname, _total, _creditCard);
+            var paymentCreated = await service.CreatePayment(_accountname, _userId, _total, _creditCard);
 
             // Assert
             httpTest
@@ -163,7 +169,8 @@ namespace Doppler.BillingUser.Test
                 Mock.Of<IJwtTokenGenerator>(),
                 new DefaultFlurlClientFactory(),
                 Mock.Of<ILogger<MercadoPagoService>>(),
-                GetEncryptionServiceMock().Object);
+                GetEncryptionServiceMock().Object,
+                Mock.Of<IEmailTemplatesService>());
 
             using var httpTest = new HttpTest();
             httpTest.RespondWithJson(new MercadoPagoPayment
@@ -172,7 +179,7 @@ namespace Doppler.BillingUser.Test
             });
 
             // Act
-            async Task CallFunc() => await service.CreatePayment(_accountname, _total, _creditCard);
+            async Task CallFunc() => await service.CreatePayment(_accountname, _userId, _total, _creditCard);
 
             // Assert
             var caughtException = await Assert.ThrowsAsync<DopplerApplicationException>(CallFunc);
@@ -193,13 +200,14 @@ namespace Doppler.BillingUser.Test
                 Mock.Of<IJwtTokenGenerator>(),
                 new DefaultFlurlClientFactory(),
                 Mock.Of<ILogger<MercadoPagoService>>(),
-                Mock.Of<IEncryptionService>());
+                Mock.Of<IEncryptionService>(),
+                Mock.Of<IEmailTemplatesService>());
 
             using var httpTest = new HttpTest();
             httpTest.RespondWith(status: 500);
 
             // Act
-            async Task CallFunc() => await service.CreatePayment(_accountname, _total, _creditCard);
+            async Task CallFunc() => await service.CreatePayment(_accountname, _userId, _total, _creditCard);
 
             // Assert
             var caughtException = await Assert.ThrowsAsync<DopplerApplicationException>(CallFunc);

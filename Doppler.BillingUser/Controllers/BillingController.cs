@@ -560,7 +560,7 @@ namespace Doppler.BillingUser.Controllers
                     var authorizationNumber = await _paymentGateway.CreateCreditCardPayment(total, encryptedCreditCard, userId);
                     return new CreditCardPayment { Status = PaymentStatusEnum.Approved, AuthorizationNumber = authorizationNumber };
                 case PaymentMethodEnum.MP:
-                    var mercadoPagoPayment = await _mercadoPagoService.CreatePayment(accountname, total, encryptedCreditCard);
+                    var mercadoPagoPayment = await _mercadoPagoService.CreatePayment(accountname, userId, total, encryptedCreditCard);
                     return new CreditCardPayment { Status = _paymentStatusMapper.MapToPaymentStatus(mercadoPagoPayment.Status), AuthorizationNumber = mercadoPagoPayment.Id.ToString() };
                 default:
                     return new CreditCardPayment { Status = PaymentStatusEnum.Approved };

@@ -2,6 +2,7 @@ using Doppler.BillingUser.Authorization;
 using Doppler.BillingUser.Encryption;
 using Doppler.BillingUser.Enums;
 using Doppler.BillingUser.ExternalServices.FirstData;
+using Doppler.BillingUser.Services;
 using Flurl.Http;
 using Flurl.Http.Configuration;
 using Microsoft.Extensions.Logging;
@@ -19,6 +20,7 @@ namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
         private readonly IFlurlClient _flurlClient;
         private readonly ILogger<MercadoPagoService> _logger;
         private readonly IEncryptionService _encryptionService;
+        private readonly IEmailTemplatesService _emailTemplatesService;
 
         const string TransactionDescription = "Doppler Email Marketing";
         const string Description = "MERPAGO*DOPPLER";
@@ -29,13 +31,15 @@ namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
             IJwtTokenGenerator jwtTokenGenerator,
             IFlurlClientFactory flurlClientFactory,
             ILogger<MercadoPagoService> logger,
-            IEncryptionService encryptionService)
+            IEncryptionService encryptionService,
+            IEmailTemplatesService emailTemplatesService)
         {
             _options = options;
             _jwtTokenGenerator = jwtTokenGenerator;
             _flurlClient = flurlClientFactory.Get(_options.Value.MercadoPagoApiUrlTemplate);
             _logger = logger;
             _encryptionService = encryptionService;
+            _emailTemplatesService = emailTemplatesService;
         }
 
         public async Task<MercadoPagoPayment> GetPaymentById(long id, string accountname)
@@ -57,7 +61,7 @@ namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
             }
         }
 
-        public async Task<MercadoPagoPayment> CreatePayment(string accountname, decimal total, CreditCard creditCard)
+        public async Task<MercadoPagoPayment> CreatePayment(string accountname, int clientId, decimal total, CreditCard creditCard)
         {
             try
             {
@@ -73,7 +77,9 @@ namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
                     var errorMessage = payment.StatusDetail;
 
                     _logger.LogError(String.Format("Mercadopago payment Declined with Accountname:{0}, ErrorCode:{1}, ErrorMessage: {2}", accountname, errorCode, errorMessage));
-                    //TODO: send email
+
+                    await _emailTemplatesService.SendNotificationForPaymentFailedTransaction(clientId, errorCode.ToString(), errorMessage, string.Empty, String.Empty, PaymentMethodEnum.MP);
+
                     throw new DopplerApplicationException(errorCode, errorMessage);
                 }
 
