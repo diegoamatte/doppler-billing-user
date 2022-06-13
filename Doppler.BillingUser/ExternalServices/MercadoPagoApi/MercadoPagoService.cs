@@ -83,7 +83,13 @@ namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
                     throw new DopplerApplicationException(errorCode, errorMessage);
                 }
 
-                //TODO: If it is pending send email
+                if (payment.Status == MercadoPagoPaymentStatusEnum.In_Process)
+                {
+                    var errorCode = payment.Status.ToString();
+                    var errorMessage = string.Format("payment is in process, MercadopagoStatus: {0}, MercadopagoStatusDetail:{1}", payment.Status, payment.StatusDetail);
+                    await _emailTemplatesService.SendNotificationForMercadoPagoPaymentInProcess(clientId, accountname, errorCode, errorMessage);
+                }
+
                 return payment;
             }
             catch (Exception ex) when (ex is not DopplerApplicationException)

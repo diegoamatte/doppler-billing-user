@@ -254,6 +254,24 @@ namespace Doppler.BillingUser.Services
                     },
                     to: new[] { _emailSettings.Value.AdminEmail });
         }
+
+        public Task SendNotificationForMercadoPagoPaymentInProcess(int userId, string accountname, string errorCode, string errorMessage)
+        {
+            var template = _emailSettings.Value.MercadoPagoPaymentInProcessAdminTemplateId;
+
+            return _emailSender.SafeSendWithTemplateAsync(
+                    templateId: template,
+                    templateModel: new
+                    {
+                        urlImagesBase = _emailSettings.Value.UrlEmailImagesBase,
+                        userId,
+                        email = accountname,
+                        errorCode,
+                        errorMessage,
+                        year = DateTime.UtcNow.Year
+                    },
+                    to: new[] { _emailSettings.Value.CommercialEmail, _emailSettings.Value.BillingEmail });
+        }
     }
 }
 
