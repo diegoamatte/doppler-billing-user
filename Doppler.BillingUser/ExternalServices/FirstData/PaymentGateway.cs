@@ -105,7 +105,7 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
 
                     if (txn.Transaction_Type != TransactionTypes.REFUND)
                     {
-                        await _emailTemplatesService.SendNotificationForFailedCreditCardTransaction(clientId, errorCode.ToString(), errorMessage, apiResponse.CTR, apiResponse.Bank_Message);
+                        await _emailTemplatesService.SendNotificationForPaymentFailedTransaction(clientId, errorCode.ToString(), errorMessage, apiResponse.CTR, apiResponse.Bank_Message, PaymentMethodEnum.CC);
                     }
 
                     throw new DopplerApplicationException(errorCode, errorMessage);

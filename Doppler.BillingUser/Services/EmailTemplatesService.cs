@@ -218,9 +218,11 @@ namespace Doppler.BillingUser.Services
             return Task.WhenAll(creditsEmail, adminEmail);
         }
 
-        public Task SendNotificationForFailedCreditCardTransaction(int userId, string errorCode, string errorMessage, string transactionCTR, string bankMessage)
+        public Task SendNotificationForPaymentFailedTransaction(int userId, string errorCode, string errorMessage, string transactionCTR, string bankMessage, PaymentMethodEnum paymentMethod)
         {
-            var template = _emailSettings.Value.FailedCreditCardFreeUserPurchaseNotificationAdminTemplateId;
+            var template = paymentMethod == PaymentMethodEnum.CC ?
+                _emailSettings.Value.FailedCreditCardFreeUserPurchaseNotificationAdminTemplateId :
+                _emailSettings.Value.FailedMercadoPagoFreeUserPurchaseNotificationAdminTemplateId;
 
             return _emailSender.SafeSendWithTemplateAsync(
                     templateId: template,
