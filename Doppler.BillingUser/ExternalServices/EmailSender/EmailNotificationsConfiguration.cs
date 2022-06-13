@@ -21,5 +21,6 @@ namespace Doppler.BillingUser.ExternalServices.EmailSender
         public string FailedCreditCardFreeUserPurchaseNotificationAdminTemplateId { get; set; }
         public string MercadoPagoPaymentApprovedAdminTemplateId { get; set; }
         public string FailedMercadoPagoFreeUserPurchaseNotificationAdminTemplateId { get; set; }
+        public string MercadoPagoPaymentInProcessAdminTemplateId { get; set; }
     }
 }
