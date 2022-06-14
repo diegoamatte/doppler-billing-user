@@ -134,7 +134,7 @@ namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
                     CardNumber = _encryptionService.DecryptAES256(creditCard.Number),
                     SecurityCode = _encryptionService.DecryptAES256(creditCard.Code),
                     ExpirationMonth = creditCard.ExpirationMonth.ToString(),
-                    ExpirationYear = creditCard.ExpirationYearFull.ToString()
+                    ExpirationYear = creditCard.ExpirationYear.ToString()
                 }
             };
 
