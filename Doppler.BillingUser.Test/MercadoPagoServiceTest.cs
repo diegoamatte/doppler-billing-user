@@ -35,7 +35,7 @@ namespace Doppler.BillingUser.Test
             {
                 CardType = CardTypeEnum.Mastercard,
                 ExpirationMonth = 12,
-                ExpirationYearFull = 2023,
+                ExpirationYear = 2023,
                 HolderName = "EncryptedHolderName",
                 Number = "EncryptedNumber",
                 Code = "EncryptedCode",
