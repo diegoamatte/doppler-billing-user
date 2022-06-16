@@ -32,7 +32,8 @@ SELECT
     S.IdCountry as IdBillingCountry,
     U.UTCFirstPayment,
     U.OriginInbound,
-    U.CUIT
+    U.CUIT,
+    U.IdCurrentBillingCredit
 FROM
     [User] U
     INNER JOIN
@@ -52,7 +53,12 @@ WHERE
             using var connection = _connectionFactory.GetConnection();
             var userTypePlan = await connection.QueryFirstOrDefaultAsync<UserTypePlanInformation>(@"
 SELECT TOP 1
-    UTP.[IdUserType]
+    UTP.[IdUserTypePlan],
+    UTP.[IdUserType],
+    UTP.[EmailQty],
+    UTP.[Fee],
+    UTP.[ExtraEmailCost],
+    UTP.[SubscribersQty]
 FROM
     [dbo].[BillingCredits] BC
     INNER JOIN
@@ -234,6 +240,22 @@ WHERE
             });
 
             return result;
+        }
+
+        public async Task<int> GetCurrentMonthlyAddedEmailsWithBillingAsync(int idUser)
+        {
+            using var connection = _connectionFactory.GetConnection();
+            var partialBalance = await connection.QueryFirstOrDefaultAsync<int>(@"
+SELECT SUM(CreditsQty)
+FROM MovementsCredits
+WHERE IdUser = @idUser AND MONTH(GETDATE()) = MONTH(Date) AND YEAR(GETDATE()) = YEAR(Date) AND
+    CreditsQty > 0 AND IdUserType = 2 AND IdBillingCredit IS NOT NULL",
+                new
+                {
+                    @idUser = idUser
+                });
+
+            return partialBalance;
         }
     }
 }

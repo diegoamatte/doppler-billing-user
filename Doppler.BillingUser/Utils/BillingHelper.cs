@@ -24,7 +24,7 @@ namespace Doppler.BillingUser.Utils
             };
         }
 
-        public static SapBillingDto MapBillingToSapAsync(SapSettings timeZoneOffset, string cardNumber, string cardHolderName, BillingCredit billingCredit, UserTypePlanInformation currentUserPlan, UserTypePlanInformation newUserPlan, string authorizationNumber, int invoicedId)
+        public static SapBillingDto MapBillingToSapAsync(SapSettings timeZoneOffset, string cardNumber, string cardHolderName, BillingCredit billingCredit, UserTypePlanInformation currentUserPlan, UserTypePlanInformation newUserPlan, string authorizationNumber, int invoicedId, decimal? total)
         {
             var sapBilling = new SapBillingDto
             {
@@ -56,8 +56,13 @@ namespace Doppler.BillingUser.Utils
                 PaymentDate = billingCredit.Date.ToHourOffset(timeZoneOffset.TimeZoneOffset),
                 InvoiceDate = billingCredit.Date.ToHourOffset(timeZoneOffset.TimeZoneOffset),
                 BillingSystemId = billingCredit.IdResponsabileBilling,
-                FiscalID = billingCredit.Cuit
+                FiscalID = billingCredit.Cuit,
             };
+
+            if (currentUserPlan != null)
+            {
+                sapBilling.DiscountedAmount = (double?)total;
+            }
 
             return sapBilling;
         }

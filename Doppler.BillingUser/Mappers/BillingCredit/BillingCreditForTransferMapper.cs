@@ -19,7 +19,7 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
             _billingRepository = billingRepository;
         }
 
-        public async Task<BillingCreditAgreement> MapToBillingCreditAgreement(AgreementInformation agreementInformation, UserBillingInformation user, UserTypePlanInformation newUserTypePlan, Promotion promotion, CreditCardPayment payment)
+        public async Task<BillingCreditAgreement> MapToBillingCreditAgreement(AgreementInformation agreementInformation, UserBillingInformation user, UserTypePlanInformation newUserTypePlan, Promotion promotion, CreditCardPayment payment, BillingCreditTypeEnum billingCreditType)
         {
             var currentPaymentMethod = await _billingRepository.GetPaymentMethodByUserName(user.Email);
 
@@ -54,16 +54,17 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
             buyCreditAgreement.BillingCredit = new BillingCreditModel()
             {
                 Date = now,
-                PaymentDate = !isUpgradePending ? now : null,
-                ActivationDate = !isUpgradePending ? now : null,
-                Approved = !isUpgradePending,
-                Payed = !isUpgradePending,
+                PaymentDate = billingCreditType == BillingCreditTypeEnum.UpgradeRequest ? !isUpgradePending ? now : null : null,
+                ActivationDate = billingCreditType == BillingCreditTypeEnum.UpgradeRequest ? !isUpgradePending ? now : null : now,
+                Approved = billingCreditType != BillingCreditTypeEnum.UpgradeRequest || !isUpgradePending,
+                Payed = billingCreditType == BillingCreditTypeEnum.UpgradeRequest && !isUpgradePending,
                 IdUserTypePlan = newUserTypePlan.IdUserTypePlan,
                 PlanFee = newUserTypePlan.Fee,
                 CreditsQty = newUserTypePlan.EmailQty ?? null,
                 ExtraEmailFee = newUserTypePlan.ExtraEmailCost ?? null,
                 ExtraCreditsPromotion = promotion?.ExtraCredits,
-                DiscountPlanFeePromotion = promotion?.DiscountPercentage
+                DiscountPlanFeePromotion = promotion?.DiscountPercentage,
+                IdBillingCreditType = (int)billingCreditType
             };
 
             if (newUserTypePlan.IdUserType == UserTypeEnum.SUBSCRIBERS)

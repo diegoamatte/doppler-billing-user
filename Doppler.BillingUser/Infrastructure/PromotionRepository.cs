@@ -26,5 +26,49 @@ WHERE [IdPromotion] = @promocodeId", new
                 @promocodeId = promocode.IdPromotion
             });
         }
+
+        public async Task<Promotion> GetById(int promocodeId)
+        {
+            using var connection = _connectionFactory.GetConnection();
+            var promotion = await connection.QueryFirstOrDefaultAsync<Promotion>(@"
+SELECT
+    [IdPromotion],
+    [ExtraCredits],
+    [DiscountPlanFee] AS DiscountPercentage,
+    [Code],
+    [Duration]
+FROM
+    [Promotions]
+WHERE [IdPromotion] = @promocodeId", new
+            {
+                promocodeId
+            });
+
+            return promotion;
+        }
+
+        public async Task<int> GetHowManyTimesApplyedPromocode(string code, string accountName)
+        {
+            using var connection = _connectionFactory.GetConnection();
+            var times = await connection.QueryFirstOrDefaultAsync<int>(@"
+SELECT
+    COUNT(B.IdBillingCredit)
+FROM
+    [BillingCredits] B
+INNER JOIN [User] U ON U.IdUser = B.IdUser
+INNER JOIN [Promotions] P ON  P.IdPromotion = B.IdPromotion
+WHERE
+    U.Email = @email AND
+    U.IdCurrentBillingCredit IS NOT NULL AND
+    P.Code = @code AND
+    B.DiscountPlanFeePromotion IS NOT NULL",
+                new
+                {
+                    code,
+                    email = accountName
+                });
+
+            return times;
+        }
     }
 }

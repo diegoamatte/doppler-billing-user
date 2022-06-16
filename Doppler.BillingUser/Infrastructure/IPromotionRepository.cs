@@ -6,5 +6,7 @@ namespace Doppler.BillingUser.Infrastructure
     public interface IPromotionRepository
     {
         Task IncrementUsedTimes(Promotion promocode);
+        Task<Promotion> GetById(int promocodeId);
+        Task<int> GetHowManyTimesApplyedPromocode(string code, string accountName);
     }
 }

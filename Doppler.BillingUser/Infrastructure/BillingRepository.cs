@@ -684,7 +684,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @activationDate = buyCreditAgreement.BillingCredit.ActivationDate,
                 @extraEmailFee = buyCreditAgreement.BillingCredit.ExtraEmailFee,
                 @totalCreditsQty = buyCreditAgreement.BillingCredit.CreditsQty + (buyCreditAgreement.BillingCredit.ExtraCreditsPromotion ?? 0),
-                @idBillingCreditType = BillingCreditTypeUpgradeRequest,
+                @idBillingCreditType = buyCreditAgreement.BillingCredit.IdBillingCreditType,
                 @ccNumber = buyCreditAgreement.CCNumber,
                 @ccExpMonth = buyCreditAgreement.CCExpMonth,
                 @ccExpYear = buyCreditAgreement.CCExpYear,
@@ -718,7 +718,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
             return result;
         }
 
-        public async Task<int> CreateMovementCreditAsync(int idBillingCredit, int partialBalance, UserBillingInformation user, UserTypePlanInformation newUserTypePlan)
+        public async Task<int> CreateMovementCreditAsync(int idBillingCredit, int partialBalance, UserBillingInformation user, UserTypePlanInformation newUserTypePlan, int? currentMonthlyAddedEmailsWithBilling = null)
         {
             BillingCredit billingCredit = await GetBillingCredit(idBillingCredit);
             string conceptEnglish;
@@ -763,9 +763,13 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @idUser = billingCredit.IdUser,
                 @date = billingCredit.ActivationDate.HasValue ? billingCredit.ActivationDate.Value : DateTime.UtcNow,
                 @idUserType = newUserTypePlan.IdUserType,
-                @creditsQty = billingCredit.TotalCreditsQty.Value,
+                @creditsQty = currentMonthlyAddedEmailsWithBilling == null ?
+                    billingCredit.TotalCreditsQty.Value :
+                    billingCredit.TotalCreditsQty.Value - currentMonthlyAddedEmailsWithBilling,
                 @idBillingCredit = billingCredit.IdBillingCredit,
-                @partialBalance = partialBalance + billingCredit.TotalCreditsQty.Value,
+                @partialBalance = currentMonthlyAddedEmailsWithBilling == null ?
+                    partialBalance + billingCredit.TotalCreditsQty.Value :
+                    (partialBalance + billingCredit.TotalCreditsQty.Value) - currentMonthlyAddedEmailsWithBilling,
                 @conceptEnglish = conceptEnglish,
                 @conceptSpanish = conceptSpanish,
             });
@@ -792,7 +796,8 @@ SELECT
     BC.TotalMonthPlan,
     BC.CUIT As Cuit,
     BC.DiscountPlanFeeAdmin,
-    BC.DiscountPlanFeePromotion
+    BC.DiscountPlanFeePromotion,
+    BC.IdPromotion
 FROM
     [dbo].[BillingCredits] BC
         LEFT JOIN [dbo].[DiscountXPlan] DP
@@ -1085,6 +1090,66 @@ WHERE
                 @Id = id,
                 @Status = status.ToString(),
             });
+        }
+
+        public async Task<int> CreateMovementBalanceAdjustmentAsync(int userId, int creditsQty, UserTypeEnum currentUserType, UserTypeEnum newUserType)
+        {
+            string conceptEnglish = string.Empty;
+            string conceptSpanish = string.Empty;
+
+            if (newUserType == UserTypeEnum.MONTHLY)
+            {
+                if (currentUserType == UserTypeEnum.MONTHLY)
+                {
+                    conceptEnglish = "Changed between Monthlies plans";
+                    conceptSpanish = "Cambio entre planes Mensuales";
+                }
+                else
+                {
+                    conceptEnglish = "Changed to Monthly";
+                    conceptSpanish = "Cambio a Mensual";
+                }
+            }
+            else
+            {
+                if (newUserType == UserTypeEnum.INDIVIDUAL)
+                {
+                    conceptEnglish = "Changed to Prepaid";
+                    conceptSpanish = "Cambio a Prepago";
+                }
+            }
+
+            using var connection = _connectionFactory.GetConnection();
+            var result = await connection.QueryAsync<int>(@"
+INSERT INTO [dbo].[MovementsCredits]
+    ([IdUser],
+    [Date],
+    [CreditsQty],
+    [ConceptEnglish],
+    [ConceptSpanish],
+    [IdUserType],
+    [Visible])
+VALUES
+    (@idUser,
+    @date,
+    @creditsQty,
+    @conceptEnglish,
+    @conceptSpanish,
+    @idUserType,
+    @visible);
+SELECT CAST(SCOPE_IDENTITY() AS INT)",
+            new
+            {
+                @idUser = userId,
+                @date = DateTime.UtcNow,
+                @idUserType = newUserType,
+                @creditsQty = creditsQty * -1,
+                @conceptEnglish = conceptEnglish,
+                @conceptSpanish = conceptSpanish,
+                @visible = false
+            });
+
+            return result.FirstOrDefault();
         }
 
         private int CalculateBillingSystemByTransfer(int idBillingCountry)

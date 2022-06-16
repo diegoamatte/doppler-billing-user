@@ -3,7 +3,6 @@ namespace Doppler.BillingUser.Enums
     public enum BillingCreditTypeEnum
     {
         UpgradeRequest = 1,
-        FreeToIndividual = 4,
-        FreeToMonthly = 5
+        Upgrade_Between_Monthlies = 13
     }
 }

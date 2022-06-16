@@ -294,12 +294,12 @@ namespace Doppler.BillingUser.Controllers
                 }
 
                 var currentPlan = await _userRepository.GetUserCurrentTypePlan(user.IdUser);
-                if (currentPlan != null)
+                if (currentPlan != null && currentPlan.IdUserType != UserTypeEnum.MONTHLY)
                 {
-                    var messageError = $"Failed at creating new agreement for user {accountname}, Invalid user type (only free users) {currentPlan.IdUserType}";
+                    var messageError = $"Failed at creating new agreement for user {accountname}, Invalid user type (only free users or upgrade between 'Montly' plans) {currentPlan.IdUserType}";
                     _logger.LogError(messageError);
                     await _slackService.SendNotification(messageError);
-                    return new BadRequestObjectResult("Invalid user type (only free users)");
+                    return new BadRequestObjectResult("Invalid user type (only free users or upgrade between 'Montly' plans)");
                 }
 
                 var newPlan = await _userRepository.GetUserNewTypePlan(agreementInformation.PlanId);
@@ -370,44 +370,63 @@ namespace Doppler.BillingUser.Controllers
                     invoiceId = await _billingRepository.CreateAccountingEntriesAsync(invoiceEntry, paymentEntry);
                 }
 
-                var billingCreditMapper = GetBillingCreditMapper(user.PaymentMethod);
-                var billingCreditAgreement = await billingCreditMapper.MapToBillingCreditAgreement(agreementInformation, user, newPlan, promotion, payment);
-                var billingCreditId = await _billingRepository.CreateBillingCreditAsync(billingCreditAgreement);
+                var billingCreditId = 0;
+                var partialBalance = 0;
 
-                user.IdCurrentBillingCredit = billingCreditId;
-                user.OriginInbound = agreementInformation.OriginInbound;
-                user.UpgradePending = BillingHelper.IsUpgradePending(user, promotion, payment);
-                user.UTCFirstPayment = !user.UpgradePending ? DateTime.UtcNow : null;
-                user.UTCUpgrade = user.UTCFirstPayment;
-
-                if (newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS && newPlan.SubscribersQty.HasValue)
-                    user.MaxSubscribers = newPlan.SubscribersQty.Value;
-
-                await _userRepository.UpdateUserBillingCredit(user);
-
-                var partialBalance = await _userRepository.GetAvailableCredit(user.IdUser);
-                User userInformation = await _userRepository.GetUserInformation(accountname);
-
-                if (newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS)
+                if (currentPlan == null)
                 {
-                    await _billingRepository.UpdateUserSubscriberLimitsAsync(user.IdUser);
-                    var activatedStandByAmount = await _billingRepository.ActivateStandBySubscribers(user.IdUser);
-                    if (activatedStandByAmount > 0)
+                    var billingCreditMapper = GetBillingCreditMapper(user.PaymentMethod);
+                    var billingCreditAgreement = await billingCreditMapper.MapToBillingCreditAgreement(agreementInformation, user, newPlan, promotion, payment, BillingCreditTypeEnum.UpgradeRequest);
+                    billingCreditId = await _billingRepository.CreateBillingCreditAsync(billingCreditAgreement);
+
+                    user.IdCurrentBillingCredit = billingCreditId;
+                    user.OriginInbound = agreementInformation.OriginInbound;
+                    user.UpgradePending = BillingHelper.IsUpgradePending(user, promotion, payment);
+                    user.UTCFirstPayment = !user.UpgradePending ? DateTime.UtcNow : null;
+                    user.UTCUpgrade = user.UTCFirstPayment;
+
+                    if (newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS && newPlan.SubscribersQty.HasValue)
+                        user.MaxSubscribers = newPlan.SubscribersQty.Value;
+
+                    await _userRepository.UpdateUserBillingCredit(user);
+
+                    partialBalance = await _userRepository.GetAvailableCredit(user.IdUser);
+                    User userInformation = await _userRepository.GetUserInformation(accountname);
+
+                    if (newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS)
                     {
-                        var lang = userInformation.Language ?? "en";
-                        await _emailTemplatesService.SendActivatedStandByEmail(lang, userInformation.FirstName, activatedStandByAmount, user.Email);
+                        await _billingRepository.UpdateUserSubscriberLimitsAsync(user.IdUser);
+                        var activatedStandByAmount = await _billingRepository.ActivateStandBySubscribers(user.IdUser);
+                        if (activatedStandByAmount > 0)
+                        {
+                            var lang = userInformation.Language ?? "en";
+                            await _emailTemplatesService.SendActivatedStandByEmail(lang, userInformation.FirstName, activatedStandByAmount, user.Email);
+                        }
                     }
+                    else
+                    {
+                        if (!user.UpgradePending)
+                        {
+                            await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan);
+                        }
+                    }
+
+                    if (promotion != null)
+                        await _promotionRepository.IncrementUsedTimes(promotion);
+
+                    //Send notifications
+                    SendNotifications(accountname, newPlan, user, partialBalance, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditTypeEnum.UpgradeRequest);
                 }
                 else
                 {
-                    if (!user.UpgradePending)
+                    if (currentPlan.IdUserType == UserTypeEnum.MONTHLY && newPlan.IdUserType == UserTypeEnum.MONTHLY)
                     {
-                        await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan);
+                        if (currentPlan.IdUserTypePlan != newPlan.IdUserTypePlan)
+                        {
+                            billingCreditId = await ChangeBetweenMonthlyPlans(currentPlan, newPlan, user, agreementInformation, promotion, payment);
+                        }
                     }
                 }
-
-                if (promotion != null)
-                    await _promotionRepository.IncrementUsedTimes(promotion);
 
                 if (agreementInformation.Total.GetValueOrDefault() > 0 &&
                     ((user.PaymentMethod == PaymentMethodEnum.CC) ||
@@ -426,12 +445,10 @@ namespace Doppler.BillingUser.Controllers
                             currentPlan,
                             newPlan,
                             authorizationNumber,
-                            invoiceId),
+                            invoiceId,
+                            agreementInformation.Total),
                         accountname);
                 }
-
-                //Send notifications
-                SendNotifications(accountname, newPlan, user, partialBalance, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment);
 
                 var message = $"Successful at creating a new agreement for: User: {accountname} - Plan: {agreementInformation.PlanId}";
                 await _slackService.SendNotification(message + (!string.IsNullOrEmpty(agreementInformation.Promocode) ? $" - Promocode {agreementInformation.Promocode}" : string.Empty));
@@ -528,25 +545,45 @@ namespace Doppler.BillingUser.Controllers
             return new OkObjectResult("Successfully");
         }
 
-        private async void SendNotifications(string accountname, UserTypePlanInformation newPlan, UserBillingInformation user, int partialBalance, Promotion promotion, string promocode, int discountId, CreditCardPayment payment)
+        private async void SendNotifications(
+            string accountname,
+            UserTypePlanInformation newPlan,
+            UserBillingInformation user,
+            int partialBalance,
+            Promotion promotion,
+            string promocode,
+            int discountId,
+            CreditCardPayment payment,
+            BillingCreditTypeEnum billingCreditType)
         {
             User userInformation = await _userRepository.GetUserInformation(accountname);
+            var planDiscountInformation = await _billingRepository.GetPlanDiscountInformation(discountId);
 
-            bool isUpgradeApproved = (user.PaymentMethod == PaymentMethodEnum.CC || !BillingHelper.IsUpgradePending(user, promotion, payment));
-
-            if (newPlan.IdUserType == UserTypeEnum.INDIVIDUAL)
+            switch (billingCreditType)
             {
-                await _emailTemplatesService.SendNotificationForCredits(accountname, userInformation, newPlan, user, partialBalance, promotion, promocode, !isUpgradeApproved);
-            }
-            else
-            {
-                if (isUpgradeApproved && newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS)
-                {
-                    await _emailTemplatesService.SendNotificationForSuscribersPlan(accountname, userInformation, newPlan);
-                }
+                case BillingCreditTypeEnum.UpgradeRequest:
+                    bool isUpgradeApproved = (user.PaymentMethod == PaymentMethodEnum.CC || !BillingHelper.IsUpgradePending(user, promotion, payment));
 
-                var planDiscountInformation = await _billingRepository.GetPlanDiscountInformation(discountId);
-                await _emailTemplatesService.SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId, planDiscountInformation, !isUpgradeApproved);
+                    if (newPlan.IdUserType == UserTypeEnum.INDIVIDUAL)
+                    {
+                        await _emailTemplatesService.SendNotificationForCredits(accountname, userInformation, newPlan, user, partialBalance, promotion, promocode, !isUpgradeApproved);
+                    }
+                    else
+                    {
+                        if (isUpgradeApproved && newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS)
+                        {
+                            await _emailTemplatesService.SendNotificationForSuscribersPlan(accountname, userInformation, newPlan);
+                        }
+
+                        await _emailTemplatesService.SendNotificationForUpgradePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId, planDiscountInformation, !isUpgradeApproved);
+                    }
+
+                    return;
+                case BillingCreditTypeEnum.Upgrade_Between_Monthlies:
+                    await _emailTemplatesService.SendNotificationForUpdatePlan(accountname, userInformation, newPlan, user, promotion, promocode, discountId, planDiscountInformation);
+                    return;
+                default:
+                    return;
             }
         }
 
@@ -595,6 +632,54 @@ namespace Doppler.BillingUser.Controllers
                     _logger.LogError($"The paymentMethod '{paymentMethod}' does not have a mapper.");
                     throw new ArgumentException($"The paymentMethod '{paymentMethod}' does not have a mapper.");
             }
+        }
+
+        private async Task<int> ChangeBetweenMonthlyPlans(UserTypePlanInformation currentPlan, UserTypePlanInformation newPlan, UserBillingInformation user, AgreementInformation agreementInformation, Promotion promotion, CreditCardPayment payment)
+        {
+            if (currentPlan.EmailQty < newPlan.EmailQty)
+            {
+                var currentBillingCredit = await _billingRepository.GetBillingCredit(user.IdCurrentBillingCredit);
+                if (currentBillingCredit != null)
+                {
+                    promotion = await _promotionRepository.GetById(currentBillingCredit.IdPromotion ?? 0);
+                    if (promotion != null)
+                    {
+                        var timesAppliedPromocode = await _promotionRepository.GetHowManyTimesApplyedPromocode(promotion.Code, user.Email);
+                        if (promotion.Duration == timesAppliedPromocode)
+                        {
+                            promotion = null;
+                        }
+                    }
+                }
+
+                var billingCreditMapper = GetBillingCreditMapper(user.PaymentMethod);
+                var billingCreditAgreement = await billingCreditMapper.MapToBillingCreditAgreement(agreementInformation, user, newPlan, promotion, payment, BillingCreditTypeEnum.Upgrade_Between_Monthlies);
+                var billingCreditId = await _billingRepository.CreateBillingCreditAsync(billingCreditAgreement);
+
+                /* Update the user */
+                user.IdCurrentBillingCredit = billingCreditId;
+                user.OriginInbound = agreementInformation.OriginInbound;
+                user.UpgradePending = false;
+                user.UTCUpgrade = DateTime.UtcNow;
+
+                await _userRepository.UpdateUserBillingCredit(user);
+
+                var partialBalance = await _userRepository.GetAvailableCredit(user.IdUser);
+                await _billingRepository.CreateMovementBalanceAdjustmentAsync(user.IdUser, 0, UserTypeEnum.MONTHLY, UserTypeEnum.MONTHLY);
+                int currentMonthlyAddedEmailsWithBilling = await _userRepository.GetCurrentMonthlyAddedEmailsWithBillingAsync(user.IdUser);
+
+                await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan, currentMonthlyAddedEmailsWithBilling);
+
+                if (promotion != null)
+                    await _promotionRepository.IncrementUsedTimes(promotion);
+
+                //Send notifications
+                SendNotifications(user.Email, newPlan, user, partialBalance, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditTypeEnum.Upgrade_Between_Monthlies);
+
+                return billingCreditId;
+            }
+
+            return 0;
         }
     }
 }

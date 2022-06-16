@@ -19,5 +19,6 @@ namespace Doppler.BillingUser.Model
         public string Cuit { get; set; }
         public int? DiscountPlanFeeAdmin { get; set; }
         public int? DiscountPlanFeePromotion { get; set; }
+        public int? IdPromotion { get; set; }
     }
 }
