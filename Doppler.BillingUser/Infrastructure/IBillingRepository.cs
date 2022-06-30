@@ -23,7 +23,7 @@ namespace Doppler.BillingUser.Infrastructure
 
         Task<int> CreateBillingCreditAsync(BillingCreditAgreement buyCreditAgreement);
 
-        Task<int> CreateMovementCreditAsync(int idBillingCredit, int partialBalance, UserBillingInformation user, UserTypePlanInformation newUserTypePlan);
+        Task<int> CreateMovementCreditAsync(int idBillingCredit, int partialBalance, UserBillingInformation user, UserTypePlanInformation newUserTypePlan, int? currentMonthlyAddedEmailsWithBilling = null);
 
         Task<BillingCredit> GetBillingCredit(int billingCreditId);
 
@@ -44,5 +44,7 @@ namespace Doppler.BillingUser.Infrastructure
         Task UpdateInvoiceStatus(int id, PaymentStatusEnum status);
 
         Task<int> CreatePaymentEntryAsync(int invoiceId, AccountingEntry paymentEntry);
+
+        Task<int> CreateMovementBalanceAdjustmentAsync(int userId, int creditsQty, UserTypeEnum currentUserType, UserTypeEnum newUserType);
     }
 }

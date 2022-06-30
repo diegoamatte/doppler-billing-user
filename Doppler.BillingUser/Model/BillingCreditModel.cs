@@ -27,5 +27,6 @@ namespace Doppler.BillingUser.Model
         public int? MonthPlan { get; set; }
         public int? TotalMonthPlan { get; set; }
         public int? CurrentMonthPlan { get; set; }
+        public int IdBillingCreditType { get; set; }
     }
 }

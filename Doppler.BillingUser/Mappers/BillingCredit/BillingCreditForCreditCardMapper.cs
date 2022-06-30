@@ -19,7 +19,7 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
             _encryptionService = encryptionService;
         }
 
-        public async Task<BillingCreditAgreement> MapToBillingCreditAgreement(AgreementInformation agreementInformation, UserBillingInformation user, UserTypePlanInformation newUserTypePlan, Promotion promotion, CreditCardPayment payment)
+        public async Task<BillingCreditAgreement> MapToBillingCreditAgreement(AgreementInformation agreementInformation, UserBillingInformation user, UserTypePlanInformation newUserTypePlan, Promotion promotion, CreditCardPayment payment, BillingCreditTypeEnum billingCreditType)
         {
             var currentPaymentMethod = await _billingRepository.GetPaymentMethodByUserName(user.Email);
 
@@ -56,7 +56,8 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
                 CreditsQty = newUserTypePlan.EmailQty ?? null,
                 ExtraEmailFee = newUserTypePlan.ExtraEmailCost ?? null,
                 ExtraCreditsPromotion = promotion?.ExtraCredits,
-                DiscountPlanFeePromotion = promotion?.DiscountPercentage
+                DiscountPlanFeePromotion = promotion?.DiscountPercentage,
+                IdBillingCreditType = (int)billingCreditType
             };
 
             if (newUserTypePlan.IdUserType == UserTypeEnum.SUBSCRIBERS)

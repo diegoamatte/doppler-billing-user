@@ -22,5 +22,7 @@ namespace Doppler.BillingUser.ExternalServices.EmailSender
         public string MercadoPagoPaymentApprovedAdminTemplateId { get; set; }
         public string FailedMercadoPagoFreeUserPurchaseNotificationAdminTemplateId { get; set; }
         public string MercadoPagoPaymentInProcessAdminTemplateId { get; set; }
+        public Dictionary<string, string> UpdatePlanTemplateId { get; set; }
+        public string UpdatePlanAdminTemplateId { get; set; }
     }
 }
