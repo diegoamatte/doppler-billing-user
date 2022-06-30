@@ -58,7 +58,8 @@ SELECT TOP 1
     UTP.[EmailQty],
     UTP.[Fee],
     UTP.[ExtraEmailCost],
-    UTP.[SubscribersQty]
+    UTP.[SubscribersQty],
+    BC.IdPaymentMethod AS PaymentMethod
 FROM
     [dbo].[BillingCredits] BC
     INNER JOIN
