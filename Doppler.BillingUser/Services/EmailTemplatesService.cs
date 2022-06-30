@@ -273,7 +273,16 @@ namespace Doppler.BillingUser.Services
                     to: new[] { _emailSettings.Value.CommercialEmail, _emailSettings.Value.BillingEmail });
         }
 
-        public Task SendNotificationForUpdatePlan(string accountname, User userInformation, UserTypePlanInformation newPlan, UserBillingInformation user, Promotion promotion, string promocode, int discountId, PlanDiscountInformation planDiscountInformation)
+        public Task SendNotificationForUpdatePlan(
+            string accountname,
+            User userInformation,
+            UserTypePlanInformation currentPlan,
+            UserTypePlanInformation newPlan,
+            UserBillingInformation user,
+            Promotion promotion,
+            string promocode,
+            int discountId,
+            PlanDiscountInformation planDiscountInformation)
         {
             var template = _emailSettings.Value.UpdatePlanTemplateId[userInformation.Language ?? "en"];
 
@@ -347,6 +356,15 @@ namespace Doppler.BillingUser.Services
                         isPaymentMethodMP = user.PaymentMethod == PaymentMethodEnum.MP,
                         isPaymentMethodTransf = user.PaymentMethod == PaymentMethodEnum.TRANSF,
                         discountMonthPlan = planDiscountInformation != null ? planDiscountInformation.MonthPlan : 0,
+                        currentIsIndividualPlan = currentPlan.IdUserType == UserTypeEnum.INDIVIDUAL,
+                        currentIsMonthlyPlan = currentPlan.IdUserType == UserTypeEnum.MONTHLY,
+                        currentIsSubscribersPlan = currentPlan.IdUserType == UserTypeEnum.SUBSCRIBERS,
+                        currentCreditsQty = currentPlan.EmailQty,
+                        currentSubscribersQty = currentPlan.Subscribers,
+                        currentAmount = currentPlan.Fee,
+                        currentIsPaymentMethodCC = currentPlan.PaymentMethod == PaymentMethodEnum.CC,
+                        currentIsPaymentMethodMP = currentPlan.PaymentMethod == PaymentMethodEnum.MP,
+                        currentIsPaymentMethodTransf = currentPlan.PaymentMethod == PaymentMethodEnum.TRANSF,
                         year = DateTime.UtcNow.Year
                     },
                     to: new[] { _emailSettings.Value.AdminEmail });
