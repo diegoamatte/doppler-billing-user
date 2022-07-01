@@ -598,7 +598,11 @@ namespace Doppler.BillingUser.Controllers
                     var authorizationNumber = await _paymentGateway.CreateCreditCardPayment(total, encryptedCreditCard, userId);
                     return new CreditCardPayment { Status = PaymentStatusEnum.Approved, AuthorizationNumber = authorizationNumber };
                 case PaymentMethodEnum.MP:
-                    var mercadoPagoPayment = await _mercadoPagoService.CreatePayment(accountname, userId, total, encryptedCreditCard);
+                    var rate = await _currencyRepository.GetCurrencyRateAsync((int)CurrencyTypeEnum.UsS, (int)CurrencyTypeEnum.sARG, DateTime.UtcNow);
+                    decimal amount = await _currencyRepository.ConvertCurrencyAsync((int)CurrencyTypeEnum.UsS, (int)CurrencyTypeEnum.sARG, total, DateTime.UtcNow, rate);
+                    decimal taxes = CalculateInvoiceTaxes(amount);
+
+                    var mercadoPagoPayment = await _mercadoPagoService.CreatePayment(accountname, userId, amount + taxes, encryptedCreditCard);
                     return new CreditCardPayment { Status = _paymentStatusMapper.MapToPaymentStatus(mercadoPagoPayment.Status), AuthorizationNumber = mercadoPagoPayment.Id.ToString() };
                 default:
                     return new CreditCardPayment { Status = PaymentStatusEnum.Approved };
@@ -681,6 +685,12 @@ namespace Doppler.BillingUser.Controllers
             }
 
             return 0;
+        }
+
+        private static decimal CalculateInvoiceTaxes(decimal amount)
+        {
+            decimal coefficient = 0.21m;
+            return amount * coefficient;
         }
     }
 }
