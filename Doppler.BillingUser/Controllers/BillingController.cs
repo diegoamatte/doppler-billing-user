@@ -602,7 +602,7 @@ namespace Doppler.BillingUser.Controllers
                     decimal amount = await _currencyRepository.ConvertCurrencyAsync((int)CurrencyTypeEnum.UsS, (int)CurrencyTypeEnum.sARG, total, DateTime.UtcNow, rate);
                     decimal taxes = CalculateInvoiceTaxes(amount);
 
-                    var mercadoPagoPayment = await _mercadoPagoService.CreatePayment(accountname, userId, amount + taxes, encryptedCreditCard);
+                    var mercadoPagoPayment = await _mercadoPagoService.CreatePayment(accountname, userId, Math.Round(amount + taxes, 2, MidpointRounding.AwayFromZero), encryptedCreditCard);
                     return new CreditCardPayment { Status = _paymentStatusMapper.MapToPaymentStatus(mercadoPagoPayment.Status), AuthorizationNumber = mercadoPagoPayment.Id.ToString() };
                 default:
                     return new CreditCardPayment { Status = PaymentStatusEnum.Approved };
