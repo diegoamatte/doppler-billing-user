@@ -650,7 +650,7 @@ namespace Doppler.BillingUser.Controllers
                     if (promotion != null)
                     {
                         var timesAppliedPromocode = await _promotionRepository.GetHowManyTimesApplyedPromocode(promotion.Code, user.Email);
-                        if (promotion.Duration == timesAppliedPromocode)
+                        if (promotion.Duration == timesAppliedPromocode.CountApplied)
                         {
                             promotion = null;
                         }
