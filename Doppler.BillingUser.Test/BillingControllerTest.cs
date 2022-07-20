@@ -107,6 +107,7 @@ namespace Doppler.BillingUser.Test
                     It.IsAny<IEnumerable<string>>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
+                    It.IsAny<string>(),
                     It.IsAny<IEnumerable<Attachment>>(),
                     It.IsAny<CancellationToken>()));
 
@@ -172,6 +173,7 @@ namespace Doppler.BillingUser.Test
                     templateId,
                     It.IsAny<object>(),
                     to,
+                    null,
                     null,
                     null,
                     null,

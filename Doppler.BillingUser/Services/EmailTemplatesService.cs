@@ -236,7 +236,8 @@ namespace Doppler.BillingUser.Services
                         bankMessage,
                         year = DateTime.UtcNow.Year
                     },
-                    to: new[] { _emailSettings.Value.CommercialEmail, _emailSettings.Value.BillingEmail });
+                    to: new[] { _emailSettings.Value.CommercialEmail, _emailSettings.Value.BillingEmail },
+                    replyTo: _emailSettings.Value.InfoDopplerAppsEmail);
         }
 
         public Task SendNotificationForMercadoPagoPaymentApproved(int userId, string accountname)

@@ -24,12 +24,22 @@ namespace Doppler.BillingUser.ExternalServices.EmailSender
             _flurlClient = flurlClientFac.Get(_config.SendTemplateUrlTemplate).WithOAuthBearerToken(_config.ApiKey);
         }
 
-        public async Task<bool> SafeSendWithTemplateAsync(string templateId, object templateModel, IEnumerable<string> to, IEnumerable<string> cc = null, IEnumerable<string> bcc = null, string fromName = null, string fromAddress = null, IEnumerable<Attachment> attachments = null, CancellationToken cancellationToken = default)
+        public async Task<bool> SafeSendWithTemplateAsync(
+            string templateId,
+            object templateModel,
+            IEnumerable<string> to,
+            IEnumerable<string> cc = null,
+            IEnumerable<string> bcc = null,
+            string fromName = null,
+            string fromAddress = null,
+            string replyTo = null,
+            IEnumerable<Attachment> attachments = null,
+            CancellationToken cancellationToken = default)
         {
             {
                 try
                 {
-                    await SendWithTemplateAsync(templateId, templateModel, to, cc, bcc, fromName, fromAddress, attachments, cancellationToken);
+                    await SendWithTemplateAsync(templateId, templateModel, to, cc, bcc, fromName, fromAddress, replyTo, attachments, cancellationToken);
                     return true;
                 }
                 catch (Exception ex)
@@ -47,6 +57,7 @@ namespace Doppler.BillingUser.ExternalServices.EmailSender
             IEnumerable<string> bcc = null,
             string fromName = null,
             string fromAddress = null,
+            string replyTo = null,
             IEnumerable<Attachment> attachments = null,
             CancellationToken cancellationToken = default
             )
@@ -75,7 +86,7 @@ namespace Doppler.BillingUser.ExternalServices.EmailSender
                         filename = x.Filename
                     }),
                     model = templateModel,
-                    reply_to = new { email = _config.ReplyToAddress, name = _config.FromName }
+                    reply_to = new { email = replyTo ?? _config.ReplyToAddress, name = _config.FromName }
                 }, cancellationToken);
         }
     }

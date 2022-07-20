@@ -150,7 +150,7 @@ namespace Doppler.BillingUser.Test
             sapServiceMock.Setup(x => x.SendBillingToSap(It.IsAny<SapBillingDto>(), It.IsAny<string>()));
 
             var emailSenderMock = new Mock<IEmailSender>();
-            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
+            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
 
             var encryptionServiceMock = new Mock<IEncryptionService>();
             encryptionServiceMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("12345");
@@ -314,7 +314,7 @@ namespace Doppler.BillingUser.Test
             sapServiceMock.Setup(x => x.SendBillingToSap(It.IsAny<SapBillingDto>(), It.IsAny<string>()));
 
             var emailSenderMock = new Mock<IEmailSender>();
-            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
+            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
 
             var encryptionServiceMock = new Mock<IEncryptionService>();
             encryptionServiceMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("12345");
@@ -556,7 +556,7 @@ namespace Doppler.BillingUser.Test
             });
 
             var emailSenderMock = new Mock<IEmailSender>();
-            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
+            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
 
             var encryptionServiceMock = new Mock<IEncryptionService>();
             encryptionServiceMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("12345");
@@ -903,7 +903,7 @@ namespace Doppler.BillingUser.Test
             billingRepositoryMock.Setup(x => x.CreateMovementCreditAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<UserBillingInformation>(), It.IsAny<UserTypePlanInformation>(), null)).ReturnsAsync(movementCreditId);
 
             var emailSenderMock = new Mock<IEmailSender>();
-            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
+            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
 
             var encryptionServiceMock = new Mock<IEncryptionService>();
             encryptionServiceMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("12345");
@@ -988,7 +988,7 @@ namespace Doppler.BillingUser.Test
             sapServiceMock.Setup(x => x.SendBillingToSap(It.IsAny<SapBillingDto>(), It.IsAny<string>()));
 
             var emailSenderMock = new Mock<IEmailSender>();
-            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
+            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
 
             var encryptionServiceMock = new Mock<IEncryptionService>();
             encryptionServiceMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("12345");
@@ -1117,7 +1117,7 @@ namespace Doppler.BillingUser.Test
             });
 
             var emailSenderMock = new Mock<IEmailSender>();
-            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
+            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
 
             var encryptionServiceMock = new Mock<IEncryptionService>();
             encryptionServiceMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("12345");
@@ -1193,7 +1193,7 @@ namespace Doppler.BillingUser.Test
             });
 
             var emailSenderMock = new Mock<IEmailSender>();
-            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
+            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
 
             var encryptionServiceMock = new Mock<IEncryptionService>();
             encryptionServiceMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("12345");
@@ -1371,7 +1371,7 @@ namespace Doppler.BillingUser.Test
             sapServiceMock.Setup(x => x.SendBillingToSap(It.IsAny<SapBillingDto>(), It.IsAny<string>()));
 
             var emailSenderMock = new Mock<IEmailSender>();
-            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
+            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
 
             var encryptionServiceMock = new Mock<IEncryptionService>();
             encryptionServiceMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("12345");
@@ -1498,7 +1498,7 @@ namespace Doppler.BillingUser.Test
             sapServiceMock.Setup(x => x.SendBillingToSap(It.IsAny<SapBillingDto>(), It.IsAny<string>()));
 
             var emailSenderMock = new Mock<IEmailSender>();
-            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
+            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
 
             var encryptionServiceMock = new Mock<IEncryptionService>();
             encryptionServiceMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("12345");
@@ -1528,6 +1528,7 @@ namespace Doppler.BillingUser.Test
                 It.IsAny<IEnumerable<string>>(),
                 It.IsAny<IEnumerable<string>>(),
                 It.IsAny<IEnumerable<string>>(),
+                It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<IEnumerable<Attachment>>(),
@@ -1622,7 +1623,7 @@ namespace Doppler.BillingUser.Test
             sapServiceMock.Setup(x => x.SendBillingToSap(It.IsAny<SapBillingDto>(), It.IsAny<string>()));
 
             var emailSenderMock = new Mock<IEmailSender>();
-            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
+            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
 
             var encryptionServiceMock = new Mock<IEncryptionService>();
             encryptionServiceMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("12345");

@@ -15,6 +15,7 @@ namespace Doppler.BillingUser.ExternalServices.EmailSender
             IEnumerable<string> bcc = null,
             string fromName = null,
             string fromAddress = null,
+            string replyTo = null,
             IEnumerable<Attachment> attachments = null,
             CancellationToken cancellationToken = default(CancellationToken));
 
@@ -26,6 +27,7 @@ namespace Doppler.BillingUser.ExternalServices.EmailSender
             IEnumerable<string> bcc = null,
             string fromName = null,
             string fromAddress = null,
+            string replyTo = null,
             IEnumerable<Attachment> attachments = null,
             CancellationToken cancellationToken = default(CancellationToken));
     }
