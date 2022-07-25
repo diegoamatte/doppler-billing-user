@@ -415,7 +415,7 @@ namespace Doppler.BillingUser.Controllers
                         await _promotionRepository.IncrementUsedTimes(promotion);
 
                     //Send notifications
-                    SendNotifications(accountname, newPlan, user, partialBalance, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditTypeEnum.UpgradeRequest, currentPlan);
+                    SendNotifications(accountname, newPlan, user, partialBalance, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditTypeEnum.UpgradeRequest, currentPlan, null);
                 }
                 else
                 {
@@ -450,7 +450,8 @@ namespace Doppler.BillingUser.Controllers
                         accountname);
                 }
 
-                var message = $"Successful at creating a new agreement for: User: {accountname} - Plan: {agreementInformation.PlanId}";
+                var userType = currentPlan == null ? "Free user" : "Update plan";
+                var message = $"Successful at creating a new agreement for: User: {accountname} - Plan: {agreementInformation.PlanId} - {userType}";
                 await _slackService.SendNotification(message + (!string.IsNullOrEmpty(agreementInformation.Promocode) ? $" - Promocode {agreementInformation.Promocode}" : string.Empty));
 
                 if (_zohoSettings.Value.UseZoho)
@@ -555,7 +556,8 @@ namespace Doppler.BillingUser.Controllers
             int discountId,
             CreditCardPayment payment,
             BillingCreditTypeEnum billingCreditType,
-            UserTypePlanInformation currentPlan)
+            UserTypePlanInformation currentPlan,
+            PlanAmountDetails amountDetails)
         {
             User userInformation = await _userRepository.GetUserInformation(accountname);
             var planDiscountInformation = await _billingRepository.GetPlanDiscountInformation(discountId);
@@ -581,7 +583,7 @@ namespace Doppler.BillingUser.Controllers
 
                     return;
                 case BillingCreditTypeEnum.Upgrade_Between_Monthlies:
-                    await _emailTemplatesService.SendNotificationForUpdatePlan(accountname, userInformation, currentPlan, newPlan, user, promotion, promocode, discountId, planDiscountInformation);
+                    await _emailTemplatesService.SendNotificationForUpdatePlan(accountname, userInformation, currentPlan, newPlan, user, promotion, promocode, discountId, planDiscountInformation, amountDetails);
                     return;
                 default:
                     return;
@@ -643,6 +645,8 @@ namespace Doppler.BillingUser.Controllers
         {
             if (currentPlan.EmailQty < newPlan.EmailQty)
             {
+                var amountDetails = await _accountPlansService.GetCalculateUpgrade(user.Email, agreementInformation);
+
                 var currentBillingCredit = await _billingRepository.GetBillingCredit(user.IdCurrentBillingCredit);
                 if (currentBillingCredit != null)
                 {
@@ -659,6 +663,8 @@ namespace Doppler.BillingUser.Controllers
 
                 var billingCreditMapper = GetBillingCreditMapper(user.PaymentMethod);
                 var billingCreditAgreement = await billingCreditMapper.MapToBillingCreditAgreement(agreementInformation, user, newPlan, promotion, payment, BillingCreditTypeEnum.Upgrade_Between_Monthlies);
+                billingCreditAgreement.BillingCredit.DiscountPlanFeeAdmin = currentBillingCredit.DiscountPlanFeeAdmin;
+
                 var billingCreditId = await _billingRepository.CreateBillingCreditAsync(billingCreditAgreement);
 
                 /* Update the user */
@@ -679,7 +685,7 @@ namespace Doppler.BillingUser.Controllers
                     await _promotionRepository.IncrementUsedTimes(promotion);
 
                 //Send notifications
-                SendNotifications(user.Email, newPlan, user, partialBalance, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditTypeEnum.Upgrade_Between_Monthlies, currentPlan);
+                SendNotifications(user.Email, newPlan, user, partialBalance, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditTypeEnum.Upgrade_Between_Monthlies, currentPlan, amountDetails);
 
                 return billingCreditId;
             }
