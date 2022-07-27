@@ -71,5 +71,27 @@ namespace Doppler.BillingUser.ExternalServices.AccountPlansApi
                 throw;
             }
         }
+
+        public async Task<PlanAmountDetails> GetCalculateUpgrade(string accountName, AgreementInformation agreementInformation)
+        {
+            try
+            {
+                var PlanAmountDetails = await _flurlClient.Request(new UriTemplate(_options.Value.CalculateUrlTemplate)
+                    .AddParameter("accountname", accountName)
+                    .AddParameter("planId", agreementInformation.PlanId)
+                    .AddParameter("discountId", agreementInformation.DiscountId)
+                    .AddParameter("promocode", agreementInformation.Promocode)
+                    .Resolve())
+                    .WithHeader("Authorization", $"Bearer {await _usersApiTokenGetter.GetTokenAsync()}")
+                    .GetJsonAsync<PlanAmountDetails>();
+
+                return PlanAmountDetails;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, $"Error to get total amount for user {accountName}.");
+                throw;
+            }
+        }
     }
 }

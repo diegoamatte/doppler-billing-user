@@ -283,7 +283,8 @@ namespace Doppler.BillingUser.Services
             Promotion promotion,
             string promocode,
             int discountId,
-            PlanDiscountInformation planDiscountInformation)
+            PlanDiscountInformation planDiscountInformation,
+            PlanAmountDetails amountDetails)
         {
             var template = _emailSettings.Value.UpdatePlanTemplateId[userInformation.Language ?? "en"];
 
@@ -366,6 +367,18 @@ namespace Doppler.BillingUser.Services
                         currentIsPaymentMethodCC = currentPlan.PaymentMethod == PaymentMethodEnum.CC,
                         currentIsPaymentMethodMP = currentPlan.PaymentMethod == PaymentMethodEnum.MP,
                         currentIsPaymentMethodTransf = currentPlan.PaymentMethod == PaymentMethodEnum.TRANSF,
+                        hasDiscountPaymentAlreadyPaid = amountDetails != null && amountDetails.DiscountPaymentAlreadyPaid > 0,
+                        discountPaymentAlreadyPaid = amountDetails != null && amountDetails.DiscountPaymentAlreadyPaid > 0 ? amountDetails.DiscountPaymentAlreadyPaid : 0,
+                        hasDiscountPlanFeeAdmin = amountDetails != null && amountDetails.DiscountPlanFeeAdmin.Amount > 0,
+                        discountPlanFeeAdminAmount = amountDetails != null && amountDetails.DiscountPlanFeeAdmin.Amount > 0 ? amountDetails.DiscountPlanFeeAdmin.Amount : 0,
+                        discountPlanFeeAdminPercentage = amountDetails != null && amountDetails.DiscountPlanFeeAdmin.DiscountPercentage > 0 ? amountDetails.DiscountPlanFeeAdmin.DiscountPercentage : 0,
+                        hasDiscountPrepayment = amountDetails != null && amountDetails.DiscountPrepayment.Amount > 0,
+                        discountPrepaymentAmount = amountDetails != null && amountDetails.DiscountPrepayment.Amount > 0 ? amountDetails.DiscountPrepayment.Amount : 0,
+                        discountPrepaymentPercentage = amountDetails != null && amountDetails.DiscountPrepayment.DiscountPercentage > 0 ? amountDetails.DiscountPrepayment.DiscountPercentage : 0,
+                        hasDiscountPromocode = amountDetails != null && amountDetails.DiscountPromocode.Amount > 0,
+                        discountPromocodeAmount = amountDetails != null && amountDetails.DiscountPromocode.Amount > 0 ? amountDetails.DiscountPromocode.Amount : 0,
+                        discountPromocodePercentage = amountDetails != null && amountDetails.DiscountPromocode.DiscountPercentage > 0 ? amountDetails.DiscountPromocode.DiscountPercentage : 0,
+                        total = amountDetails.Total,
                         year = DateTime.UtcNow.Year
                     },
                     to: new[] { _emailSettings.Value.AdminEmail });
