@@ -33,7 +33,8 @@ SELECT
     U.UTCFirstPayment,
     U.OriginInbound,
     U.CUIT,
-    U.IdCurrentBillingCredit
+    U.IdCurrentBillingCredit,
+    U.MaxSubscribers
 FROM
     [User] U
     INNER JOIN
