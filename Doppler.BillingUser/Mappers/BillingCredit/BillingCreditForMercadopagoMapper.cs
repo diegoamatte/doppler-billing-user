@@ -2,6 +2,7 @@ using Doppler.BillingUser.Encryption;
 using Doppler.BillingUser.Enums;
 using Doppler.BillingUser.Infrastructure;
 using Doppler.BillingUser.Model;
+using Doppler.BillingUser.Services;
 using Doppler.BillingUser.Utils;
 using System;
 using System.Threading.Tasks;
@@ -13,14 +14,14 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
         private readonly IBillingRepository _billingRepository;
         private readonly ICurrencyRepository _currencyRepository;
         private readonly IEncryptionService _encryptionService;
-
+        private readonly IPaymentAmountHelper _paymentAmountService;
         private const int CF = 1;
 
-        public BillingCreditForMercadopagoMapper(IBillingRepository billingRepository, ICurrencyRepository currencyRepository, IEncryptionService encryptionService)
+        public BillingCreditForMercadopagoMapper(IBillingRepository billingRepository, IEncryptionService encryptionService, IPaymentAmountHelper paymentAmountService)
         {
             _billingRepository = billingRepository;
-            _currencyRepository = currencyRepository;
             _encryptionService = encryptionService;
+            _paymentAmountService = paymentAmountService;
         }
 
         public async Task<BillingCreditAgreement> MapToBillingCreditAgreement(AgreementInformation agreementInformation, UserBillingInformation user, UserTypePlanInformation newUserTypePlan, Promotion promotion, CreditCardPayment payment, BillingCreditTypeEnum billingCreditType)
@@ -82,22 +83,14 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
 
             if (agreementInformation.Total != 0)
             {
-                var rate = await _currencyRepository.GetCurrencyRateAsync((int)CurrencyTypeEnum.UsS, (int)CurrencyTypeEnum.sARG, DateTime.UtcNow);
-                var amount = await _currencyRepository.ConvertCurrencyAsync((int)CurrencyTypeEnum.UsS, (int)CurrencyTypeEnum.sARG, agreementInformation.Total.Value, DateTime.UtcNow, rate);
-                var taxes = CalculateInvoiceTaxes(amount);
-                buyCreditAgreement.BillingCredit.Taxes = (double)await _currencyRepository.ConvertCurrencyAsync((int)CurrencyTypeEnum.sARG, (int)CurrencyTypeEnum.UsS, taxes, DateTime.UtcNow, (1 / rate));
+                var amountDetails = await _paymentAmountService.ConvertCurrencyAmount(CurrencyTypeEnum.UsS, CurrencyTypeEnum.sARG, agreementInformation.Total.Value);
+                buyCreditAgreement.BillingCredit.Taxes = (double)amountDetails.Taxes;
             }
 
 
             buyCreditAgreement.IdResponsabileBilling = (int)ResponsabileBillingEnum.Mercadopago;
 
             return buyCreditAgreement;
-        }
-
-        private static decimal CalculateInvoiceTaxes(decimal amount)
-        {
-            decimal coefficient = 0.21m;
-            return amount * coefficient;
         }
     }
 }

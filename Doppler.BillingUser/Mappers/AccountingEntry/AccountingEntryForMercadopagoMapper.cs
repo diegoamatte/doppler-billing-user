@@ -1,7 +1,7 @@
 using Doppler.BillingUser.Enums;
 using Doppler.BillingUser.ExternalServices.FirstData;
-using Doppler.BillingUser.Infrastructure;
 using Doppler.BillingUser.Model;
+using Doppler.BillingUser.Services;
 using Doppler.BillingUser.Utils;
 using System;
 using System.Threading.Tasks;
@@ -10,8 +10,7 @@ namespace Doppler.BillingUser.Mappers
 {
     public class AccountingEntryForMercadopagoMapper : IAccountingEntryMapper
     {
-        private readonly ICurrencyRepository _currencyRepository;
-
+        private IPaymentAmountHelper _paymentAmountService;
         private const string AccountingEntryTypeDescriptionInvoice = "Invoice";
         private const int UserAccountType = 1;
         private const string AccountEntryTypeInvoice = "I";
@@ -19,9 +18,9 @@ namespace Doppler.BillingUser.Mappers
         private const string AccountEntryTypePayment = "P";
         private const string PaymentEntryTypePayment = "P";
 
-        public AccountingEntryForMercadopagoMapper(ICurrencyRepository currencyRepository)
+        public AccountingEntryForMercadopagoMapper(IPaymentAmountHelper paymentAmountService)
         {
-            _currencyRepository = currencyRepository;
+            _paymentAmountService = paymentAmountService;
         }
 
         public async Task<AccountingEntry> MapToInvoiceAccountingEntry(decimal total, UserBillingInformation user, UserTypePlanInformation newPlan, CreditCardPayment payment)
@@ -31,10 +30,9 @@ namespace Doppler.BillingUser.Mappers
 
             if (total != 0)
             {
-                rate = await _currencyRepository.GetCurrencyRateAsync((int)CurrencyTypeEnum.UsS, (int)CurrencyTypeEnum.sARG, DateTime.UtcNow);
-                decimal amount = await _currencyRepository.ConvertCurrencyAsync((int)CurrencyTypeEnum.UsS, (int)CurrencyTypeEnum.sARG, total, DateTime.UtcNow, rate);
-                decimal taxes = CalculateInvoiceTaxes(amount);
-                invoiceTaxes = await _currencyRepository.ConvertCurrencyAsync((int)CurrencyTypeEnum.sARG, (int)CurrencyTypeEnum.UsS, taxes, DateTime.UtcNow, (1 / rate));
+                var paymentDetails = await _paymentAmountService.ConvertCurrencyAmount(CurrencyTypeEnum.UsS, CurrencyTypeEnum.sARG, total);
+                rate = paymentDetails.CurrencyRate;
+                invoiceTaxes = paymentDetails.Taxes;
             }
             else
             {
@@ -82,12 +80,6 @@ namespace Doppler.BillingUser.Mappers
                 Taxes = invoiceEntry.Taxes,
                 IdInvoiceBillingType = invoiceEntry.IdInvoiceBillingType
             });
-        }
-
-        private static decimal CalculateInvoiceTaxes(decimal amount)
-        {
-            decimal coefficient = 0.21m;
-            return amount * coefficient;
         }
     }
 }
