@@ -14,7 +14,7 @@ namespace Doppler.BillingUser.Controllers
     public class WebhooksController : ControllerBase
     {
         private readonly IBillingRepository _billingRepository;
-        private readonly ICurrencyRepository _currencyRepository;
+        private readonly IPaymentAmountHelper _paymentAmountService;
         private readonly ILogger<WebhooksController> _logger;
         private readonly IUserRepository _userRepository;
         private readonly IMercadoPagoService _mercadoPagoService;
@@ -23,7 +23,7 @@ namespace Doppler.BillingUser.Controllers
         private readonly string PAYMENT_UPDATED = "payment.updated";
 
         public WebhooksController(
-            ICurrencyRepository currencyRepository,
+            IPaymentAmountHelper paymentAmountService,
             ILogger<WebhooksController> logger,
             IBillingRepository billingRepository,
             IUserRepository userRepository,
@@ -32,7 +32,7 @@ namespace Doppler.BillingUser.Controllers
             IEmailTemplatesService emailTemplatesService)
         {
             _billingRepository = billingRepository;
-            _currencyRepository = currencyRepository;
+            _paymentAmountService = paymentAmountService;
             _logger = logger;
             _userRepository = userRepository;
             _mercadoPagoService = mercadoPagoService;
@@ -82,7 +82,7 @@ namespace Doppler.BillingUser.Controllers
 
             if (status == PaymentStatusEnum.Approved && invoice.Status != PaymentStatusEnum.Approved)
             {
-                var accountingEntryMapper = new AccountingEntryForMercadopagoMapper(_currencyRepository);
+                var accountingEntryMapper = new AccountingEntryForMercadopagoMapper(_paymentAmountService);
                 var encryptedCreditCard = await _userRepository.GetEncryptedCreditCard(accountname);
                 var paymentEntry = await accountingEntryMapper.MapToPaymentAccountingEntry(invoice, encryptedCreditCard);
                 await _billingRepository.UpdateInvoiceStatus(invoice.IdAccountingEntry, PaymentStatusEnum.Approved);

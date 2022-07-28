@@ -54,7 +54,7 @@ namespace Doppler.BillingUser.Controllers
         private readonly ICurrencyRepository _currencyRepository;
         private readonly IMercadoPagoService _mercadoPagoService;
         private readonly IPaymentStatusMapper _paymentStatusMapper;
-
+        private readonly IPaymentAmountHelper _paymentAmountService;
         private readonly JsonSerializerSettings settings = new JsonSerializerSettings
         {
             DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'Z'",
@@ -100,9 +100,9 @@ namespace Doppler.BillingUser.Controllers
             IOptions<ZohoSettings> zohoSettings,
             IZohoService zohoService,
             IEmailTemplatesService emailTemplatesService,
-            ICurrencyRepository currencyRepository,
             IMercadoPagoService mercadopagoService,
-            IPaymentStatusMapper paymentStatusMapper)
+            IPaymentStatusMapper paymentStatusMapper,
+            IPaymentAmountHelper paymentAmountService)
         {
             _logger = logger;
             _billingRepository = billingRepository;
@@ -121,9 +121,9 @@ namespace Doppler.BillingUser.Controllers
             _zohoSettings = zohoSettings;
             _zohoService = zohoService;
             _emailTemplatesService = emailTemplatesService;
-            _currencyRepository = currencyRepository;
             _mercadoPagoService = mercadopagoService;
             _paymentStatusMapper = paymentStatusMapper;
+            _paymentAmountService = paymentAmountService;
         }
 
         [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
@@ -600,11 +600,8 @@ namespace Doppler.BillingUser.Controllers
                     var authorizationNumber = await _paymentGateway.CreateCreditCardPayment(total, encryptedCreditCard, userId);
                     return new CreditCardPayment { Status = PaymentStatusEnum.Approved, AuthorizationNumber = authorizationNumber };
                 case PaymentMethodEnum.MP:
-                    var rate = await _currencyRepository.GetCurrencyRateAsync((int)CurrencyTypeEnum.UsS, (int)CurrencyTypeEnum.sARG, DateTime.UtcNow);
-                    decimal amount = await _currencyRepository.ConvertCurrencyAsync((int)CurrencyTypeEnum.UsS, (int)CurrencyTypeEnum.sARG, total, DateTime.UtcNow, rate);
-                    decimal taxes = CalculateInvoiceTaxes(amount);
-
-                    var mercadoPagoPayment = await _mercadoPagoService.CreatePayment(accountname, userId, Math.Round(amount + taxes, 2, MidpointRounding.AwayFromZero), encryptedCreditCard);
+                    var paymentDetails = await _paymentAmountService.ConvertCurrencyAmount(CurrencyTypeEnum.UsS, CurrencyTypeEnum.sARG, total);
+                    var mercadoPagoPayment = await _mercadoPagoService.CreatePayment(accountname, userId, paymentDetails.Total, encryptedCreditCard);
                     return new CreditCardPayment { Status = _paymentStatusMapper.MapToPaymentStatus(mercadoPagoPayment.Status), AuthorizationNumber = mercadoPagoPayment.Id.ToString() };
                 default:
                     return new CreditCardPayment { Status = PaymentStatusEnum.Approved };
@@ -618,7 +615,7 @@ namespace Doppler.BillingUser.Controllers
                 case PaymentMethodEnum.CC:
                     return new AccountingEntryForCreditCardMapper();
                 case PaymentMethodEnum.MP:
-                    return new AccountingEntryForMercadopagoMapper(_currencyRepository);
+                    return new AccountingEntryForMercadopagoMapper(_paymentAmountService);
                 default:
                     _logger.LogError($"The paymentMethod '{paymentMethod}' does not have a mapper.");
                     throw new ArgumentException($"The paymentMethod '{paymentMethod}' does not have a mapper.");
@@ -632,7 +629,7 @@ namespace Doppler.BillingUser.Controllers
                 case PaymentMethodEnum.CC:
                     return new BillingCreditForCreditCardMapper(_billingRepository, _encryptionService);
                 case PaymentMethodEnum.MP:
-                    return new BillingCreditForMercadopagoMapper(_billingRepository, _currencyRepository, _encryptionService);
+                    return new BillingCreditForMercadopagoMapper(_billingRepository, _encryptionService, _paymentAmountService);
                 case PaymentMethodEnum.TRANSF:
                     return new BillingCreditForTransferMapper(_billingRepository);
                 default:
@@ -691,12 +688,6 @@ namespace Doppler.BillingUser.Controllers
             }
 
             return 0;
-        }
-
-        private static decimal CalculateInvoiceTaxes(decimal amount)
-        {
-            decimal coefficient = 0.21m;
-            return amount * coefficient;
         }
     }
 }
