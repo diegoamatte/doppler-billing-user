@@ -132,7 +132,8 @@ namespace Doppler.BillingUser.Services
                         discountMonthPlan = planDiscountInformation != null ? planDiscountInformation.MonthPlan : 0,
                         year = DateTime.UtcNow.Year
                     },
-                    to: new[] { _emailSettings.Value.AdminEmail });
+                    to: new[] { _emailSettings.Value.AdminEmail },
+                    replyTo: _emailSettings.Value.InfoDopplerAppsEmail);
 
             return Task.WhenAll(adminEmail, upgradeEmail);
         }
@@ -381,7 +382,8 @@ namespace Doppler.BillingUser.Services
                         total = amountDetails.Total,
                         year = DateTime.UtcNow.Year
                     },
-                    to: new[] { _emailSettings.Value.AdminEmail });
+                    to: new[] { _emailSettings.Value.AdminEmail },
+                    replyTo: _emailSettings.Value.InfoDopplerAppsEmail);
 
             return Task.WhenAll(updatePlanAdminEmail, updatePlanEmail);
         }
