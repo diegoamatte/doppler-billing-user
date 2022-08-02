@@ -379,7 +379,7 @@ namespace Doppler.BillingUser.Services
                         hasDiscountPromocode = amountDetails != null && amountDetails.DiscountPromocode.Amount > 0,
                         discountPromocodeAmount = amountDetails != null && amountDetails.DiscountPromocode.Amount > 0 ? amountDetails.DiscountPromocode.Amount : 0,
                         discountPromocodePercentage = amountDetails != null && amountDetails.DiscountPromocode.DiscountPercentage > 0 ? amountDetails.DiscountPromocode.DiscountPercentage : 0,
-                        total = amountDetails.Total,
+                        total = amountDetails != null ? amountDetails.Total : 0,
                         year = DateTime.UtcNow.Year
                     },
                     to: new[] { _emailSettings.Value.AdminEmail },

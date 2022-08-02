@@ -800,7 +800,12 @@ SELECT
     BC.CUIT As Cuit,
     BC.DiscountPlanFeeAdmin,
     BC.DiscountPlanFeePromotion,
-    BC.IdPromotion
+    BC.IdPromotion,
+    BC.[SubscribersQty],
+    BC.[PaymentDate],
+    BC.[IdDiscountPlan],
+    BC.[TotalMonthPlan],
+    BC.[CurrentMonthPlan]
 FROM
     [dbo].[BillingCredits] BC
         LEFT JOIN [dbo].[DiscountXPlan] DP
