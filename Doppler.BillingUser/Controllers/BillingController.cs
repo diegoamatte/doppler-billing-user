@@ -391,23 +391,24 @@ namespace Doppler.BillingUser.Controllers
                     await _userRepository.UpdateUserBillingCredit(user);
 
                     partialBalance = await _userRepository.GetAvailableCredit(user.IdUser);
-                    User userInformation = await _userRepository.GetUserInformation(accountname);
 
-                    if (newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS)
+                    if (!user.UpgradePending)
                     {
-                        await _billingRepository.UpdateUserSubscriberLimitsAsync(user.IdUser);
+                        if (newPlan.IdUserType != UserTypeEnum.SUBSCRIBERS)
+                        {
+                            await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan);
+                        }
+                        else
+                        {
+                            await _billingRepository.UpdateUserSubscriberLimitsAsync(user.IdUser);
+                        }
+
+                        User userInformation = await _userRepository.GetUserInformation(accountname);
                         var activatedStandByAmount = await _billingRepository.ActivateStandBySubscribers(user.IdUser);
                         if (activatedStandByAmount > 0)
                         {
                             var lang = userInformation.Language ?? "en";
                             await _emailTemplatesService.SendActivatedStandByEmail(lang, userInformation.FirstName, activatedStandByAmount, user.Email);
-                        }
-                    }
-                    else
-                    {
-                        if (!user.UpgradePending)
-                        {
-                            await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan);
                         }
                     }
 
