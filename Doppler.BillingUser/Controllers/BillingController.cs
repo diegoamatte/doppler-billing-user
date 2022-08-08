@@ -82,6 +82,12 @@ namespace Doppler.BillingUser.Controllers
             CountryEnum.Argentina
         };
 
+        private static readonly List<UserTypeEnum> AllowedUpdatePlanTypesForBilling = new List<UserTypeEnum>
+        {
+            UserTypeEnum.MONTHLY,
+            UserTypeEnum.SUBSCRIBERS
+        };
+
         public BillingController(
             ILogger<BillingController> logger,
             IBillingRepository billingRepository,
@@ -294,9 +300,9 @@ namespace Doppler.BillingUser.Controllers
                 }
 
                 var currentPlan = await _userRepository.GetUserCurrentTypePlan(user.IdUser);
-                if (currentPlan != null && currentPlan.IdUserType != UserTypeEnum.MONTHLY)
+                if (currentPlan != null && !AllowedUpdatePlanTypesForBilling.Any(p => p == currentPlan.IdUserType))
                 {
-                    var messageError = $"Failed at creating new agreement for user {accountname}, Invalid user type (only free users or upgrade between 'Montly' plans) {currentPlan.IdUserType}";
+                    var messageError = $"Failed at creating new agreement for user {accountname}, Invalid user type (only free users or upgrade between 'Montly' and 'Contacts' plans) {currentPlan.IdUserType}";
                     _logger.LogError(messageError);
                     await _slackService.SendNotification(messageError);
                     return new BadRequestObjectResult("Invalid user type (only free users or upgrade between 'Montly' plans)");
@@ -427,6 +433,13 @@ namespace Doppler.BillingUser.Controllers
                             billingCreditId = await ChangeBetweenMonthlyPlans(currentPlan, newPlan, user, agreementInformation, promotion, payment);
                         }
                     }
+                    else
+                    {
+                        if (currentPlan.IdUserType == UserTypeEnum.SUBSCRIBERS && newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS)
+                        {
+                            billingCreditId = await ChangeBetweenSubscribersPlans(currentPlan, newPlan, user, agreementInformation, promotion, payment);
+                        }
+                    }
                 }
 
                 if (agreementInformation.Total.GetValueOrDefault() > 0 &&
@@ -438,83 +451,89 @@ namespace Doppler.BillingUser.Controllers
                     var cardNumber = user.PaymentMethod == PaymentMethodEnum.CC ? _encryptionService.DecryptAES256(encryptedCreditCard.Number) : "";
                     var holderName = user.PaymentMethod == PaymentMethodEnum.CC ? _encryptionService.DecryptAES256(encryptedCreditCard.HolderName) : "";
 
-                    await _sapService.SendBillingToSap(
-                        BillingHelper.MapBillingToSapAsync(_sapSettings.Value,
-                            cardNumber,
-                            holderName,
-                            billingCredit,
-                            currentPlan,
-                            newPlan,
-                            authorizationNumber,
-                            invoiceId,
-                            agreementInformation.Total),
-                        accountname);
+                    if (billingCredit != null)
+                    {
+                        await _sapService.SendBillingToSap(
+                            BillingHelper.MapBillingToSapAsync(_sapSettings.Value,
+                                cardNumber,
+                                holderName,
+                                billingCredit,
+                                currentPlan,
+                                newPlan,
+                                authorizationNumber,
+                                invoiceId,
+                                agreementInformation.Total),
+                            accountname);
+                    }
                 }
 
                 var userType = currentPlan == null ? "Free user" : "Update plan";
                 var message = $"Successful at creating a new agreement for: User: {accountname} - Plan: {agreementInformation.PlanId} - {userType}";
                 await _slackService.SendNotification(message + (!string.IsNullOrEmpty(agreementInformation.Promocode) ? $" - Promocode {agreementInformation.Promocode}" : string.Empty));
 
-                if (_zohoSettings.Value.UseZoho)
+                if (currentPlan == null)
                 {
-                    ZohoDTO zohoDto = new ZohoDTO()
+                    if (_zohoSettings.Value.UseZoho)
                     {
-                        Email = user.Email,
-                        Doppler = newPlan.IdUserType.ToDescription(),
-                        BillingSystem = user.PaymentMethod.ToString(),
-                        OriginInbound = agreementInformation.OriginInbound
-                    };
-
-                    if (!user.UpgradePending)
-                    {
-                        zohoDto.UpgradeDate = DateTime.UtcNow;
-                        zohoDto.FirstPaymentDate = DateTime.UtcNow;
-                    }
-
-                    if (promotion != null)
-                    {
-                        zohoDto.PromoCodo = agreementInformation.Promocode;
-                        if (promotion.ExtraCredits.HasValue && promotion.ExtraCredits.Value != 0)
-                            zohoDto.DiscountType = ZohoDopplerValues.Credits;
-                        else if (promotion.DiscountPercentage.HasValue && promotion.DiscountPercentage.Value != 0)
-                            zohoDto.DiscountType = ZohoDopplerValues.Discount;
-                    }
-
-                    try
-                    {
-                        await _zohoService.RefreshTokenAsync();
-                        var contact = await _zohoService.SearchZohoEntityAsync<ZohoEntityContact>("Contacts", string.Format("Email:equals:{0}", zohoDto.Email));
-                        if (contact == null)
+                        ZohoDTO zohoDto = new ZohoDTO()
                         {
-                            var response = await _zohoService.SearchZohoEntityAsync<ZohoResponse<ZohoEntityLead>>("Leads", string.Format("Email:equals:{0}", zohoDto.Email));
-                            if (response != null)
-                            {
-                                var lead = response.Data.FirstOrDefault();
-                                BillingHelper.MapForUpgrade(lead, zohoDto);
-                                var body = JsonConvert.SerializeObject(new ZohoUpdateModel<ZohoEntityLead> { Data = new List<ZohoEntityLead> { lead } }, settings);
-                                await _zohoService.UpdateZohoEntityAsync(body, lead.Id, "Leads");
-                            }
+                            Email = user.Email,
+                            Doppler = newPlan.IdUserType.ToDescription(),
+                            BillingSystem = user.PaymentMethod.ToString(),
+                            OriginInbound = agreementInformation.OriginInbound
+                        };
+
+                        if (!user.UpgradePending)
+                        {
+                            zohoDto.UpgradeDate = DateTime.UtcNow;
+                            zohoDto.FirstPaymentDate = DateTime.UtcNow;
                         }
-                        else
+
+                        if (promotion != null)
                         {
-                            if (contact.AccountName != null && !string.IsNullOrEmpty(contact.AccountName.Name))
+                            zohoDto.PromoCodo = agreementInformation.Promocode;
+                            if (promotion.ExtraCredits.HasValue && promotion.ExtraCredits.Value != 0)
+                                zohoDto.DiscountType = ZohoDopplerValues.Credits;
+                            else if (promotion.DiscountPercentage.HasValue && promotion.DiscountPercentage.Value != 0)
+                                zohoDto.DiscountType = ZohoDopplerValues.Discount;
+                        }
+
+                        try
+                        {
+                            await _zohoService.RefreshTokenAsync();
+                            var contact = await _zohoService.SearchZohoEntityAsync<ZohoEntityContact>("Contacts", string.Format("Email:equals:{0}", zohoDto.Email));
+                            if (contact == null)
                             {
-                                var response = await _zohoService.SearchZohoEntityAsync<ZohoResponse<ZohoEntityAccount>>("Accounts", string.Format("Account_Name:equals:{0}", contact.AccountName.Name));
+                                var response = await _zohoService.SearchZohoEntityAsync<ZohoResponse<ZohoEntityLead>>("Leads", string.Format("Email:equals:{0}", zohoDto.Email));
                                 if (response != null)
                                 {
-                                    var account = response.Data.FirstOrDefault();
-                                    BillingHelper.MapForUpgrade(account, zohoDto);
-                                    var body = JsonConvert.SerializeObject(new ZohoUpdateModel<ZohoEntityAccount> { Data = new List<ZohoEntityAccount> { account } }, settings);
-                                    await _zohoService.UpdateZohoEntityAsync(body, account.Id, "Accounts");
+                                    var lead = response.Data.FirstOrDefault();
+                                    BillingHelper.MapForUpgrade(lead, zohoDto);
+                                    var body = JsonConvert.SerializeObject(new ZohoUpdateModel<ZohoEntityLead> { Data = new List<ZohoEntityLead> { lead } }, settings);
+                                    await _zohoService.UpdateZohoEntityAsync(body, lead.Id, "Leads");
+                                }
+                            }
+                            else
+                            {
+                                if (contact.AccountName != null && !string.IsNullOrEmpty(contact.AccountName.Name))
+                                {
+                                    var response = await _zohoService.SearchZohoEntityAsync<ZohoResponse<ZohoEntityAccount>>("Accounts", string.Format("Account_Name:equals:{0}", contact.AccountName.Name));
+                                    if (response != null)
+                                    {
+                                        var account = response.Data.FirstOrDefault();
+                                        BillingHelper.MapForUpgrade(account, zohoDto);
+                                        var body = JsonConvert.SerializeObject(new ZohoUpdateModel<ZohoEntityAccount> { Data = new List<ZohoEntityAccount> { account } }, settings);
+                                        await _zohoService.UpdateZohoEntityAsync(body, account.Id, "Accounts");
+                                    }
                                 }
                             }
                         }
-                    }
-                    catch (Exception e)
-                    {
-                        var messageError = $"Failed at updating lead from zoho {accountname} with exception {e.Message}";
-                        _logger.LogError(e, messageError);
-                        await _slackService.SendNotification(messageError);
+                        catch (Exception e)
+                        {
+                            var messageError = $"Failed at updating lead from zoho {accountname} with exception {e.Message}";
+                            _logger.LogError(e, messageError);
+                            await _slackService.SendNotification(messageError);
+                        }
                     }
                 }
 
@@ -584,6 +603,7 @@ namespace Doppler.BillingUser.Controllers
 
                     return;
                 case BillingCreditTypeEnum.Upgrade_Between_Monthlies:
+                case BillingCreditTypeEnum.Upgrade_Between_Subscribers:
                     await _emailTemplatesService.SendNotificationForUpdatePlan(accountname, userInformation, currentPlan, newPlan, user, promotion, promocode, discountId, planDiscountInformation, amountDetails);
                     return;
                 default:
@@ -684,6 +704,65 @@ namespace Doppler.BillingUser.Controllers
 
                 //Send notifications
                 SendNotifications(user.Email, newPlan, user, partialBalance, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditTypeEnum.Upgrade_Between_Monthlies, currentPlan, amountDetails);
+
+                return billingCreditId;
+            }
+
+            return 0;
+        }
+
+        private async Task<int> ChangeBetweenSubscribersPlans(UserTypePlanInformation currentPlan, UserTypePlanInformation newPlan, UserBillingInformation user, AgreementInformation agreementInformation, Promotion promotion, CreditCardPayment payment)
+        {
+            if (currentPlan.SubscribersQty < newPlan.SubscribersQty)
+            {
+                var currentBillingCredit = await _billingRepository.GetBillingCredit(user.IdCurrentBillingCredit);
+                var amountDetails = await _accountPlansService.GetCalculateUpgrade(user.Email, agreementInformation);
+
+                if (currentBillingCredit != null)
+                {
+                    promotion = await _promotionRepository.GetById(currentBillingCredit.IdPromotion ?? 0);
+                    if (promotion != null)
+                    {
+                        var timesAppliedPromocode = await _promotionRepository.GetHowManyTimesApplyedPromocode(promotion.Code, user.Email);
+                        if (promotion.Duration == timesAppliedPromocode.CountApplied)
+                        {
+                            promotion = null;
+                        }
+                    }
+                }
+
+                var billingCreditMapper = GetBillingCreditMapper(user.PaymentMethod);
+                var billingCreditAgreement = await billingCreditMapper.MapToBillingCreditAgreement(agreementInformation, user, newPlan, promotion, payment, BillingCreditTypeEnum.Upgrade_Between_Subscribers);
+                billingCreditAgreement.BillingCredit.DiscountPlanFeeAdmin = currentBillingCredit.DiscountPlanFeeAdmin;
+
+                var billingCreditId = await _billingRepository.CreateBillingCreditAsync(billingCreditAgreement);
+
+
+                /* Update the user */
+                user.IdCurrentBillingCredit = billingCreditId;
+                user.OriginInbound = agreementInformation.OriginInbound;
+                user.UpgradePending = false;
+                user.UTCUpgrade = DateTime.UtcNow;
+                user.MaxSubscribers = newPlan.SubscribersQty.Value;
+
+                await _userRepository.UpdateUserBillingCredit(user);
+
+                if (promotion != null)
+                    await _promotionRepository.IncrementUsedTimes(promotion);
+
+                //Send notifications
+                SendNotifications(user.Email, newPlan, user, 0, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditTypeEnum.Upgrade_Between_Subscribers, currentPlan, amountDetails);
+
+                //Activate StandBy Subscribers
+                User userInformation = await _userRepository.GetUserInformation(user.Email);
+
+                await _billingRepository.UpdateUserSubscriberLimitsAsync(user.IdUser);
+                var activatedStandByAmount = await _billingRepository.ActivateStandBySubscribers(user.IdUser);
+                if (activatedStandByAmount > 0)
+                {
+                    var lang = userInformation.Language ?? "en";
+                    await _emailTemplatesService.SendActivatedStandByEmail(lang, userInformation.FirstName, activatedStandByAmount, user.Email);
+                }
 
                 return billingCreditId;
             }

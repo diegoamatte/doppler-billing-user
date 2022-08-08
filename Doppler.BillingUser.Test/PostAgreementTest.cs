@@ -1880,5 +1880,173 @@ namespace Doppler.BillingUser.Test
             billingRepositoryMock.Verify(brm => brm.ActivateStandBySubscribers(It.IsAny<int>()), Times.Never);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
+
+        [Fact]
+        public async Task POST_agreement_information_should_return_bad_request_when_user_do_an_update_and_is_not_a_monthly_or_contacts()
+        {
+            // Arrange
+            var user = new UserBillingInformation()
+            {
+                IdUser = 1,
+                PaymentMethod = PaymentMethodEnum.CC
+            };
+
+            var agreement = new
+            {
+                planId = 1,
+                total = 15
+            };
+
+            var accountName = "test1@example.com";
+            var accountPlansServiceMock = new Mock<IAccountPlansService>();
+            accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
+                .ReturnsAsync(true);
+
+            var userRepositoryMock = new Mock<IUserRepository>();
+            userRepositoryMock.Setup(x => x.GetUserBillingInformation(accountName)).ReturnsAsync(user);
+            userRepositoryMock.Setup(x => x.GetUserCurrentTypePlan(It.IsAny<int>())).ReturnsAsync(new UserTypePlanInformation()
+            {
+                IdUserType = UserTypeEnum.INDIVIDUAL,
+                SubscribersQty = 1500,
+                Fee = 25
+            });
+
+            var client = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    services.AddSingleton(Mock.Of<IEncryptionService>());
+                    services.AddSingleton(accountPlansServiceMock.Object);
+                    services.AddSingleton(userRepositoryMock.Object);
+                });
+
+            }).CreateClient(new WebApplicationFactoryClientOptions());
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TOKEN_ACCOUNT_123_TEST1_AT_EXAMPLE_DOT_COM_EXPIRE_20330518);
+
+            // Act
+            var response = await client.PostAsync("accounts/test1@example.com/agreements", JsonContent.Create(agreement));
+
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async void POST_agreement_should_return_ok_when_update_plans_is_by_emails_or_contacts()
+        {
+            // Arrange
+            const string accountName = "test1@example.com";
+            var agreement = new
+            {
+                planId = 1,
+                total = 15
+            };
+
+            var currentPaymentMethod = new PaymentMethod
+            {
+                CCExpMonth = "1",
+                CCExpYear = "2022",
+                CCHolderFullName = "Test",
+                CCNumber = "411111111111"
+            };
+
+            var creditCard = new CreditCard()
+            {
+                CardType = CardTypeEnum.Visa,
+                ExpirationMonth = 12,
+                ExpirationYear = 23,
+                HolderName = "kBvAJf5f3AIp8+MEVYVTGA==",
+                Number = "Oe9VdYnmPsZGPKnLEogk1hbP7NH3YfZnqxLrUJxnGgc=",
+                Code = "pNw3zrff06X9K972Ro6OwQ=="
+            };
+
+            var billingRepositoryMock = new Mock<IBillingRepository>();
+            billingRepositoryMock.Setup(x => x.GetPaymentMethodByUserName(It.IsAny<string>())).ReturnsAsync(currentPaymentMethod);
+            billingRepositoryMock.Setup(x => x.CreateAccountingEntriesAsync(It.IsAny<AccountingEntry>(), It.IsAny<AccountingEntry>())).ReturnsAsync(1);
+            billingRepositoryMock.Setup(x => x.GetBillingCredit(It.IsAny<int>()))
+                .ReturnsAsync(new BillingCredit
+                {
+                    Date = DateTime.UtcNow
+                });
+
+            var accountPlansServiceMock = new Mock<IAccountPlansService>();
+            accountPlansServiceMock.Setup(x => x.IsValidTotal(accountName, It.IsAny<AgreementInformation>()))
+                .ReturnsAsync(true);
+            accountPlansServiceMock.Setup(x => x.GetValidPromotionByCode("promocode-test", 1))
+                .ReturnsAsync(new Promotion
+                {
+                    IdPromotion = 1
+                });
+            accountPlansServiceMock.Setup(x => x.GetCalculateUpgrade(It.IsAny<string>(), It.IsAny<AgreementInformation>()))
+                .ReturnsAsync(new PlanAmountDetails
+                {
+                    Total = 100,
+                    CurrentMonthTotal = 100,
+                    DiscountPaymentAlreadyPaid = 0,
+                    DiscountPlanFeeAdmin = new DiscountPlanFeeAdmin(),
+                    DiscountPrepayment = new DiscountPrepayment(),
+                    DiscountPromocode = new DiscountPromocode(),
+                    NextMonthTotal = 150
+                });
+
+            var userRepositoryMock = new Mock<IUserRepository>();
+            userRepositoryMock.Setup(x => x.GetUserBillingInformation(accountName))
+                .ReturnsAsync(new UserBillingInformation
+                {
+                    IdUser = 1,
+                    PaymentMethod = PaymentMethodEnum.CC
+                });
+            userRepositoryMock.Setup(x => x.GetUserNewTypePlan(It.IsAny<int>()))
+                .ReturnsAsync(new UserTypePlanInformation
+                {
+                    IdUserType = UserTypeEnum.MONTHLY,
+                    IdUserTypePlan = 1,
+                    EmailQty = 1500
+                });
+            userRepositoryMock.Setup(x => x.GetUserInformation(It.IsAny<string>())).ReturnsAsync(new User()
+            {
+                Language = "es"
+            });
+            userRepositoryMock.Setup(x => x.GetUserCurrentTypePlan(It.IsAny<int>()))
+                .ReturnsAsync(new UserTypePlanInformation
+                {
+                    IdUserType = UserTypeEnum.MONTHLY,
+                    IdUserTypePlan = 2,
+                    EmailQty = 500
+                });
+            userRepositoryMock.Setup(x => x.GetEncryptedCreditCard(accountName)).ReturnsAsync(creditCard);
+
+            var emailSenderMock = new Mock<IEmailSender>();
+            emailSenderMock.Setup(x => x.SafeSendWithTemplateAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<Attachment>>(), It.IsAny<CancellationToken>()));
+
+            var encryptionServiceMock = new Mock<IEncryptionService>();
+            encryptionServiceMock.Setup(x => x.DecryptAES256(It.IsAny<string>())).Returns("12345");
+
+            var paymentGatewayMock = new Mock<IPaymentGateway>();
+            paymentGatewayMock.Setup(x => x.CreateCreditCardPayment(It.IsAny<decimal>(), It.IsAny<CreditCard>(), It.IsAny<int>())).ReturnsAsync("ET123456");
+
+            var factory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    services.AddSingleton(encryptionServiceMock.Object);
+                    services.AddSingleton(accountPlansServiceMock.Object);
+                    services.AddSingleton(userRepositoryMock.Object);
+                    services.AddSingleton(billingRepositoryMock.Object);
+                    services.AddSingleton(paymentGatewayMock.Object);
+                    services.AddSingleton(Mock.Of<IPromotionRepository>());
+                    services.AddSingleton(emailSenderMock.Object);
+                });
+            });
+            var client = factory.CreateClient(new WebApplicationFactoryClientOptions());
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TOKEN_ACCOUNT_123_TEST1_AT_EXAMPLE_DOT_COM_EXPIRE_20330518);
+
+            // Act
+            var response = await client.PostAsJsonAsync($"accounts/{accountName}/agreements", agreement);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
     }
 }
