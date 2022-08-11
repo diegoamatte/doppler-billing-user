@@ -391,8 +391,10 @@ namespace Doppler.BillingUser.Controllers
                     user.UTCFirstPayment = !user.UpgradePending ? DateTime.UtcNow : null;
                     user.UTCUpgrade = user.UTCFirstPayment;
 
-                    if (newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS && newPlan.SubscribersQty.HasValue)
+                    if (newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS && newPlan.SubscribersQty.HasValue && !user.UpgradePending)
+                    {
                         user.MaxSubscribers = newPlan.SubscribersQty.Value;
+                    }
 
                     await _userRepository.UpdateUserBillingCredit(user);
 
