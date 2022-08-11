@@ -38,7 +38,7 @@ namespace Doppler.BillingUser.ExternalServices.Sap
                         .WithHeader("Authorization", $"Bearer {_jwtTokenGenerator.GenerateSuperUserJwtToken()}")
                         .PostJsonAsync(sapBusinessPartner);
 
-                    _logger.LogInformation($"User data successfully sent to DopplerSap. Iduser: {sapBusinessPartner.Id} - ClientManager: {sapBusinessPartner.IsClientManager}");
+                    _logger.LogInformation("User data successfully sent to DopplerSap. Iduser: {IdUser} - ClientManager: {IsClientManager}", sapBusinessPartner.Id, sapBusinessPartner.IsClientManager);
                 }
                 catch (Exception e)
                 {
@@ -56,7 +56,7 @@ namespace Doppler.BillingUser.ExternalServices.Sap
                         .WithHeader("Authorization", $"Bearer {_jwtTokenGenerator.GenerateSuperUserJwtToken()}")
                         .PostJsonAsync(new List<SapBillingDto>() { sapBilling });
 
-                    _logger.LogInformation($"User billing data successfully sent to Sap. User: {email}");
+                    _logger.LogInformation("User billing data successfully sent to Sap. User: {email}", email);
                 }
                 catch (Exception e)
                 {

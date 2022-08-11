@@ -100,8 +100,8 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
                         errorCode = PaymentErrorCode.DeclinedPaymentTransaction;
                     }
 
-                    _logger.LogError(String.Format("First Data Error: Client Id: {0}, CVDCode: {1}, CVD_Presence_Ind: {2}", clientId, txn.CVDCode, txn.CVD_Presence_Ind));
-                    _logger.LogError(String.Format("Response: CVV: {0}, ErrorCode:{1}, ErrorMessage: {2}", apiResponse.CVV2, errorCode, errorMessage));
+                    _logger.LogError("First Data Error: Client Id: {clientId}, CVDCode: {cvdCode}, CVD_Presence_Ind: {CVD_Presence_ind}", clientId, txn.CVDCode, txn.CVD_Presence_Ind);
+                    _logger.LogError("Response: CVV: {CVV}, ErrorCode:{errorCode}, ErrorMessage: {errorMessage}", apiResponse.CVV2, errorCode, errorMessage);
 
                     if (txn.Transaction_Type != TransactionTypes.REFUND)
                     {
