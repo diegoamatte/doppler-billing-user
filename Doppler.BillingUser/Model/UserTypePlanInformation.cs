@@ -1,3 +1,4 @@
+#nullable enable
 using Doppler.BillingUser.Enums;
 
 namespace Doppler.BillingUser.Model
