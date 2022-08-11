@@ -41,7 +41,7 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
         {
             if (config == null)
             {
-                throw new ArgumentNullException("config");
+                throw new ArgumentNullException(nameof(config));
             }
 
             _encryptionService = encryptionService;
