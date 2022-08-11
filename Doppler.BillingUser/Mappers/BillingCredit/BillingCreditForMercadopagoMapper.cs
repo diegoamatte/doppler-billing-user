@@ -12,7 +12,6 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
     public class BillingCreditForMercadopagoMapper : IBillingCreditMapper
     {
         private readonly IBillingRepository _billingRepository;
-        private readonly ICurrencyRepository _currencyRepository;
         private readonly IEncryptionService _encryptionService;
         private readonly IPaymentAmountHelper _paymentAmountService;
         private const int CF = 1;
