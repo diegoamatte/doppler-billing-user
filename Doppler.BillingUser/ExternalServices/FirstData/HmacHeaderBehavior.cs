@@ -61,7 +61,7 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
             MessageBuffer buffer = request.CreateBufferedCopy(Int32.MaxValue);
             request = buffer.CreateMessage();
             Message msg = buffer.CreateMessage();
-            ASCIIEncoding encoder = new ASCIIEncoding();
+            var encoder = new ASCIIEncoding();
 
             var sb = new StringBuilder();
             var xmlWriter = XmlWriter.Create(sb, new XmlWriterSettings

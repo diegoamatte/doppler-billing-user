@@ -4,7 +4,7 @@ namespace Doppler.BillingUser.Enums
 {
     public static class SapDictionary
     {
-        public static readonly Dictionary<int, string> StatesDictionary = new Dictionary<int, string>
+        public static readonly Dictionary<int, string> StatesDictionary = new()
         {
             //AR
             { 2189, "01" }, // Buenos Aires

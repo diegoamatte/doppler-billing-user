@@ -51,34 +51,34 @@ namespace Doppler.BillingUser.Controllers
         private readonly IMercadoPagoService _mercadoPagoService;
         private readonly IPaymentStatusMapper _paymentStatusMapper;
         private readonly IPaymentAmountHelper _paymentAmountService;
-        private readonly JsonSerializerSettings settings = new JsonSerializerSettings
+        private readonly JsonSerializerSettings settings = new()
         {
             DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'Z'",
             DateFormatHandling = DateFormatHandling.IsoDateFormat,
             DateTimeZoneHandling = DateTimeZoneHandling.Utc,
             NullValueHandling = NullValueHandling.Ignore
         };
-        private static readonly List<UserTypeEnum> AllowedPlanTypesForBilling = new List<UserTypeEnum>
+        private static readonly List<UserTypeEnum> AllowedPlanTypesForBilling = new()
         {
             UserTypeEnum.INDIVIDUAL,
             UserTypeEnum.MONTHLY,
             UserTypeEnum.SUBSCRIBERS
         };
-        private static readonly List<PaymentMethodEnum> AllowedPaymentMethodsForBilling = new List<PaymentMethodEnum>
+        private static readonly List<PaymentMethodEnum> AllowedPaymentMethodsForBilling = new()
         {
             PaymentMethodEnum.CC,
             PaymentMethodEnum.TRANSF,
             PaymentMethodEnum.MP
         };
 
-        private static readonly List<CountryEnum> AllowedCountriesForTransfer = new List<CountryEnum>
+        private static readonly List<CountryEnum> AllowedCountriesForTransfer = new()
         {
             CountryEnum.Colombia,
             CountryEnum.Mexico,
             CountryEnum.Argentina
         };
 
-        private static readonly List<UserTypeEnum> AllowedUpdatePlanTypesForBilling = new List<UserTypeEnum>
+        private static readonly List<UserTypeEnum> AllowedUpdatePlanTypesForBilling = new()
         {
             UserTypeEnum.MONTHLY,
             UserTypeEnum.SUBSCRIBERS
@@ -469,7 +469,7 @@ namespace Doppler.BillingUser.Controllers
                 {
                     if (_zohoSettings.Value.UseZoho)
                     {
-                        ZohoDTO zohoDto = new ZohoDTO()
+                        ZohoDTO zohoDto = new()
                         {
                             Email = user.Email,
                             Doppler = newPlan.IdUserType.ToDescription(),

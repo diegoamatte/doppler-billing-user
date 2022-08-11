@@ -880,7 +880,7 @@ WHERE
             dataRow["IdUser"] = idUser;
             dtUserCheckLimits.Rows.Add(dataRow);
 
-            DynamicParameters parameters = new DynamicParameters();
+            var parameters = new DynamicParameters();
             parameters.Add("@Table", dtUserCheckLimits.AsTableValuedParameter("TYPEUSERTOCHECKLIMITS"));
 
             await connection.ExecuteAsync("User_UpdateLimits", parameters, commandType: CommandType.StoredProcedure);

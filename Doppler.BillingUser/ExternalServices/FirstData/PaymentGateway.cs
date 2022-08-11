@@ -28,7 +28,7 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
         private readonly bool _isDemo;
         private readonly int _amountToValidateCreditCard;
 
-        private readonly HashSet<string> _doNotHonorCodes = new HashSet<string>(new[] { "530", "606", "303" });
+        private readonly HashSet<string> _doNotHonorCodes = new(new[] { "530", "606", "303" });
 
         private readonly IEncryptionService _encryptionService;
         private readonly ILogger _logger;
@@ -121,7 +121,7 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
 
         private Transaction CreateDirectPaymentRequest(string type, decimal chargeTotal, CreditCard creditCard, int clientId)
         {
-            Transaction txn = new Transaction
+            var txn = new Transaction
             {
                 Transaction_Type = type,
                 Customer_Ref = clientId.ToString(),
