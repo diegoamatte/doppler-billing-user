@@ -54,10 +54,10 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
             buyCreditAgreement.BillingCredit = new BillingCreditModel()
             {
                 Date = now,
-                PaymentDate = billingCreditType == BillingCreditTypeEnum.UpgradeRequest ? !isUpgradePending ? now : null : null,
-                ActivationDate = billingCreditType == BillingCreditTypeEnum.UpgradeRequest ? !isUpgradePending ? now : null : now,
-                Approved = billingCreditType != BillingCreditTypeEnum.UpgradeRequest || !isUpgradePending,
-                Payed = billingCreditType == BillingCreditTypeEnum.UpgradeRequest && !isUpgradePending,
+                PaymentDate = (billingCreditType == BillingCreditTypeEnum.UpgradeRequest || billingCreditType == BillingCreditTypeEnum.Credit_Request) ? !isUpgradePending ? now : null : null,
+                ActivationDate = (billingCreditType == BillingCreditTypeEnum.UpgradeRequest || billingCreditType == BillingCreditTypeEnum.Credit_Request) ? !isUpgradePending ? now : null : now,
+                Approved = (billingCreditType != BillingCreditTypeEnum.UpgradeRequest && billingCreditType != BillingCreditTypeEnum.Credit_Request) || !isUpgradePending,
+                Payed = (billingCreditType == BillingCreditTypeEnum.UpgradeRequest || billingCreditType == BillingCreditTypeEnum.Credit_Request) && !isUpgradePending,
                 IdUserTypePlan = newUserTypePlan.IdUserTypePlan,
                 PlanFee = newUserTypePlan.Fee,
                 CreditsQty = newUserTypePlan.EmailQty ?? null,
