@@ -158,7 +158,7 @@ namespace Doppler.BillingUser.Controllers
             _paymentAmountService = paymentAmountService;
         }
 
-        [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
+        [Authorize(Policies.OwnResourceOrSuperUser)]
         [HttpGet("/accounts/{accountName}/billing-information")]
         public async Task<IActionResult> GetBillingInformation(string accountName)
         {
@@ -172,7 +172,7 @@ namespace Doppler.BillingUser.Controllers
             return new OkObjectResult(billingInformation);
         }
 
-        [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
+        [Authorize(Policies.OwnResourceOrSuperUser)]
         [HttpPut("/accounts/{accountname}/billing-information")]
         public async Task<IActionResult> UpdateBillingInformation(string accountname, [FromBody] BillingInformation billingInformation)
         {
@@ -200,7 +200,7 @@ namespace Doppler.BillingUser.Controllers
             return new OkObjectResult("Successfully");
         }
 
-        [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
+        [Authorize(Policies.OwnResourceOrSuperUser)]
         [HttpGet("/accounts/{accountname}/billing-information/invoice-recipients")]
         public async Task<IActionResult> GetInvoiceRecipients(string accountname)
         {
@@ -214,7 +214,7 @@ namespace Doppler.BillingUser.Controllers
             return new OkObjectResult(result);
         }
 
-        [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
+        [Authorize(Policies.OwnResourceOrSuperUser)]
         [HttpPut("/accounts/{accountname}/billing-information/invoice-recipients")]
         public async Task<IActionResult> UpdateInvoiceRecipients(string accountname, [FromBody] InvoiceRecipients invoiceRecipients)
         {
@@ -223,7 +223,7 @@ namespace Doppler.BillingUser.Controllers
             return new OkObjectResult("Successfully");
         }
 
-        [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
+        [Authorize(Policies.OwnResourceOrSuperUser)]
         [HttpGet("/accounts/{accountname}/payment-methods/current")]
         public async Task<IActionResult> GetCurrentPaymentMethod(string accountname)
         {
@@ -239,7 +239,7 @@ namespace Doppler.BillingUser.Controllers
             return new OkObjectResult(currentPaymentMethod);
         }
 
-        [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
+        [Authorize(Policies.OwnResourceOrSuperUser)]
         [HttpPut("/accounts/{accountname}/payment-methods/current")]
         public async Task<IActionResult> UpdateCurrentPaymentMethod(string accountname, [FromBody] PaymentMethod paymentMethod)
         {
@@ -267,7 +267,7 @@ namespace Doppler.BillingUser.Controllers
             }
         }
 
-        [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
+        [Authorize(Policies.OwnResourceOrSuperUser)]
         [HttpGet("/accounts/{accountname}/plans/current")]
         public async Task<IActionResult> GetCurrentPlan(string accountname)
         {
@@ -283,7 +283,7 @@ namespace Doppler.BillingUser.Controllers
             return new OkObjectResult(currentPlan);
         }
 
-        [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
+        [Authorize(Policies.OwnResourceOrSuperUser)]
         [HttpPost("/accounts/{accountname}/agreements")]
         public async Task<IActionResult> CreateAgreement([FromRoute] string accountname, [FromBody] AgreementInformation agreementInformation)
         {
@@ -580,7 +580,7 @@ namespace Doppler.BillingUser.Controllers
             }
         }
 
-        [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
+        [Authorize(Policies.OwnResourceOrSuperUser)]
         [HttpPut("/accounts/{accountname}/purchase-intention")]
         public async Task<IActionResult> UpdateLastPurchaseIntentionDate(string accountname)
         {
@@ -631,8 +631,8 @@ namespace Doppler.BillingUser.Controllers
                     }
 
                     return;
-                case BillingCreditTypeEnum.Upgrade_Between_Monthlies:
-                case BillingCreditTypeEnum.Upgrade_Between_Subscribers:
+                case BillingCreditTypeEnum.UpgradeBetweenMonthlies:
+                case BillingCreditTypeEnum.UpgradeBetweenSubscribers:
                     await _emailTemplatesService.SendNotificationForUpdatePlan(accountname, userInformation, currentPlan, newPlan, user, promotion, promocode, discountId, planDiscountInformation, amountDetails);
                     return;
                 case BillingCreditTypeEnum.Credit_Buyed_CC:
@@ -714,7 +714,7 @@ namespace Doppler.BillingUser.Controllers
                 }
 
                 var billingCreditMapper = GetBillingCreditMapper(user.PaymentMethod);
-                var billingCreditAgreement = await billingCreditMapper.MapToBillingCreditAgreement(agreementInformation, user, newPlan, promotion, payment, BillingCreditTypeEnum.Upgrade_Between_Monthlies);
+                var billingCreditAgreement = await billingCreditMapper.MapToBillingCreditAgreement(agreementInformation, user, newPlan, promotion, payment, BillingCreditTypeEnum.UpgradeBetweenMonthlies);
                 billingCreditAgreement.BillingCredit.DiscountPlanFeeAdmin = currentBillingCredit.DiscountPlanFeeAdmin;
 
                 var billingCreditId = await _billingRepository.CreateBillingCreditAsync(billingCreditAgreement);
@@ -737,7 +737,7 @@ namespace Doppler.BillingUser.Controllers
                     await _promotionRepository.IncrementUsedTimes(promotion);
 
                 //Send notifications
-                SendNotifications(user.Email, newPlan, user, partialBalance, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditTypeEnum.Upgrade_Between_Monthlies, currentPlan, amountDetails);
+                SendNotifications(user.Email, newPlan, user, partialBalance, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditTypeEnum.UpgradeBetweenMonthlies, currentPlan, amountDetails);
 
                 return billingCreditId;
             }
@@ -766,7 +766,7 @@ namespace Doppler.BillingUser.Controllers
                 }
 
                 var billingCreditMapper = GetBillingCreditMapper(user.PaymentMethod);
-                var billingCreditAgreement = await billingCreditMapper.MapToBillingCreditAgreement(agreementInformation, user, newPlan, promotion, payment, BillingCreditTypeEnum.Upgrade_Between_Subscribers);
+                var billingCreditAgreement = await billingCreditMapper.MapToBillingCreditAgreement(agreementInformation, user, newPlan, promotion, payment, BillingCreditTypeEnum.UpgradeBetweenSubscribers);
                 billingCreditAgreement.BillingCredit.DiscountPlanFeeAdmin = currentBillingCredit.DiscountPlanFeeAdmin;
 
                 var billingCreditId = await _billingRepository.CreateBillingCreditAsync(billingCreditAgreement);
@@ -785,7 +785,7 @@ namespace Doppler.BillingUser.Controllers
                     await _promotionRepository.IncrementUsedTimes(promotion);
 
                 //Send notifications
-                SendNotifications(user.Email, newPlan, user, 0, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditTypeEnum.Upgrade_Between_Subscribers, currentPlan, amountDetails);
+                SendNotifications(user.Email, newPlan, user, 0, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditTypeEnum.UpgradeBetweenSubscribers, currentPlan, amountDetails);
 
                 //Activate StandBy Subscribers
                 User userInformation = await _userRepository.GetUserInformation(user.Email);

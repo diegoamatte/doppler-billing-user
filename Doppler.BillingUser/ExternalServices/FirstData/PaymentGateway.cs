@@ -112,7 +112,7 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
                     LogErrorFirstData(clientId, txn.CVDCode, txn.CVD_Presence_Ind);
                     LogErrorFirstDataResponse(apiResponse.CVV2, errorCode, errorMessage);
 
-                    if (txn.Transaction_Type != TransactionTypes.REFUND)
+                    if (txn.Transaction_Type != TransactionTypes.Refund)
                     {
                         await _emailTemplatesService.SendNotificationForPaymentFailedTransaction(clientId, errorCode.ToString(), errorMessage, apiResponse.CTR, apiResponse.Bank_Message, PaymentMethodEnum.CC);
                     }
@@ -154,7 +154,7 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
         {
             try
             {
-                var paymentRequest = CreateDirectPaymentRequest(TransactionTypes.PRE_AUTH, _amountToValidateCreditCard, creditCard, clientId);
+                var paymentRequest = CreateDirectPaymentRequest(TransactionTypes.PreAuth, _amountToValidateCreditCard, creditCard, clientId);
                 await PostRequest(paymentRequest, clientId);
                 return true;
             }
@@ -175,7 +175,7 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
 
         public async Task<string> CreateCreditCardPayment(decimal chargeTotal, CreditCard creditCard, int clientId)
         {
-            var paymentRequest = CreateDirectPaymentRequest(TransactionTypes.PURCHASE, chargeTotal, creditCard, clientId);
+            var paymentRequest = CreateDirectPaymentRequest(TransactionTypes.Purchase, chargeTotal, creditCard, clientId);
             return await PostRequest(paymentRequest, clientId);
         }
 

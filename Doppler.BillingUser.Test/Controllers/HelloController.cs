@@ -26,21 +26,21 @@ namespace Doppler.BillingUser.Test.Controllers
             return "Hello! you have a valid token!";
         }
 
-        [Authorize(Policies.ONLY_SUPERUSER)]
+        [Authorize(Policies.OnlySuperser)]
         [HttpGet("/hello/superuser")]
         public string GetForSuperUserToken()
         {
             return "Hello! you have a valid SuperUser token!";
         }
 
-        [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
+        [Authorize(Policies.OwnResourceOrSuperUser)]
         [HttpGet("/accounts/{accountId:int:min(0)}/hello")]
         public string GetForAccountById(int accountId)
         {
             return $"Hello! \"you\" that have access to the account with ID '{accountId}'";
         }
 
-        [Authorize(Policies.OWN_RESOURCE_OR_SUPERUSER)]
+        [Authorize(Policies.OwnResourceOrSuperUser)]
         [HttpGet("/accounts/{accountname}/hello")]
         public string GetForAccountByName(string accountname)
         {
