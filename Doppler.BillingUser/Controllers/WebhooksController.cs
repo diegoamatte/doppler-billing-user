@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Doppler.BillingUser.Controllers
 {
     [ApiController]
-    public class WebhooksController : ControllerBase
+    public partial class WebhooksController : ControllerBase
     {
         private readonly IBillingRepository _billingRepository;
         private readonly IPaymentAmountHelper _paymentAmountService;
@@ -21,6 +21,12 @@ namespace Doppler.BillingUser.Controllers
         private readonly IPaymentStatusMapper _paymentStatusMapper;
         private readonly IEmailTemplatesService _emailTemplatesService;
         private readonly string PAYMENT_UPDATED = "payment.updated";
+
+        [LoggerMessage(0, LogLevel.Error, "Invoice with authorization number: {authorizationNumber} was not found.")]
+        partial void LogErrorAuthorizationNotFound(long authorizationNumber);
+
+        [LoggerMessage(1, LogLevel.Error, "The payment associated to the invoiceId {invoiceId} was rejected. Reason: {reason}")]
+        partial void LogErrorPaymentRejectedWithReason(int invoiceId, string reason);
 
         public WebhooksController(
             IPaymentAmountHelper paymentAmountService,
@@ -57,7 +63,7 @@ namespace Doppler.BillingUser.Controllers
             var invoice = await _billingRepository.GetInvoice(user.IdUser, notification.Data.Id.ToString());
             if (invoice is null)
             {
-                _logger.LogError("Invoice with authorization number: {authorizationNumber} was not found.", notification.Data.Id);
+                LogErrorAuthorizationNotFound(notification.Data.Id);
                 return new NotFoundObjectResult("Invoice not found");
             }
 
@@ -73,12 +79,12 @@ namespace Doppler.BillingUser.Controllers
             {
                 if (invoice.Status == PaymentStatusEnum.Approved)
                 {
-                    _logger.LogError("The payment associated to the invoiceId {invoiceId} was rejected. Reason: {reason}", invoice.IdAccountingEntry, payment.StatusDetail);
+                    LogErrorPaymentRejectedWithReason(invoice.IdAccountingEntry, payment.StatusDetail);
                 }
 
                 await _billingRepository.UpdateInvoiceStatus(invoice.IdAccountingEntry, status);
                 return new OkObjectResult("Successful");
-            }
+            } 
 
             if (status == PaymentStatusEnum.Approved && invoice.Status != PaymentStatusEnum.Approved)
             {

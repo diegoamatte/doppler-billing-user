@@ -7,11 +7,14 @@ using Microsoft.Extensions.Options;
 
 namespace Doppler.BillingUser.ExternalServices.Slack
 {
-    public class SlackService : ISlackService
+    public partial class SlackService : ISlackService
     {
         private readonly SlackSettings _slackSettings;
         private readonly IFlurlClient _flurlClient;
         private readonly ILogger _logger;
+
+        [LoggerMessage(0, LogLevel.Error, "Unexpected error sending slack notification")]
+        partial void LogErrorSendingSlackNotification(Exception ex);
 
         public SlackService(IOptions<SlackSettings> slackSettings, IFlurlClientFactory flurlClientFac, ILogger<SlackService> logger)
         {
@@ -28,7 +31,7 @@ namespace Doppler.BillingUser.ExternalServices.Slack
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Unexpected error sending slack notification");
+                LogErrorSendingSlackNotification(e);
             }
         }
     }

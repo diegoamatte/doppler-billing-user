@@ -13,7 +13,7 @@ using Tavis.UriTemplates;
 
 namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
 {
-    public class MercadoPagoService : IMercadoPagoService
+    public partial class MercadoPagoService : IMercadoPagoService
     {
         private readonly IOptions<MercadoPagoSettings> _options;
         private readonly IJwtTokenGenerator _jwtTokenGenerator;
@@ -25,6 +25,15 @@ namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
         const string TransactionDescription = "Doppler Email Marketing";
         const string Description = "MERPAGO*DOPPLER";
         const string Master = "master";
+
+        [LoggerMessage(0, LogLevel.Error, "Error to get payment for user: {accountname} with payment ID: {id}")]
+        partial void LogErrorGetPaymentForUserWithPaymentId(string accountname, long id);
+
+        [LoggerMessage(1, LogLevel.Error, "Mercadopago payment Declined with Accountname:{accountname}, ErrorCode:{errorCode}, ErrorMessage: {errorMessage}")]
+        partial void LogErrorPaymentDeclinedWithMessage(string accountname, PaymentErrorCode errorCode, string errorMessage);
+
+        [LoggerMessage(2, LogLevel.Error, "Unexpected error")]
+        partial void LogErrorException(Exception ex);
 
         public MercadoPagoService(
             IOptions<MercadoPagoSettings> options,
@@ -56,7 +65,7 @@ namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
             }
             catch (Exception e)
             {
-                _logger.LogError(e, $"Error to get payment for user: {accountname} with payment ID: {id}");
+                LogErrorGetPaymentForUserWithPaymentId(accountname, id);
                 throw;
             }
         }
@@ -76,9 +85,8 @@ namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
                     var errorCode = PaymentErrorCode.DeclinedPaymentTransaction;
                     var errorMessage = payment.StatusDetail;
 
-                    _logger.LogError(String.Format("Mercadopago payment Declined with Accountname:{0}, ErrorCode:{1}, ErrorMessage: {2}", accountname, errorCode, errorMessage));
-
-                    await _emailTemplatesService.SendNotificationForPaymentFailedTransaction(clientId, errorCode.ToString(), errorMessage, string.Empty, String.Empty, PaymentMethodEnum.MP);
+                    LogErrorPaymentDeclinedWithMessage(accountname, errorCode, errorMessage);
+                    await _emailTemplatesService.SendNotificationForPaymentFailedTransaction(clientId, errorCode.ToString(), errorMessage, string.Empty, string.Empty, PaymentMethodEnum.MP);
 
                     throw new DopplerApplicationException(errorCode, errorMessage);
                 }
@@ -94,7 +102,7 @@ namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
             }
             catch (Exception ex) when (ex is not DopplerApplicationException)
             {
-                _logger.LogError(ex, "Unexpected error");
+                LogErrorException(ex);
                 throw new DopplerApplicationException(PaymentErrorCode.ClientPaymentTransactionError, ex.Message, ex);
             }
         }

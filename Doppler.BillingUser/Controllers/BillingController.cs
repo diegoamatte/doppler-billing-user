@@ -32,7 +32,7 @@ namespace Doppler.BillingUser.Controllers
 {
     [Authorize]
     [ApiController]
-    public class BillingController
+    public partial class BillingController
     {
         private readonly ILogger _logger;
         private readonly IBillingRepository _billingRepository;
@@ -88,6 +88,31 @@ namespace Doppler.BillingUser.Controllers
             UserTypeEnum.SUBSCRIBERS,
             UserTypeEnum.INDIVIDUAL
         };
+
+        [LoggerMessage(0, LogLevel.Debug, "Get current payment method.")]
+        partial void LogDebugGetCurrentPaymentMethod();
+
+        [LoggerMessage(1, LogLevel.Debug, "Get current plan.")]
+        partial void LogDebugGetCurrentPlan();
+
+        [LoggerMessage(2, LogLevel.Debug, "Update current payment method.")]
+        partial void LogDebugUpdateCurrentPaymentMethod();
+
+        [LoggerMessage(3, LogLevel.Error, "Failed at updating payment method for user {accountname}")]
+        partial void LogErrorFailedUpdatingPaymentMethodForUser(string accountname);
+
+        [LoggerMessage(4, LogLevel.Error, "Failed at updating payment method for user {accountname} with exception {message}" )]
+        partial void LogErrorFailedUpdatingPaymentMethodWithMessage(string accountname, string message);
+
+        [LoggerMessage(5, LogLevel.Error, "Failed at updating lead from zoho {accountname} with exception {message}")]
+        partial void LogErrorFailedUpdatingLeadFromZohoWithMessage(string accountname, string message);
+
+        [LoggerMessage(6, LogLevel.Error, "Failed at creating new agreement for user {accountname}, {message}")]
+        partial void LogErrorFailedCreatingNewAgreementForUserWithMessage(string accountname, string message);
+
+        [LoggerMessage(7, LogLevel.Error, "The paymentMethod '{paymentMethod}' does not have a mapper.")]
+        partial void LogErrorPaymentMethodDontHaveMapper(PaymentMethodEnum paymentMethod);
+
 
         public BillingController(
             ILogger<BillingController> logger,
@@ -202,7 +227,7 @@ namespace Doppler.BillingUser.Controllers
         [HttpGet("/accounts/{accountname}/payment-methods/current")]
         public async Task<IActionResult> GetCurrentPaymentMethod(string accountname)
         {
-            _logger.LogDebug("Get current payment method.");
+            LogDebugGetCurrentPaymentMethod();
 
             var currentPaymentMethod = await _billingRepository.GetCurrentPaymentMethod(accountname);
 
@@ -220,16 +245,15 @@ namespace Doppler.BillingUser.Controllers
         {
             try
             {
-                _logger.LogDebug("Update current payment method.");
+                LogDebugUpdateCurrentPaymentMethod();
 
                 User userInformation = await _userRepository.GetUserInformation(accountname);
                 var isSuccess = await _billingRepository.UpdateCurrentPaymentMethod(userInformation, paymentMethod);
 
                 if (!isSuccess)
                 {
-                    var messageError = $"Failed at updating payment method for user {accountname}";
-                    _logger.LogError(messageError);
-                    await _slackService.SendNotification(messageError);
+                    LogErrorFailedUpdatingPaymentMethodForUser(accountname);
+                    await _slackService.SendNotification($"Failed at updating payment method for user {accountname}");
                     return new BadRequestObjectResult("Failed at updating payment");
                 }
 
@@ -237,9 +261,8 @@ namespace Doppler.BillingUser.Controllers
             }
             catch (DopplerApplicationException e)
             {
-                var messageError = $"Failed at updating payment method for user {accountname} with exception {e.Message}";
-                _logger.LogError(e, messageError);
-                await _slackService.SendNotification(messageError);
+                LogErrorFailedUpdatingPaymentMethodWithMessage(accountname, e.Message);
+                await _slackService.SendNotification($"Failed at updating payment method for user {accountname} with exception {e.Message}");
                 return new BadRequestObjectResult(e.Message);
             }
         }
@@ -248,7 +271,7 @@ namespace Doppler.BillingUser.Controllers
         [HttpGet("/accounts/{accountname}/plans/current")]
         public async Task<IActionResult> GetCurrentPlan(string accountname)
         {
-            _logger.LogDebug("Get current plan.");
+            LogDebugGetCurrentPlan();
 
             var currentPlan = await _billingRepository.GetCurrentPlan(accountname);
 
@@ -269,60 +292,60 @@ namespace Doppler.BillingUser.Controllers
                 var results = await _agreementInformationValidator.ValidateAsync(agreementInformation);
                 if (!results.IsValid)
                 {
-                    var messageError = $"Failed at creating new agreement for user {accountname}, Validation error {results.ToString("-")}";
-                    _logger.LogError(messageError);
-                    await _slackService.SendNotification(messageError);
+                    var messageError = $"Validation error {results.ToString("-")}";
+                    LogErrorFailedCreatingNewAgreementForUserWithMessage(accountname, messageError);
+                    await _slackService.SendNotification($"Failed at creating new agreement for user {accountname}, {messageError}");
                     return new BadRequestObjectResult(results.ToString("-"));
                 }
 
                 var user = await _userRepository.GetUserBillingInformation(accountname);
                 if (user == null)
                 {
-                    var messageError = $"Failed at creating new agreement for user {accountname}, Invalid user";
-                    _logger.LogError(messageError);
-                    await _slackService.SendNotification(messageError);
+                    var messageError = $"Invalid User";
+                    LogErrorFailedCreatingNewAgreementForUserWithMessage(accountname, messageError);
+                    await _slackService.SendNotification($"Failed at creating new agreement for user {accountname}, {messageError}");
                     return new NotFoundObjectResult("Invalid user");
                 }
 
                 if (!AllowedPaymentMethodsForBilling.Any(p => p == user.PaymentMethod))
                 {
-                    var messageError = $"Failed at creating new agreement for user {accountname}, Invalid payment method {user.PaymentMethod}";
-                    _logger.LogError(messageError);
-                    await _slackService.SendNotification(messageError);
+                    var messageError = $"Invalid payment method {user.PaymentMethod}";
+                    LogErrorFailedCreatingNewAgreementForUserWithMessage(accountname, messageError);
+                    await _slackService.SendNotification($"Failed at creating new agreement for user {accountname}, {messageError}");
                     return new BadRequestObjectResult("Invalid payment method");
                 }
 
                 if (user.PaymentMethod == PaymentMethodEnum.TRANSF && !AllowedCountriesForTransfer.Any(p => (int)p == user.IdBillingCountry))
                 {
-                    var messageErrorTransference = $"Failed at creating new agreement for user {accountname}, payment method {user.PaymentMethod} it's only supported for {AllowedCountriesForTransfer.Select(p => p)}";
-                    _logger.LogError(messageErrorTransference);
-                    await _slackService.SendNotification(messageErrorTransference);
+                    var messageErrorTransference = $"payment method {user.PaymentMethod} it's only supported for {AllowedCountriesForTransfer.Select(p => p)}";
+                    LogErrorFailedCreatingNewAgreementForUserWithMessage(accountname, messageErrorTransference);
+                    await _slackService.SendNotification($"Failed at creating new agreement for user {accountname}, {messageErrorTransference}");
                     return new BadRequestObjectResult("Invalid payment method");
                 }
 
                 var currentPlan = await _userRepository.GetUserCurrentTypePlan(user.IdUser);
                 if (currentPlan != null && !AllowedUpdatePlanTypesForBilling.Any(p => p == currentPlan.IdUserType))
                 {
-                    var messageError = $"Failed at creating new agreement for user {accountname}, Invalid user type (only free users or upgrade between 'Montly' and 'Contacts' plans) {currentPlan.IdUserType}";
-                    _logger.LogError(messageError);
-                    await _slackService.SendNotification(messageError);
+                    var messageError = $"Invalid user type (only free users or upgrade between 'Montly' and 'Contacts' plans) {currentPlan.IdUserType}";
+                    LogErrorFailedCreatingNewAgreementForUserWithMessage(accountname, messageError);
+                    await _slackService.SendNotification($"Failed at creating new agreement for user {accountname}, {messageError}");
                     return new BadRequestObjectResult("Invalid user type (only free users or upgrade between 'Montly' plans)");
                 }
 
                 var newPlan = await _userRepository.GetUserNewTypePlan(agreementInformation.PlanId);
                 if (newPlan == null)
                 {
-                    var messageError = $"Failed at creating new agreement for user {accountname}, Invalid selected plan {agreementInformation.PlanId}";
-                    _logger.LogError(messageError);
-                    await _slackService.SendNotification(messageError);
+                    var messageError = $"Invalid selected plan {agreementInformation.PlanId}";
+                    LogErrorFailedCreatingNewAgreementForUserWithMessage(accountname, messageError);
+                    await _slackService.SendNotification($"Failed at creating new agreement for user {accountname}, {messageError}");
                     return new BadRequestObjectResult("Invalid selected plan");
                 }
 
                 if (!AllowedPlanTypesForBilling.Any(p => p == newPlan.IdUserType))
                 {
-                    var messageError = $"Failed at creating new agreement for user {accountname}, invalid selected plan type {newPlan.IdUserType}";
-                    _logger.LogError(messageError);
-                    await _slackService.SendNotification(messageError);
+                    var messageError = $"invalid selected plan type {newPlan.IdUserType}";
+                    LogErrorFailedCreatingNewAgreementForUserWithMessage(accountname, messageError);
+                    await _slackService.SendNotification($"Failed at creating new agreement for user {accountname}, {messageError}");
                     return new BadRequestObjectResult("Invalid selected plan type");
                 }
 
@@ -353,9 +376,9 @@ namespace Doppler.BillingUser.Controllers
                     encryptedCreditCard = await _userRepository.GetEncryptedCreditCard(accountname);
                     if (encryptedCreditCard == null)
                     {
-                        var messageError = $"Failed at creating new agreement for user {accountname}, missing credit card information";
-                        _logger.LogError(messageError);
-                        await _slackService.SendNotification(messageError);
+                        var messageError = $"missing credit card information";
+                        LogErrorFailedCreatingNewAgreementForUserWithMessage(accountname, messageError);
+                        await _slackService.SendNotification($"Failed at creating new agreement for user {accountname}, {messageError}");
                         return new ObjectResult("User credit card missing")
                         {
                             StatusCode = 500
@@ -537,9 +560,8 @@ namespace Doppler.BillingUser.Controllers
                         }
                         catch (Exception e)
                         {
-                            var messageError = $"Failed at updating lead from zoho {accountname} with exception {e.Message}";
-                            _logger.LogError(e, messageError);
-                            await _slackService.SendNotification(messageError);
+                            LogErrorFailedUpdatingLeadFromZohoWithMessage(accountname, e.Message);
+                            await _slackService.SendNotification($"Failed at updating lead from zoho {accountname} with exception {e.Message}");
                         }
                     }
                 }
@@ -548,9 +570,8 @@ namespace Doppler.BillingUser.Controllers
             }
             catch (Exception e)
             {
-                var messageError = $"Failed at creating new agreement for user {accountname} with exception {e.Message}";
-                _logger.LogError(e, messageError);
-                await _slackService.SendNotification(messageError);
+                LogErrorFailedCreatingNewAgreementForUserWithMessage(accountname, e.Message);
+                await _slackService.SendNotification($"Failed at creating new agreement for user {accountname} with exception {e.Message}");
                 return new ObjectResult("Failed at creating new agreement")
                 {
                     StatusCode = 500,
@@ -651,7 +672,7 @@ namespace Doppler.BillingUser.Controllers
                 case PaymentMethodEnum.MP:
                     return new AccountingEntryForMercadopagoMapper(_paymentAmountService);
                 default:
-                    _logger.LogError($"The paymentMethod '{paymentMethod}' does not have a mapper.");
+                    LogErrorPaymentMethodDontHaveMapper(paymentMethod);
                     throw new ArgumentException($"The paymentMethod '{paymentMethod}' does not have a mapper.");
             }
         }
@@ -667,7 +688,7 @@ namespace Doppler.BillingUser.Controllers
                 case PaymentMethodEnum.TRANSF:
                     return new BillingCreditForTransferMapper(_billingRepository);
                 default:
-                    _logger.LogError($"The paymentMethod '{paymentMethod}' does not have a mapper.");
+                    LogErrorPaymentMethodDontHaveMapper(paymentMethod);
                     throw new ArgumentException($"The paymentMethod '{paymentMethod}' does not have a mapper.");
             }
         }

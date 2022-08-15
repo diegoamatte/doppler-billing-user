@@ -8,9 +8,15 @@ using System.Threading.Tasks;
 
 namespace Doppler.BillingUser.DopplerSecurity
 {
-    public class IsSuperUserAuthorizationHandler : AuthorizationHandler<DopplerAuthorizationRequirement>
+    public partial class IsSuperUserAuthorizationHandler : AuthorizationHandler<DopplerAuthorizationRequirement>
     {
         private readonly ILogger<IsSuperUserAuthorizationHandler> _logger;
+
+        [LoggerMessage(0, LogLevel.Debug, "The token hasn't super user permissions.")]
+        partial void LogDebugTokenHasNotSuperuserPermissions();
+
+        [LoggerMessage(1, LogLevel.Debug, "The token super user permissions is false.")]
+        partial void LogDebugTokenSuperuserPermissionsIsFalse();
 
         public IsSuperUserAuthorizationHandler(ILogger<IsSuperUserAuthorizationHandler> logger)
         {
@@ -31,7 +37,7 @@ namespace Doppler.BillingUser.DopplerSecurity
         {
             if (!context.User.HasClaim(c => c.Type.Equals(DopplerSecurityDefaults.SUPERUSER_JWT_KEY)))
             {
-                _logger.LogDebug("The token hasn't super user permissions.");
+                LogDebugTokenHasNotSuperuserPermissions();
                 return false;
             }
 
@@ -41,7 +47,7 @@ namespace Doppler.BillingUser.DopplerSecurity
                 return true;
             }
 
-            _logger.LogDebug("The token super user permissions is false.");
+            LogDebugTokenSuperuserPermissionsIsFalse();
             return false;
         }
     }

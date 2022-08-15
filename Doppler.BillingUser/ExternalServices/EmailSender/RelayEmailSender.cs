@@ -11,11 +11,14 @@ using Tavis.UriTemplates;
 
 namespace Doppler.BillingUser.ExternalServices.EmailSender
 {
-    public class RelayEmailSender : IEmailSender
+    public partial class RelayEmailSender : IEmailSender
     {
         private readonly ILogger<RelayEmailSender> _logger;
         private readonly RelayEmailSenderSettings _config;
         private readonly IFlurlClient _flurlClient;
+
+        [LoggerMessage(0, LogLevel.Error, "Error sending email with template")]
+        partial void LogErrorSendingEmail(Exception ex);
 
         public RelayEmailSender(IOptions<RelayEmailSenderSettings> config, ILogger<RelayEmailSender> logger, IFlurlClientFactory flurlClientFac)
         {
@@ -44,7 +47,7 @@ namespace Doppler.BillingUser.ExternalServices.EmailSender
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error sending email with template");
+                    LogErrorSendingEmail(ex);
                     return false;
                 }
             }

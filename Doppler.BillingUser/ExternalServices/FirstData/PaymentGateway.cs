@@ -18,7 +18,7 @@ using System.Xml;
 
 namespace Doppler.BillingUser.ExternalServices.FirstData
 {
-    public class PaymentGateway : IPaymentGateway
+    public partial class PaymentGateway : IPaymentGateway, IDisposable
     {
         private readonly ServiceSoapClient _orderService;
         private readonly string _gatewayId;
@@ -33,6 +33,15 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
         private readonly IEncryptionService _encryptionService;
         private readonly ILogger _logger;
         private readonly IEmailTemplatesService _emailTemplatesService;
+
+        [LoggerMessage(0, LogLevel.Error, "First Data Error: Client Id: {clientId}, CVDCode: {cvdCode}, CVD_Presence_Ind: {cvdPresenceInd}")]
+        partial void LogErrorFirstData(int clientId, string cvdCode, string cvdPresenceInd);
+
+        [LoggerMessage(1, LogLevel.Error, "Response: CVV: {cvv}, ErrorCode:{errorCode}, ErrorMessage: {errorMessage}")]
+        partial void LogErrorFirstDataResponse(string cvv, PaymentErrorCode errorCode, string errorMessage);
+
+        [LoggerMessage(2, LogLevel.Error, "Unexpected error")]
+        partial void LogErrorException(Exception ex);
 
         public PaymentGateway(IEncryptionService encryptionService,
             IFirstDataService config,
@@ -100,8 +109,8 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
                         errorCode = PaymentErrorCode.DeclinedPaymentTransaction;
                     }
 
-                    _logger.LogError(String.Format("First Data Error: Client Id: {0}, CVDCode: {1}, CVD_Presence_Ind: {2}", clientId, txn.CVDCode, txn.CVD_Presence_Ind));
-                    _logger.LogError(String.Format("Response: CVV: {0}, ErrorCode:{1}, ErrorMessage: {2}", apiResponse.CVV2, errorCode, errorMessage));
+                    LogErrorFirstData(clientId, txn.CVDCode, txn.CVD_Presence_Ind);
+                    LogErrorFirstDataResponse(apiResponse.CVV2, errorCode, errorMessage);
 
                     if (txn.Transaction_Type != TransactionTypes.REFUND)
                     {
@@ -114,7 +123,7 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
             }
             catch (Exception ex) when (ex is not DopplerApplicationException)
             {
-                _logger.LogError(ex, "Unexpected error");
+                LogErrorException(ex);
                 throw new DopplerApplicationException(PaymentErrorCode.ClientPaymentTransactionError, ex.Message, ex);
             }
         }
@@ -169,5 +178,7 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
             var paymentRequest = CreateDirectPaymentRequest(TransactionTypes.PURCHASE, chargeTotal, creditCard, clientId);
             return await PostRequest(paymentRequest, clientId);
         }
+
+        public void Dispose() => ((IDisposable)_orderService).Dispose();
     }
 }

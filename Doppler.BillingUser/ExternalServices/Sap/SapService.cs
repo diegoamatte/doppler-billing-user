@@ -9,12 +9,21 @@ using System.Collections.Generic;
 
 namespace Doppler.BillingUser.ExternalServices.Sap
 {
-    public class SapService : ISapService
+    public partial class SapService : ISapService
     {
         private readonly IOptions<SapSettings> _options;
         private readonly ILogger _logger;
         private readonly IFlurlClient _flurlClient;
         private readonly IJwtTokenGenerator _jwtTokenGenerator;
+
+        [LoggerMessage(0, LogLevel.Information, "User data successfully sent to DopplerSap. Iduser: {idUser} - ClientManager: {isClientManager}")]
+        partial void LogInfoDataSendToSap(int idUser, bool isClientManager);
+
+        [LoggerMessage(1, LogLevel.Information, "User billing data successfully sent to Sap. User: {email}")]
+        partial void LogInfoBillingDataSendToSap(string email);
+
+        [LoggerMessage(2, LogLevel.Error, "{message}")]
+        partial void LogErrorExceptionWithMessage(Exception e, string message);
 
         public SapService(
             IOptions<SapSettings> options,
@@ -37,12 +46,12 @@ namespace Doppler.BillingUser.ExternalServices.Sap
                     await _flurlClient.Request(_options.Value.SapBaseUrl + _options.Value.SapCreateBusinessPartnerEndpoint)
                         .WithHeader("Authorization", $"Bearer {_jwtTokenGenerator.GenerateSuperUserJwtToken()}")
                         .PostJsonAsync(sapBusinessPartner);
-
-                    _logger.LogInformation($"User data successfully sent to DopplerSap. Iduser: {sapBusinessPartner.Id} - ClientManager: {sapBusinessPartner.IsClientManager}");
+                    LogInfoDataSendToSap(sapBusinessPartner.Id, sapBusinessPartner.IsClientManager);
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, "Unexpected error sending data to DopplerSap");
+
+                    LogErrorExceptionWithMessage(e, "Unexpected error sending data to DopplerSap");
                 }
             }
         }
@@ -56,11 +65,11 @@ namespace Doppler.BillingUser.ExternalServices.Sap
                         .WithHeader("Authorization", $"Bearer {_jwtTokenGenerator.GenerateSuperUserJwtToken()}")
                         .PostJsonAsync(new List<SapBillingDto>() { sapBilling });
 
-                    _logger.LogInformation($"User billing data successfully sent to Sap. User: {email}");
+                    LogInfoBillingDataSendToSap(email);
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, "Unexpected error sending invoice data to Sap");
+                    LogErrorExceptionWithMessage(e, "Unexpected error sending invoice data to Sap");
                 }
             }
         }

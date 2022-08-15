@@ -10,12 +10,19 @@ using Tavis.UriTemplates;
 
 namespace Doppler.BillingUser.ExternalServices.AccountPlansApi
 {
-    public class AccountPlansService : IAccountPlansService
+    public partial class AccountPlansService : IAccountPlansService
     {
         private readonly IOptions<AccountPlansSettings> _options;
         private readonly ILogger _logger;
         private readonly IFlurlClient _flurlClient;
         private readonly ICurrentRequestApiTokenGetter _usersApiTokenGetter;
+
+        [LoggerMessage(0, LogLevel.Error, "Error to get total amount for user {accountname}.")]
+        partial void LogErrorGetTotalAmountForuser(string accountname);
+
+        [LoggerMessage(1, LogLevel.Error, "Error to get promocode information {promocode}.")]
+        partial void LogErrorGetPromocodeInformation(string promocode);
+
 
         public AccountPlansService(
             IOptions<AccountPlansSettings> options,
@@ -46,7 +53,7 @@ namespace Doppler.BillingUser.ExternalServices.AccountPlansApi
             }
             catch (Exception e)
             {
-                _logger.LogError(e, $"Error to get total amount for user {accountname}.");
+                LogErrorGetTotalAmountForuser(accountname);
                 throw;
             }
         }
@@ -67,7 +74,7 @@ namespace Doppler.BillingUser.ExternalServices.AccountPlansApi
             }
             catch (Exception e)
             {
-                _logger.LogError(e, $"Error to get promocode information {promocode}.");
+                LogErrorGetPromocodeInformation(promocode);
                 throw;
             }
         }
@@ -89,7 +96,7 @@ namespace Doppler.BillingUser.ExternalServices.AccountPlansApi
             }
             catch (Exception e)
             {
-                _logger.LogError(e, $"Error to get total amount for user {accountName}.");
+                LogErrorGetTotalAmountForuser(accountName);
                 throw;
             }
         }
