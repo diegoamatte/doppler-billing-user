@@ -35,13 +35,13 @@ namespace Doppler.BillingUser.DopplerSecurity
 
         private bool IsSuperUser(AuthorizationHandlerContext context)
         {
-            if (!context.User.HasClaim(c => c.Type.Equals(DopplerSecurityDefaults.SuperuserJwtKey)))
+            if (!context.User.HasClaim(c => c.Type.Equals(DopplerSecurityDefaults.SuperuserJwtKey, StringComparison.Ordinal)))
             {
                 LogDebugTokenHasNotSuperuserPermissions();
                 return false;
             }
 
-            var isSuperUser = bool.Parse(context.User.FindFirst(c => c.Type.Equals(DopplerSecurityDefaults.SuperuserJwtKey)).Value);
+            var isSuperUser = bool.Parse(context.User.FindFirst(c => c.Type.Equals(DopplerSecurityDefaults.SuperuserJwtKey, StringComparison.Ordinal)).Value);
             if (isSuperUser)
             {
                 return true;
