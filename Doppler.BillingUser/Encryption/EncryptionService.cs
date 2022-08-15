@@ -93,6 +93,8 @@ namespace Doppler.BillingUser.Encryption
             {
                 _encryptor.Value.Dispose();
             }
+
+            GC.SuppressFinalize(this);
         }
     }
 }
