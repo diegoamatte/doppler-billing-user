@@ -64,7 +64,7 @@ namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
                     .GetJsonAsync<MercadoPagoPayment>();
                 return payment;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 LogErrorGetPaymentForUserWithPaymentId(accountname, id);
                 throw;

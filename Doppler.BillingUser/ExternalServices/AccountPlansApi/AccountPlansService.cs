@@ -51,7 +51,7 @@ namespace Doppler.BillingUser.ExternalServices.AccountPlansApi
 
                 return planAmountDetails.Total == agreementInformation.Total;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 LogErrorGetTotalAmountForuser(accountname);
                 throw;
@@ -72,7 +72,7 @@ namespace Doppler.BillingUser.ExternalServices.AccountPlansApi
 
                 return promotion;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 LogErrorGetPromocodeInformation(promocode);
                 throw;
@@ -94,7 +94,7 @@ namespace Doppler.BillingUser.ExternalServices.AccountPlansApi
 
                 return PlanAmountDetails;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 LogErrorGetTotalAmountForuser(accountName);
                 throw;

@@ -52,7 +52,6 @@ namespace Doppler.BillingUser.Controllers
         private readonly IOptions<ZohoSettings> _zohoSettings;
         private readonly IZohoService _zohoService;
         private readonly IEmailTemplatesService _emailTemplatesService;
-        private readonly ICurrencyRepository _currencyRepository;
         private readonly IMercadoPagoService _mercadoPagoService;
         private readonly IPaymentStatusMapper _paymentStatusMapper;
         private readonly IPaymentAmountHelper _paymentAmountService;
