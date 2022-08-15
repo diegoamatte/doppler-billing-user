@@ -3,6 +3,7 @@ using Doppler.BillingUser.Infrastructure;
 using Doppler.BillingUser.Model;
 using Doppler.BillingUser.Utils;
 using System;
+using System.Globalization;
 using System.Threading.Tasks;
 
 namespace Doppler.BillingUser.Mappers.BillingCredit
@@ -36,7 +37,7 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
                 CCIdentificationNumber = null,
                 CCNumber = null,
                 CCVerification = null,
-                IdConsumerType = !string.IsNullOrEmpty(currentPaymentMethod.IdConsumerType) ? int.Parse(currentPaymentMethod.IdConsumerType) : null,
+                IdConsumerType = !string.IsNullOrEmpty(currentPaymentMethod.IdConsumerType) ? int.Parse(currentPaymentMethod.IdConsumerType, CultureInfo.InvariantCulture) : null,
                 RazonSocial = currentPaymentMethod.RazonSocial,
                 ResponsableIVA = user.ResponsableIVA,
                 Cuit = currentPaymentMethod.IdentificationNumber,
@@ -88,7 +89,7 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
                 (user.IdBillingCountry == (int)CountryEnum.Mexico || user.IdBillingCountry == (int)CountryEnum.Argentina))
             {
                 int iva = (user.IdBillingCountry == (int)CountryEnum.Mexico) ? MexicoIva : ArgentinaIva;
-                buyCreditAgreement.BillingCredit.Taxes = Convert.ToDouble(agreementInformation.Total * iva / 100);
+                buyCreditAgreement.BillingCredit.Taxes = Convert.ToDouble(agreementInformation.Total * iva / 100, CultureInfo.InvariantCulture);
             }
 
             return buyCreditAgreement;

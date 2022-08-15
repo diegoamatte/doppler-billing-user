@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
@@ -80,7 +81,7 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
 
             var contentDigest = GetHashedContent(body);
 
-            var timeString = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+            var timeString = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture);
 
             var base64HmacSignature = GetHmacSignature(contentDigest, timeString);
 
@@ -92,14 +93,14 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
                 httpRequestMessageProperty = httpRequestMessageObject as HttpRequestMessageProperty;
                 httpRequestMessageProperty.Headers["x-gge4-content-sha1"] = contentDigest;
                 httpRequestMessageProperty.Headers["x-gge4-date"] = timeString;
-                httpRequestMessageProperty.Headers["Authorization"] = string.Format("GGE4_API {0}:{1}", _keyId, base64HmacSignature);
+                httpRequestMessageProperty.Headers["Authorization"] = string.Format(CultureInfo.InvariantCulture, "GGE4_API {0}:{1}", _keyId, base64HmacSignature);
             }
             else
             {
                 httpRequestMessageProperty = new HttpRequestMessageProperty();
                 httpRequestMessageProperty.Headers["x-gge4-content-sha1"] = contentDigest;
                 httpRequestMessageProperty.Headers["x-gge4-date"] = timeString;
-                httpRequestMessageProperty.Headers["Authorization"] = string.Format("GGE4_API {0}:{1}", _keyId, base64HmacSignature);
+                httpRequestMessageProperty.Headers["Authorization"] = string.Format(CultureInfo.InvariantCulture, "GGE4_API {0}:{1}", _keyId, base64HmacSignature);
                 request.Properties.Add(HttpRequestMessageProperty.Name, httpRequestMessageProperty);
             }
 
@@ -111,12 +112,12 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
             var payloadBytes = Encoding.UTF8.GetBytes(payload);
             var sha1_crypto = new SHA1CryptoServiceProvider();
             var hash = BitConverter.ToString(sha1_crypto.ComputeHash(payloadBytes)).Replace("-", "");
-            return hash.ToLower();
+            return hash.ToLower(CultureInfo.InvariantCulture);
         }
 
         private string GetHmacSignature(string hashedContent, string timeString)
         {
-            var hashData = string.Format("POST\n{0}\n{1}\n{2}\n{3}", Type, hashedContent, timeString, Uri);
+            var hashData = string.Format(CultureInfo.InvariantCulture, "POST\n{0}\n{1}\n{2}\n{3}", Type, hashedContent, timeString, Uri);
 
             var hmac_sha1 = new HMACSHA1(Encoding.UTF8.GetBytes(_hmac));
             var hmac_data = hmac_sha1.ComputeHash(Encoding.UTF8.GetBytes(hashData));

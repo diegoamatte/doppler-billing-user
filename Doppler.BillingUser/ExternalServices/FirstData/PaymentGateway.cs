@@ -133,10 +133,10 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
             Transaction txn = new Transaction
             {
                 Transaction_Type = type,
-                Customer_Ref = clientId.ToString(),
+                Customer_Ref = clientId.ToString(CultureInfo.InvariantCulture),
                 CardHoldersName = _encryptionService.DecryptAES256(creditCard.HolderName),
                 Card_Number = _encryptionService.DecryptAES256(creditCard.Number),
-                Expiry_Date = String.Format("{0:00}{1:00}", creditCard.ExpirationMonth, creditCard.ExpirationYear % 100),
+                Expiry_Date = String.Format(CultureInfo.InvariantCulture, "{0:00}{1:00}", creditCard.ExpirationMonth, creditCard.ExpirationYear % 100),
                 DollarAmount = chargeTotal.ToString(CultureInfo.InvariantCulture),
                 Reference_No = "Doppler Email Marketing"
             };

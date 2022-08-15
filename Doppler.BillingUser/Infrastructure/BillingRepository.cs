@@ -240,8 +240,8 @@ WHERE
                 {
                     Number = _encryptionService.EncryptAES256(paymentMethod.CCNumber.Replace(" ", "")),
                     HolderName = _encryptionService.EncryptAES256(paymentMethod.CCHolderFullName),
-                    ExpirationMonth = int.Parse(paymentMethod.CCExpMonth),
-                    ExpirationYear = int.Parse(paymentMethod.CCExpYear),
+                    ExpirationMonth = int.Parse(paymentMethod.CCExpMonth, CultureInfo.InvariantCulture),
+                    ExpirationYear = int.Parse(paymentMethod.CCExpYear, CultureInfo.InvariantCulture),
                     Code = _encryptionService.EncryptAES256(paymentMethod.CCVerification)
                 };
 
@@ -266,8 +266,8 @@ WHERE
                 {
                     Number = _encryptionService.EncryptAES256(paymentMethod.CCNumber.Replace(" ", "")),
                     HolderName = _encryptionService.EncryptAES256(paymentMethod.CCHolderFullName),
-                    ExpirationMonth = int.Parse(paymentMethod.CCExpMonth),
-                    ExpirationYear = int.Parse(paymentMethod.CCExpYear),
+                    ExpirationMonth = int.Parse(paymentMethod.CCExpMonth, CultureInfo.InvariantCulture),
+                    ExpirationYear = int.Parse(paymentMethod.CCExpYear, CultureInfo.InvariantCulture),
                     Code = _encryptionService.EncryptAES256(paymentMethod.CCVerification)
                 };
 

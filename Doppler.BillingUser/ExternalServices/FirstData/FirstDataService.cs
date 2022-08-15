@@ -1,5 +1,6 @@
 using Doppler.BillingUser.Encryption;
 using Microsoft.Extensions.Options;
+using System.Globalization;
 
 namespace Doppler.BillingUser.ExternalServices.FirstData
 {
@@ -41,7 +42,7 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
 
         public int GetAmountToValidate()
         {
-            return int.Parse(_options.Value.FirstDataAmountToValidate);
+            return int.Parse(_options.Value.FirstDataAmountToValidate, CultureInfo.InvariantCulture);
         }
 
         public string GetFirstDataServiceSoap()

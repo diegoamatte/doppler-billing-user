@@ -8,6 +8,7 @@ using Flurl.Http.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
+using System.Globalization;
 using System.Threading.Tasks;
 using Tavis.UriTemplates;
 
@@ -94,7 +95,7 @@ namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
                 if (payment.Status == MercadoPagoPaymentStatusEnum.In_Process)
                 {
                     var errorCode = payment.Status.ToString();
-                    var errorMessage = string.Format("payment is in process, MercadopagoStatus: {0}, MercadopagoStatusDetail:{1}", payment.Status, payment.StatusDetail);
+                    var errorMessage = string.Format(CultureInfo.InvariantCulture, "payment is in process, MercadopagoStatus: {0}, MercadopagoStatusDetail:{1}", payment.Status, payment.StatusDetail);
                     await _emailTemplatesService.SendNotificationForMercadoPagoPaymentInProcess(clientId, accountname, errorCode, errorMessage);
                 }
 
@@ -127,7 +128,7 @@ namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
                 Installments = 1,
                 TransactionDescription = TransactionDescription,
                 Description = Description,
-                PaymentMethodId = creditCard.CardType == CardTypeEnum.Mastercard ? Master : creditCard.CardType.ToString().ToLower(),
+                PaymentMethodId = creditCard.CardType == CardTypeEnum.Mastercard ? Master : creditCard.CardType.ToString().ToLower(CultureInfo.InvariantCulture),
                 Card = new CardDto
                 {
                     Cardholder = new PaymentCardholder
@@ -141,8 +142,8 @@ namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
                     },
                     CardNumber = _encryptionService.DecryptAES256(creditCard.Number),
                     SecurityCode = _encryptionService.DecryptAES256(creditCard.Code),
-                    ExpirationMonth = creditCard.ExpirationMonth.ToString(),
-                    ExpirationYear = creditCard.ExpirationYear.ToString()
+                    ExpirationMonth = creditCard.ExpirationMonth.ToString(CultureInfo.InvariantCulture),
+                    ExpirationYear = creditCard.ExpirationYear.ToString(CultureInfo.InvariantCulture)
                 }
             };
 

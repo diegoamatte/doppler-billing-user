@@ -6,6 +6,7 @@ using Doppler.BillingUser.Mappers.PaymentStatus;
 using Doppler.BillingUser.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using System.Globalization;
 using System.Threading.Tasks;
 
 namespace Doppler.BillingUser.Controllers
@@ -60,7 +61,7 @@ namespace Doppler.BillingUser.Controllers
                 return new NotFoundObjectResult("Account not found");
             }
 
-            var invoice = await _billingRepository.GetInvoice(user.IdUser, notification.Data.Id.ToString());
+            var invoice = await _billingRepository.GetInvoice(user.IdUser, notification.Data.Id.ToString(CultureInfo.InvariantCulture));
             if (invoice is null)
             {
                 LogErrorAuthorizationNotFound(notification.Data.Id);

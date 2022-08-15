@@ -27,6 +27,7 @@ using Doppler.BillingUser.Mappers;
 using Doppler.BillingUser.Mappers.BillingCredit;
 using Doppler.BillingUser.ExternalServices.MercadoPagoApi;
 using Doppler.BillingUser.Mappers.PaymentStatus;
+using System.Globalization;
 
 namespace Doppler.BillingUser.Controllers
 {
@@ -186,7 +187,7 @@ namespace Doppler.BillingUser.Controllers
 
             await _billingRepository.UpdateBillingInformation(accountname, billingInformation);
 
-            if (currentBillingInformation != null && currentBillingInformation.Country.ToLower() != billingInformation.Country.ToLower())
+            if (currentBillingInformation != null && currentBillingInformation.Country.ToLower(CultureInfo.InvariantCulture) != billingInformation.Country.ToLower(CultureInfo.InvariantCulture))
             {
                 var currentPaymentMethod = await _billingRepository.GetCurrentPaymentMethod(accountname);
 
@@ -531,10 +532,10 @@ namespace Doppler.BillingUser.Controllers
                         try
                         {
                             await _zohoService.RefreshTokenAsync();
-                            var contact = await _zohoService.SearchZohoEntityAsync<ZohoEntityContact>("Contacts", string.Format("Email:equals:{0}", zohoDto.Email));
+                            var contact = await _zohoService.SearchZohoEntityAsync<ZohoEntityContact>("Contacts", string.Format(CultureInfo.InvariantCulture, "Email:equals:{0}", zohoDto.Email));
                             if (contact == null)
                             {
-                                var response = await _zohoService.SearchZohoEntityAsync<ZohoResponse<ZohoEntityLead>>("Leads", string.Format("Email:equals:{0}", zohoDto.Email));
+                                var response = await _zohoService.SearchZohoEntityAsync<ZohoResponse<ZohoEntityLead>>("Leads", string.Format(CultureInfo.InvariantCulture, "Email:equals:{0}", zohoDto.Email));
                                 if (response != null)
                                 {
                                     var lead = response.Data.FirstOrDefault();
@@ -547,7 +548,7 @@ namespace Doppler.BillingUser.Controllers
                             {
                                 if (contact.AccountName != null && !string.IsNullOrEmpty(contact.AccountName.Name))
                                 {
-                                    var response = await _zohoService.SearchZohoEntityAsync<ZohoResponse<ZohoEntityAccount>>("Accounts", string.Format("Account_Name:equals:{0}", contact.AccountName.Name));
+                                    var response = await _zohoService.SearchZohoEntityAsync<ZohoResponse<ZohoEntityAccount>>("Accounts", string.Format(CultureInfo.InvariantCulture, "Account_Name:equals:{0}", contact.AccountName.Name));
                                     if (response != null)
                                     {
                                         var account = response.Data.FirstOrDefault();
@@ -657,7 +658,7 @@ namespace Doppler.BillingUser.Controllers
                 case PaymentMethodEnum.MP:
                     var paymentDetails = await _paymentAmountService.ConvertCurrencyAmount(CurrencyTypeEnum.UsS, CurrencyTypeEnum.sARG, total);
                     var mercadoPagoPayment = await _mercadoPagoService.CreatePayment(accountname, userId, paymentDetails.Total, encryptedCreditCard);
-                    return new CreditCardPayment { Status = _paymentStatusMapper.MapToPaymentStatus(mercadoPagoPayment.Status), AuthorizationNumber = mercadoPagoPayment.Id.ToString() };
+                    return new CreditCardPayment { Status = _paymentStatusMapper.MapToPaymentStatus(mercadoPagoPayment.Status), AuthorizationNumber = mercadoPagoPayment.Id.ToString(CultureInfo.InvariantCulture) };
                 default:
                     return new CreditCardPayment { Status = PaymentStatusEnum.Approved };
             }

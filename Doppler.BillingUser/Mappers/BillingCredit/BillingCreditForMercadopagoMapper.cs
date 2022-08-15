@@ -5,6 +5,7 @@ using Doppler.BillingUser.Model;
 using Doppler.BillingUser.Services;
 using Doppler.BillingUser.Utils;
 using System;
+using System.Globalization;
 using System.Threading.Tasks;
 
 namespace Doppler.BillingUser.Mappers.BillingCredit
@@ -34,8 +35,8 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
                 IdCountry = user.IdBillingCountry,
                 IdPaymentMethod = (int)user.PaymentMethod,
                 IdCCType = currentPaymentMethod.IdCCType,
-                CCExpMonth = short.Parse(currentPaymentMethod.CCExpMonth),
-                CCExpYear = short.Parse(currentPaymentMethod.CCExpYear),
+                CCExpMonth = short.Parse(currentPaymentMethod.CCExpMonth, CultureInfo.InvariantCulture),
+                CCExpYear = short.Parse(currentPaymentMethod.CCExpYear, CultureInfo.InvariantCulture),
                 CCHolderFullName = currentPaymentMethod.CCHolderFullName,
                 CCIdentificationType = currentPaymentMethod.CCType,
                 CCIdentificationNumber = CreditCardHelper.ObfuscateNumber(_encryptionService.DecryptAES256(currentPaymentMethod.CCNumber)),
