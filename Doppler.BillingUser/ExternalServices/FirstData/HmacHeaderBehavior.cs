@@ -105,7 +105,9 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
         private static string GetHashedContent(string payload)
         {
             var payloadBytes = Encoding.UTF8.GetBytes(payload);
+#pragma warning disable CA5350 // Do Not Use Weak Cryptographic Algorithms
             var sha1_crypto = new SHA1CryptoServiceProvider();
+#pragma warning restore CA5350 // Do Not Use Weak Cryptographic Algorithms
             var hash = BitConverter.ToString(sha1_crypto.ComputeHash(payloadBytes)).Replace("-", "");
             return hash.ToLower(CultureInfo.InvariantCulture);
         }
@@ -114,7 +116,9 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
         {
             var hashData = string.Format(CultureInfo.InvariantCulture, "POST\n{0}\n{1}\n{2}\n{3}", Type, hashedContent, timeString, Uri);
 
+#pragma warning disable CA5350 // Do Not Use Weak Cryptographic Algorithms
             var hmac_sha1 = new HMACSHA1(Encoding.UTF8.GetBytes(_hmac));
+#pragma warning restore CA5350 // Do Not Use Weak Cryptographic Algorithms
             var hmac_data = hmac_sha1.ComputeHash(Encoding.UTF8.GetBytes(hashData));
 
             return Convert.ToBase64String(hmac_data);

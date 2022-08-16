@@ -69,7 +69,9 @@ namespace Doppler.BillingUser.Encryption
                 "SHA1",
                 5);
 
+#pragma warning disable CA5373 // Do not use obsolete key derivation function
             var keyBytes = password.GetBytes(32); // KeySize = 256 bits = 32 bytes
+#pragma warning restore CA5373 // Do not use obsolete key derivation function
 
             _symmetricKey = new RijndaelManaged() { Mode = CipherMode.CBC };
             _encryptor = new Lazy<ICryptoTransform>(() => _symmetricKey.CreateEncryptor(keyBytes, initVectorBytes));
