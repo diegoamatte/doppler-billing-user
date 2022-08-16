@@ -23,18 +23,8 @@ namespace Doppler.BillingUser.Infrastructure
         private readonly IPaymentGateway _paymentGateway;
         private readonly ISapService _sapService;
 
-        private const int InvoiceBillingTypeQBL = 1;
-        private const int UserAccountType = 1;
-        private const string AccountingEntryStatusApproved = "Approved";
-        private const string AccountingEntryTypeDescriptionInvoice = "Invoice";
-        private const string AccountingEntryTypeDescriptionCCPayment = "CC Payment";
-        private const string AccountEntryTypeInvoice = "I";
-        private const string AccountEntryTypePayment = "P";
-        private const string PaymentEntryTypePayment = "P";
+
         private const int CurrencyTypeUsd = 0;
-        private const int BillingCreditTypeUpgradeRequest = 1;
-        private const int MexicoIva = 16;
-        private const int ArgentinaIva = 21;
         private const string FinalConsumer = "CF";
 
         public BillingRepository(IDatabaseConnectionFactory connectionFactory,
@@ -542,8 +532,8 @@ WHERE
                 };
 
                 sapDto.BillingStateId = ((sapDto.BillingSystemId == (int)ResponsabileBillingEnum.QBL || sapDto.BillingSystemId == (int)ResponsabileBillingEnum.QuickBookUSA) && sapDto.BillingCountryCode != "US") ? string.Empty
-                    : (sapDto.BillingCountryCode == "US") ? (SapDictionary.StatesDictionary.TryGetValue(user.IdBillingState, out string stateIdUs) ? stateIdUs : string.Empty)
-                    : (SapDictionary.StatesDictionary.TryGetValue(user.IdBillingState, out string stateId) ? stateId : "99");
+                    : (sapDto.BillingCountryCode == "US") ? (SapDictionary.StatesDictionary.TryGetValue(user.IdBillingState, out var stateIdUs) ? stateIdUs : string.Empty)
+                    : (SapDictionary.StatesDictionary.TryGetValue(user.IdBillingState, out var stateId) ? stateId : "99");
                 sapDto.County = user.BillingStateName ?? "";
                 sapDto.BillingCity = user.BillingCity ?? "";
 
@@ -725,7 +715,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
 
         public async Task<int> CreateMovementCreditAsync(int idBillingCredit, int partialBalance, UserBillingInformation user, UserTypePlanInformation newUserTypePlan, int? currentMonthlyAddedEmailsWithBilling = null)
         {
-            BillingCredit billingCredit = await GetBillingCredit(idBillingCredit);
+            var billingCredit = await GetBillingCredit(idBillingCredit);
             string conceptEnglish;
             string conceptSpanish;
 
@@ -736,7 +726,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
             }
             else
             {
-                TextInfo textInfo = new CultureInfo("es", false).TextInfo;
+                var textInfo = new CultureInfo("es", false).TextInfo;
                 var date = billingCredit.ActivationDate ?? DateTime.UtcNow;
                 conceptSpanish = "Acreditación de Emails Mes: " + textInfo.ToTitleCase(date.ToString("MMMM", CultureInfo.CreateSpecificCulture("es")));
                 conceptEnglish = "Monthly Emails Accreditation: " + date.ToString("MMMM", CultureInfo.CreateSpecificCulture("en"));
@@ -882,7 +872,7 @@ WHERE
             dataRow["IdUser"] = idUser;
             dtUserCheckLimits.Rows.Add(dataRow);
 
-            DynamicParameters parameters = new DynamicParameters();
+            var parameters = new DynamicParameters();
             parameters.Add("@Table", dtUserCheckLimits.AsTableValuedParameter("TYPEUSERTOCHECKLIMITS"));
 
             await connection.ExecuteAsync("User_UpdateLimits", parameters, commandType: CommandType.StoredProcedure);
@@ -1104,8 +1094,8 @@ WHERE
 
         public async Task<int> CreateMovementBalanceAdjustmentAsync(int userId, int creditsQty, UserTypeEnum currentUserType, UserTypeEnum newUserType)
         {
-            string conceptEnglish = string.Empty;
-            string conceptSpanish = string.Empty;
+            var conceptEnglish = string.Empty;
+            var conceptSpanish = string.Empty;
 
             if (newUserType == UserTypeEnum.MONTHLY)
             {

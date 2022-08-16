@@ -12,12 +12,10 @@ namespace Doppler.BillingUser.Controllers
     [Route("[controller]")]
     public class WeatherForecastController : ControllerBase
     {
-        private readonly ILogger<WeatherForecastController> _logger;
         private readonly WeatherForecastService _service;
 
-        public WeatherForecastController(ILogger<WeatherForecastController> logger, WeatherForecastService service)
+        public WeatherForecastController(WeatherForecastService service)
         {
-            _logger = logger;
             _service = service;
         }
 
