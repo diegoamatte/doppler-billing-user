@@ -232,7 +232,7 @@ namespace Doppler.BillingUser.Controllers
             {
                 LogDebugUpdateCurrentPaymentMethod();
 
-                User userInformation = await _userRepository.GetUserInformation(accountname);
+                var userInformation = await _userRepository.GetUserInformation(accountname);
                 var isSuccess = await _billingRepository.UpdateCurrentPaymentMethod(userInformation, paymentMethod);
 
                 if (!isSuccess)
@@ -345,8 +345,8 @@ namespace Doppler.BillingUser.Controllers
                     promotion = await _accountPlansService.GetValidPromotionByCode(agreementInformation.Promocode, agreementInformation.PlanId);
                 }
 
-                int invoiceId = 0;
-                string authorizationNumber = string.Empty;
+                var invoiceId = 0;
+                var authorizationNumber = string.Empty;
                 CreditCard encryptedCreditCard = null;
                 CreditCardPayment payment = null;
 
@@ -368,7 +368,7 @@ namespace Doppler.BillingUser.Controllers
                     payment = await CreateCreditCardPayment(agreementInformation.Total.Value, user.IdUser, accountname, user.PaymentMethod);
 
                     var accountEntyMapper = GetAccountingEntryMapper(user.PaymentMethod);
-                    AccountingEntry invoiceEntry = await accountEntyMapper.MapToInvoiceAccountingEntry(agreementInformation.Total.Value, user, newPlan, payment);
+                    var invoiceEntry = await accountEntyMapper.MapToInvoiceAccountingEntry(agreementInformation.Total.Value, user, newPlan, payment);
                     AccountingEntry paymentEntry = null;
                     authorizationNumber = payment.AuthorizationNumber;
 
@@ -415,7 +415,7 @@ namespace Doppler.BillingUser.Controllers
                             await _billingRepository.UpdateUserSubscriberLimitsAsync(user.IdUser);
                         }
 
-                        User userInformation = await _userRepository.GetUserInformation(accountname);
+                        var userInformation = await _userRepository.GetUserInformation(accountname);
                         var activatedStandByAmount = await _billingRepository.ActivateStandBySubscribers(user.IdUser);
                         if (activatedStandByAmount > 0)
                         {
@@ -487,7 +487,7 @@ namespace Doppler.BillingUser.Controllers
                 {
                     if (_zohoSettings.Value.UseZoho)
                     {
-                        ZohoDTO zohoDto = new ZohoDTO()
+                        var zohoDto = new ZohoDTO()
                         {
                             Email = user.Email,
                             Doppler = newPlan.IdUserType.ToDescription(),
@@ -590,7 +590,7 @@ namespace Doppler.BillingUser.Controllers
             UserTypePlanInformation currentPlan,
             PlanAmountDetails amountDetails)
         {
-            User userInformation = await _userRepository.GetUserInformation(accountname);
+            var userInformation = await _userRepository.GetUserInformation(accountname);
             var planDiscountInformation = await _billingRepository.GetPlanDiscountInformation(discountId);
             bool isUpgradeApproved;
 
@@ -712,7 +712,7 @@ namespace Doppler.BillingUser.Controllers
 
                 var partialBalance = await _userRepository.GetAvailableCredit(user.IdUser);
                 await _billingRepository.CreateMovementBalanceAdjustmentAsync(user.IdUser, 0, UserTypeEnum.MONTHLY, UserTypeEnum.MONTHLY);
-                int currentMonthlyAddedEmailsWithBilling = await _userRepository.GetCurrentMonthlyAddedEmailsWithBillingAsync(user.IdUser);
+                var currentMonthlyAddedEmailsWithBilling = await _userRepository.GetCurrentMonthlyAddedEmailsWithBillingAsync(user.IdUser);
 
                 await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan, currentMonthlyAddedEmailsWithBilling);
 
@@ -775,7 +775,7 @@ namespace Doppler.BillingUser.Controllers
                 SendNotifications(user.Email, newPlan, user, 0, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditTypeEnum.UpgradeBetweenSubscribers, currentPlan, amountDetails);
 
                 //Activate StandBy Subscribers
-                User userInformation = await _userRepository.GetUserInformation(user.Email);
+                var userInformation = await _userRepository.GetUserInformation(user.Email);
 
                 await _billingRepository.UpdateUserSubscriberLimitsAsync(user.IdUser);
                 var activatedStandByAmount = await _billingRepository.ActivateStandBySubscribers(user.IdUser);

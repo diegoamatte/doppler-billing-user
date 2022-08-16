@@ -78,13 +78,13 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
                 txn.Password = _password;
 
                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-                SendAndCommitResponse response = await _orderService.SendAndCommitAsync(txn);
-                TransactionResult apiResponse = response.SendAndCommitResult;
-                string authNumber = apiResponse.Authorization_Num;
+                var response = await _orderService.SendAndCommitAsync(txn);
+                var apiResponse = response.SendAndCommitResult;
+                var authNumber = apiResponse.Authorization_Num;
                 if (!apiResponse.Transaction_Approved)
                 {
-                    string errorMessage = "";
-                    string approvalCode = apiResponse.EXact_Resp_Code;
+                    var errorMessage = "";
+                    var approvalCode = apiResponse.EXact_Resp_Code;
                     if (approvalCode != ResponseTypes.NORMAL_TRANSACTION)
                     {
                         errorMessage = apiResponse.EXact_Message;
