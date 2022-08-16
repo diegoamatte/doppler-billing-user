@@ -88,15 +88,11 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
                     if (approvalCode != ResponseTypes.NormalTransaction)
                     {
                         errorMessage = apiResponse.EXact_Message;
-                        switch (approvalCode)
+                        errorCode = approvalCode switch
                         {
-                            case ResponseTypes.Duplicate:
-                                errorCode = PaymentErrorCode.DuplicatedPaymentTransaction;
-                                break;
-                            default:
-                                errorCode = PaymentErrorCode.DeclinedPaymentTransaction;
-                                break;
-                        }
+                            ResponseTypes.Duplicate => PaymentErrorCode.DuplicatedPaymentTransaction,
+                            _ => PaymentErrorCode.DeclinedPaymentTransaction,
+                        };
                     }
                     else if (apiResponse.Bank_Resp_Code != null && _doNotHonorCodes.Contains(apiResponse.Bank_Resp_Code))
                     {
@@ -130,13 +126,13 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
 
         private Transaction CreateDirectPaymentRequest(string type, decimal chargeTotal, CreditCard creditCard, int clientId)
         {
-            Transaction txn = new Transaction
+            var txn = new Transaction
             {
                 Transaction_Type = type,
                 Customer_Ref = clientId.ToString(CultureInfo.InvariantCulture),
                 CardHoldersName = _encryptionService.DecryptAES256(creditCard.HolderName),
                 Card_Number = _encryptionService.DecryptAES256(creditCard.Number),
-                Expiry_Date = String.Format(CultureInfo.InvariantCulture, "{0:00}{1:00}", creditCard.ExpirationMonth, creditCard.ExpirationYear % 100),
+                Expiry_Date = string.Format(CultureInfo.InvariantCulture, "{0:00}{1:00}", creditCard.ExpirationMonth, creditCard.ExpirationYear % 100),
                 DollarAmount = chargeTotal.ToString(CultureInfo.InvariantCulture),
                 Reference_No = "Doppler Email Marketing"
             };
@@ -179,6 +175,10 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
             return await PostRequest(paymentRequest, clientId);
         }
 
-        public void Dispose() => ((IDisposable)_orderService).Dispose();
+        public void Dispose()
+        {
+            ((IDisposable)_orderService).Dispose();
+            GC.SuppressFinalize(this);
+        }
     }
 }

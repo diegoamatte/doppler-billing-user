@@ -56,9 +56,9 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
 
         public object BeforeSendRequest(ref Message request, IClientChannel channel)
         {
-            MessageBuffer buffer = request.CreateBufferedCopy(Int32.MaxValue);
+            var buffer = request.CreateBufferedCopy(int.MaxValue);
             request = buffer.CreateMessage();
-            Message msg = buffer.CreateMessage();
+            var msg = buffer.CreateMessage();
 
             var sb = new StringBuilder();
             var xmlWriter = XmlWriter.Create(sb, new XmlWriterSettings
@@ -73,7 +73,7 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
             xmlWriter.WriteEndElement();
             writer.Flush();
 
-            string body = sb.ToString().Replace(" />", "/>");
+            var body = sb.ToString().Replace(" />", "/>");
 
             var contentDigest = GetHashedContent(body);
 
