@@ -1,6 +1,6 @@
 namespace Doppler.BillingUser.Enums
 {
-    public enum CurrencyTypeEnum
+    public enum CurrencyType
     {
         UsS = 0,
         sARG = 1

@@ -6,7 +6,7 @@ namespace Doppler.BillingUser.Utils
     {
         public static string GetConsumerType(string idConsumerType)
         {
-            var isConsumerTypeValid = Enum.TryParse<ConsumerTypeEnum>(idConsumerType, out var consumer);
+            var isConsumerTypeValid = Enum.TryParse<ConsumerType>(idConsumerType, out var consumer);
 
             return !isConsumerTypeValid ? null : consumer.ToString();
         }

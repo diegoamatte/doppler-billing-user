@@ -20,7 +20,7 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
             _billingRepository = billingRepository;
         }
 
-        public async Task<BillingCreditAgreement> MapToBillingCreditAgreement(AgreementInformation agreementInformation, UserBillingInformation user, UserTypePlanInformation newUserTypePlan, Promotion promotion, CreditCardPayment payment, BillingCreditTypeEnum billingCreditType)
+        public async Task<BillingCreditAgreement> MapToBillingCreditAgreement(AgreementInformation agreementInformation, UserBillingInformation user, UserTypePlanInformation newUserTypePlan, Promotion promotion, CreditCardPayment payment, BillingCreditType billingCreditType)
         {
             var currentPaymentMethod = await _billingRepository.GetPaymentMethodByUserName(user.Email);
 
@@ -68,7 +68,7 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
                 IdBillingCreditType = (int)billingCreditType
             };
 
-            if (newUserTypePlan.IdUserType == UserTypeEnum.SUBSCRIBERS)
+            if (newUserTypePlan.IdUserType == UserType.SUBSCRIBERS)
             {
                 var planDiscountInformation = await _billingRepository.GetPlanDiscountInformation(agreementInformation.DiscountId);
 
@@ -85,10 +85,10 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
             //Calculate the BillingSystem
             buyCreditAgreement.IdResponsabileBilling = CalculateBillingSystemByTransfer(user.IdBillingCountry);
 
-            if (user.PaymentMethod == PaymentMethodEnum.TRANSF &&
-                (user.IdBillingCountry == (int)CountryEnum.Mexico || user.IdBillingCountry == (int)CountryEnum.Argentina))
+            if (user.PaymentMethod == PaymentMethodTypes.TRANSF &&
+                (user.IdBillingCountry == (int)Country.Mexico || user.IdBillingCountry == (int)Country.Argentina))
             {
-                int iva = (user.IdBillingCountry == (int)CountryEnum.Mexico) ? MexicoIva : ArgentinaIva;
+                int iva = (user.IdBillingCountry == (int)Country.Mexico) ? MexicoIva : ArgentinaIva;
                 buyCreditAgreement.BillingCredit.Taxes = Convert.ToDouble(agreementInformation.Total * iva / 100, CultureInfo.InvariantCulture);
             }
 
@@ -99,10 +99,10 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
         {
             return idBillingCountry switch
             {
-                (int)CountryEnum.Colombia => (int)ResponsabileBillingEnum.BorisMarketing,
-                (int)CountryEnum.Mexico => (int)ResponsabileBillingEnum.RC,
-                (int)CountryEnum.Argentina => (int)ResponsabileBillingEnum.GBBISIDE,
-                _ => (int)ResponsabileBillingEnum.GBBISIDE,
+                (int)Country.Colombia => (int)ResponsabileBilling.BorisMarketing,
+                (int)Country.Mexico => (int)ResponsabileBilling.RC,
+                (int)Country.Argentina => (int)ResponsabileBilling.GBBISIDE,
+                _ => (int)ResponsabileBilling.GBBISIDE,
             };
         }
     }

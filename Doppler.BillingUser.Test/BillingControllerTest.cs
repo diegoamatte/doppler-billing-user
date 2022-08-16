@@ -67,10 +67,10 @@ namespace Doppler.BillingUser.Test
                 .ReturnsAsync(null as UserTypePlanInformation);
             userRepository
                 .Setup(x => x.GetUserBillingInformation("test1@example.com"))
-                .ReturnsAsync(new UserBillingInformation() { Email = user.Email, PaymentMethod = PaymentMethodEnum.CC });
+                .ReturnsAsync(new UserBillingInformation() { Email = user.Email, PaymentMethod = PaymentMethodTypes.CC });
             userRepository
                 .Setup(x => x.GetUserNewTypePlan(1))
-                .ReturnsAsync(new UserTypePlanInformation { IdUserType = UserTypeEnum.SUBSCRIBERS });
+                .ReturnsAsync(new UserTypePlanInformation { IdUserType = UserType.SUBSCRIBERS });
             userRepository
                 .Setup(x => x.GetUserInformation("test1@example.com"))
                 .ReturnsAsync(user);

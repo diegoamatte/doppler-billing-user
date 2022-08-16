@@ -6,6 +6,6 @@ namespace Doppler.BillingUser.Services
 {
     public interface IPaymentAmountHelper
     {
-        Task<PaymentAmountDetail> ConvertCurrencyAmount(CurrencyTypeEnum from, CurrencyTypeEnum to, decimal total);
+        Task<PaymentAmountDetail> ConvertCurrencyAmount(CurrencyType from, CurrencyType to, decimal total);
     }
 }

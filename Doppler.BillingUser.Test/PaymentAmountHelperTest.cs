@@ -60,7 +60,7 @@ namespace Doppler.BillingUser.Test
 
             var service = new PaymentAmounthelper(currencyRepository.Object);
 
-            var paymentDetail = await service.ConvertCurrencyAmount(Enums.CurrencyTypeEnum.sARG, Enums.CurrencyTypeEnum.UsS, amountInArs);
+            var paymentDetail = await service.ConvertCurrencyAmount(Enums.CurrencyType.sARG, Enums.CurrencyType.UsS, amountInArs);
 
             Assert.Equal(JsonSerializer.Serialize(expectedDetail), JsonSerializer.Serialize(paymentDetail));
         }

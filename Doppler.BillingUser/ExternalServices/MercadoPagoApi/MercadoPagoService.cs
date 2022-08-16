@@ -77,21 +77,21 @@ namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
                 var paymentRequestDto = CreatePaymentRequestDto(total, creditCard);
                 var payment = await PostMercadoPagoPayment(accountname, paymentRequestDto);
 
-                if (payment.Status is MercadoPagoPaymentStatusEnum.Rejected or
-                    MercadoPagoPaymentStatusEnum.Cancelled or
-                    MercadoPagoPaymentStatusEnum.Refunded or
-                    MercadoPagoPaymentStatusEnum.Charged_Back)
+                if (payment.Status is MercadoPagoPaymentStatus.Rejected or
+                    MercadoPagoPaymentStatus.Cancelled or
+                    MercadoPagoPaymentStatus.Refunded or
+                    MercadoPagoPaymentStatus.Charged_Back)
                 {
                     var errorCode = PaymentErrorCode.DeclinedPaymentTransaction;
                     var errorMessage = payment.StatusDetail;
 
                     LogErrorPaymentDeclinedWithMessage(accountname, errorCode, errorMessage);
-                    await _emailTemplatesService.SendNotificationForPaymentFailedTransaction(clientId, errorCode.ToString(), errorMessage, string.Empty, string.Empty, PaymentMethodEnum.MP);
+                    await _emailTemplatesService.SendNotificationForPaymentFailedTransaction(clientId, errorCode.ToString(), errorMessage, string.Empty, string.Empty, PaymentMethodTypes.MP);
 
                     throw new DopplerApplicationException(errorCode, errorMessage);
                 }
 
-                if (payment.Status == MercadoPagoPaymentStatusEnum.In_Process)
+                if (payment.Status == MercadoPagoPaymentStatus.In_Process)
                 {
                     var errorCode = payment.Status.ToString();
                     var errorMessage = string.Format(CultureInfo.InvariantCulture, "payment is in process, MercadopagoStatus: {0}, MercadopagoStatusDetail:{1}", payment.Status, payment.StatusDetail);
@@ -127,7 +127,7 @@ namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
                 Installments = 1,
                 TransactionDescription = TransactionDescription,
                 Description = Description,
-                PaymentMethodId = creditCard.CardType == CardTypeEnum.Mastercard ? Master : creditCard.CardType.ToString().ToLower(CultureInfo.InvariantCulture),
+                PaymentMethodId = creditCard.CardType == CardType.Mastercard ? Master : creditCard.CardType.ToString().ToLower(CultureInfo.InvariantCulture),
                 Card = new CardDto
                 {
                     Cardholder = new PaymentCardholder

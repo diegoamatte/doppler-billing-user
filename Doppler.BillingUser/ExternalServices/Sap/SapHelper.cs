@@ -21,7 +21,7 @@ namespace Doppler.BillingUser.ExternalServices.Sap
                 return string.Empty;
             }
 
-            SapDictionary.StatesDictionary.TryGetValue(user.IdBillingState, out var stateIdUs);
+            SapStates.StatesDictionary.TryGetValue(user.IdBillingState, out var stateIdUs);
 
             return !string.IsNullOrEmpty(stateIdUs) ? stateIdUs : "99";
         }

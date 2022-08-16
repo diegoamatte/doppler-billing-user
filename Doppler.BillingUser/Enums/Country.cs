@@ -1,6 +1,6 @@
 namespace Doppler.BillingUser.Enums
 {
-    public enum CountryEnum
+    public enum Country
     {
         Argentina = 10,
         Mexico = 157,

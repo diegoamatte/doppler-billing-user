@@ -9,8 +9,8 @@ namespace Doppler.BillingUser.Model
         public int IdClient { get; set; }
         public decimal Amount { get; set; }
         public DateTime Date { get; set; }
-        public PaymentStatusEnum Status { get; set; }
-        public SourceTypeEnum Source { get; set; }
+        public PaymentStatus Status { get; set; }
+        public SourceType Source { get; set; }
         public string AccountingTypeDescription { get; set; }
         public int InvoiceNumber { get; set; }
         public int IdAccountType { get; set; }

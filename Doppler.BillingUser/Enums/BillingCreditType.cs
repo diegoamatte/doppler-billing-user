@@ -1,6 +1,6 @@
 namespace Doppler.BillingUser.Enums
 {
-    public enum BillingCreditTypeEnum
+    public enum BillingCreditType
     {
         UpgradeRequest = 1,
         Credit_Request = 2,

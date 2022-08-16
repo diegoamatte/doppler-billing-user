@@ -2,7 +2,7 @@ using System.ComponentModel;
 
 namespace Doppler.BillingUser.Enums
 {
-    public enum UserTypeEnum
+    public enum UserType
     {
         [Description("Free")]
         FREE = 1,

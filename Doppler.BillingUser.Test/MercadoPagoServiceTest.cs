@@ -33,7 +33,7 @@ namespace Doppler.BillingUser.Test
 
             _creditCard = new CreditCard()
             {
-                CardType = CardTypeEnum.Mastercard,
+                CardType = CardType.Mastercard,
                 ExpirationMonth = 12,
                 ExpirationYear = 2023,
                 HolderName = "EncryptedHolderName",
@@ -87,7 +87,7 @@ namespace Doppler.BillingUser.Test
             httpTest.RespondWithJson(new MercadoPagoPayment
             {
                 Id = 1,
-                Status = MercadoPagoPaymentStatusEnum.Approved,
+                Status = MercadoPagoPaymentStatus.Approved,
                 StatusDetail = "Accredited",
             });
 
@@ -122,9 +122,9 @@ namespace Doppler.BillingUser.Test
         }
 
         [Theory]
-        [InlineData(MercadoPagoPaymentStatusEnum.Approved)]
-        [InlineData(MercadoPagoPaymentStatusEnum.In_Process)]
-        public async void Create_payment_returns_payment_when_status_is_in_process_or_approved(MercadoPagoPaymentStatusEnum mercadoPagoPaymentStatus)
+        [InlineData(MercadoPagoPaymentStatus.Approved)]
+        [InlineData(MercadoPagoPaymentStatus.In_Process)]
+        public async void Create_payment_returns_payment_when_status_is_in_process_or_approved(MercadoPagoPaymentStatus mercadoPagoPaymentStatus)
         {
             // Arrange
             var expectedUrl = "http://localhost:5000/doppler-mercadopago/accounts/test%40example.com/payment/";
@@ -155,11 +155,11 @@ namespace Doppler.BillingUser.Test
         }
 
         [Theory]
-        [InlineData(MercadoPagoPaymentStatusEnum.Rejected)]
-        [InlineData(MercadoPagoPaymentStatusEnum.Refunded)]
-        [InlineData(MercadoPagoPaymentStatusEnum.Cancelled)]
-        [InlineData(MercadoPagoPaymentStatusEnum.Charged_Back)]
-        public async void Create_payment_throws_doppler_application_exception_with_error_code_DeclinedPaymentTransaction_when_payment_status_is_not_in_process_or_approved(MercadoPagoPaymentStatusEnum mercadoPagoPaymentStatus)
+        [InlineData(MercadoPagoPaymentStatus.Rejected)]
+        [InlineData(MercadoPagoPaymentStatus.Refunded)]
+        [InlineData(MercadoPagoPaymentStatus.Cancelled)]
+        [InlineData(MercadoPagoPaymentStatus.Charged_Back)]
+        public async void Create_payment_throws_doppler_application_exception_with_error_code_DeclinedPaymentTransaction_when_payment_status_is_not_in_process_or_approved(MercadoPagoPaymentStatus mercadoPagoPaymentStatus)
         {
             // Arrange
             var expectedUrl = "http://localhost:5000/doppler-mercadopago/accounts/test%40example.com/payment/";

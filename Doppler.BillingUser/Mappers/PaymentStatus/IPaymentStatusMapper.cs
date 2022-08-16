@@ -4,6 +4,6 @@ namespace Doppler.BillingUser.Mappers.PaymentStatus
 {
     public interface IPaymentStatusMapper
     {
-        PaymentStatusEnum MapToPaymentStatus(MercadoPagoPaymentStatusEnum status);
+        Enums.PaymentStatus MapToPaymentStatus(MercadoPagoPaymentStatus status);
     }
 }

@@ -1,6 +1,6 @@
 namespace Doppler.BillingUser.Enums
 {
-    public enum PaymentMethodEnum
+    public enum PaymentMethodTypes
     {
         CC = 1,
         TRANSF = 3,

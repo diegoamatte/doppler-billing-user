@@ -1,6 +1,6 @@
 namespace Doppler.BillingUser.Utils
 {
-    public enum ConsumerTypeEnum
+    public enum ConsumerType
     {
         CF = 1,
         RI = 2,

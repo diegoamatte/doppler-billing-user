@@ -226,7 +226,7 @@ WHERE
         {
             using var connection = _connectionFactory.GetConnection();
 
-            if (paymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString())
+            if (paymentMethod.PaymentMethodName == PaymentMethodTypes.CC.ToString())
             {
                 var creditCard = new CreditCard
                 {
@@ -243,7 +243,7 @@ WHERE
                 paymentMethod.CCType = textInfo.ToTitleCase(paymentMethod.CCType);
 
                 //Validate CC
-                var validCc = Enum.Parse<CardTypeEnum>(paymentMethod.CCType) != CardTypeEnum.Unknown && await _paymentGateway.IsValidCreditCard(creditCard, user.IdUser);
+                var validCc = Enum.Parse<CardType>(paymentMethod.CCType) != CardType.Unknown && await _paymentGateway.IsValidCreditCard(creditCard, user.IdUser);
                 if (!validCc)
                 {
                     return false;
@@ -252,7 +252,7 @@ WHERE
                 //Update user payment method in DB
                 await UpdateUserPaymentMethod(user, paymentMethod);
             }
-            else if (paymentMethod.PaymentMethodName == PaymentMethodEnum.MP.ToString())
+            else if (paymentMethod.PaymentMethodName == PaymentMethodTypes.MP.ToString())
             {
                 var creditCard = new CreditCard
                 {
@@ -272,15 +272,15 @@ WHERE
                 //Update user payment method in DB
                 await UpdateUserPaymentMethodByMercadopago(user, paymentMethod, creditCard);
             }
-            else if (paymentMethod.PaymentMethodName == PaymentMethodEnum.TRANSF.ToString())
+            else if (paymentMethod.PaymentMethodName == PaymentMethodTypes.TRANSF.ToString())
             {
                 await UpdateUserPaymentMethodByTransfer(user, paymentMethod);
             }
 
             //Send BP to SAP
-            if (paymentMethod.PaymentMethodName == PaymentMethodEnum.CC.ToString() ||
-                paymentMethod.PaymentMethodName == PaymentMethodEnum.MP.ToString() ||
-                (paymentMethod.PaymentMethodName == PaymentMethodEnum.TRANSF.ToString() && user.IdBillingCountry == (int)CountryEnum.Argentina))
+            if (paymentMethod.PaymentMethodName == PaymentMethodTypes.CC.ToString() ||
+                paymentMethod.PaymentMethodName == PaymentMethodTypes.MP.ToString() ||
+                (paymentMethod.PaymentMethodName == PaymentMethodTypes.TRANSF.ToString() && user.IdBillingCountry == (int)Country.Argentina))
             {
                 await SendUserDataToSap(user.Email, paymentMethod.IdSelectedPlan);
             }
@@ -324,7 +324,7 @@ WHERE
                 @ccExpYear = (int?)null,
                 @ccVerification = string.Empty,
                 @idCCType = (string)null,
-                @paymentMethodName = PaymentMethodEnum.NONE.ToString(),
+                @paymentMethodName = PaymentMethodTypes.NONE.ToString(),
                 @razonSocial = string.Empty,
                 @idConsumerType = string.Empty,
                 @idResponsabileBilling = (int?)null,
@@ -369,11 +369,11 @@ WHERE
                     @idResponsabileBilling = CalculateBillingSystemByTransfer(user.IdBillingCountry),
                     @cuit = paymentMethod.IdentificationNumber,
                     @responsableIVA = paymentMethod.ResponsableIVA,
-                    @useCFDI = user.IdBillingCountry == (int)CountryEnum.Mexico ? paymentMethod.UseCFDI : null,
-                    @paymentType = user.IdBillingCountry == (int)CountryEnum.Mexico ? paymentMethod.PaymentType : null,
-                    @paymentWay = user.IdBillingCountry == (int)CountryEnum.Mexico ? paymentMethod.PaymentWay.ToString() : null,
-                    @bankAccount = user.IdBillingCountry == (int)CountryEnum.Mexico && paymentMethod.PaymentWay == PaymentWayEnum.TRANSFER.ToString() ? paymentMethod.BankAccount : null,
-                    @bankName = user.IdBillingCountry == (int)CountryEnum.Mexico && paymentMethod.PaymentWay == PaymentWayEnum.TRANSFER.ToString() ? paymentMethod.BankName : null,
+                    @useCFDI = user.IdBillingCountry == (int)Country.Mexico ? paymentMethod.UseCFDI : null,
+                    @paymentType = user.IdBillingCountry == (int)Country.Mexico ? paymentMethod.PaymentType : null,
+                    @paymentWay = user.IdBillingCountry == (int)Country.Mexico ? paymentMethod.PaymentWay.ToString() : null,
+                    @bankAccount = user.IdBillingCountry == (int)Country.Mexico && paymentMethod.PaymentWay == PaymentWay.TRANSFER.ToString() ? paymentMethod.BankAccount : null,
+                    @bankName = user.IdBillingCountry == (int)Country.Mexico && paymentMethod.PaymentWay == PaymentWay.TRANSFER.ToString() ? paymentMethod.BankName : null,
                 });
         }
 
@@ -405,11 +405,11 @@ WHERE
                 @ccExpMonth = paymentMethod.CCExpMonth,
                 @ccExpYear = paymentMethod.CCExpYear,
                 @ccVerification = _encryptionService.EncryptAES256(paymentMethod.CCVerification),
-                @idCCType = Enum.Parse<CardTypeEnum>(paymentMethod.CCType, true),
+                @idCCType = Enum.Parse<CardType>(paymentMethod.CCType, true),
                 @paymentMethodName = paymentMethod.PaymentMethodName,
                 @razonSocial = paymentMethod.RazonSocial,
                 @idConsumerType = paymentMethod.IdConsumerType,
-                @idResponsabileBilling = (int)ResponsabileBillingEnum.QBL
+                @idResponsabileBilling = (int)ResponsabileBilling.QBL
             });
         }
 
@@ -442,11 +442,11 @@ WHERE
                 @ccExpMonth = creditCard.ExpirationMonth,
                 @ccExpYear = creditCard.ExpirationYear,
                 @ccVerification = creditCard.Code,
-                @idCCType = Enum.Parse<CardTypeEnum>(paymentMethod.CCType, true),
+                @idCCType = Enum.Parse<CardType>(paymentMethod.CCType, true),
                 @paymentMethodName = paymentMethod.PaymentMethodName,
                 @razonSocial = paymentMethod.RazonSocial,
                 @idConsumerType = paymentMethod.IdConsumerType ?? FinalConsumer,
-                @idResponsabileBilling = (int)ResponsabileBillingEnum.Mercadopago,
+                @idResponsabileBilling = (int)ResponsabileBilling.Mercadopago,
                 @cuit = paymentMethod.IdentificationNumber,
             });
         }
@@ -501,7 +501,7 @@ WHERE
                     @idUserTypePlan = planId
                 });
 
-            if (user.IdResponsabileBilling is (int)ResponsabileBillingEnum.QBL or (int)ResponsabileBillingEnum.GBBISIDE or (int)ResponsabileBillingEnum.Mercadopago)
+            if (user.IdResponsabileBilling is (int)ResponsabileBilling.QBL or (int)ResponsabileBilling.GBBISIDE or (int)ResponsabileBilling.Mercadopago)
             {
                 var sapDto = new SapBusinessPartner
                 {
@@ -531,9 +531,9 @@ WHERE
                     BillingSystemId = user.IdResponsabileBilling
                 };
 
-                sapDto.BillingStateId = ((sapDto.BillingSystemId == (int)ResponsabileBillingEnum.QBL || sapDto.BillingSystemId == (int)ResponsabileBillingEnum.QuickBookUSA) && sapDto.BillingCountryCode != "US") ? string.Empty
-                    : (sapDto.BillingCountryCode == "US") ? (SapDictionary.StatesDictionary.TryGetValue(user.IdBillingState, out var stateIdUs) ? stateIdUs : string.Empty)
-                    : (SapDictionary.StatesDictionary.TryGetValue(user.IdBillingState, out var stateId) ? stateId : "99");
+                sapDto.BillingStateId = ((sapDto.BillingSystemId == (int)ResponsabileBilling.QBL || sapDto.BillingSystemId == (int)ResponsabileBilling.QuickBookUSA) && sapDto.BillingCountryCode != "US") ? string.Empty
+                    : (sapDto.BillingCountryCode == "US") ? (SapStates.StatesDictionary.TryGetValue(user.IdBillingState, out var stateIdUs) ? stateIdUs : string.Empty)
+                    : (SapStates.StatesDictionary.TryGetValue(user.IdBillingState, out var stateId) ? stateId : "99");
                 sapDto.County = user.BillingStateName ?? "";
                 sapDto.BillingCity = user.BillingCity ?? "";
 
@@ -719,7 +719,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
             string conceptEnglish;
             string conceptSpanish;
 
-            if (newUserTypePlan.IdUserType == UserTypeEnum.INDIVIDUAL)
+            if (newUserTypePlan.IdUserType == UserType.INDIVIDUAL)
             {
                 conceptEnglish = "Credits Accreditation";
                 conceptSpanish = "Acreditación de Créditos";
@@ -1075,7 +1075,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
             return idAccountingEntry;
         }
 
-        public async Task UpdateInvoiceStatus(int id, PaymentStatusEnum status)
+        public async Task UpdateInvoiceStatus(int id, PaymentStatus status)
         {
             using var connection = _connectionFactory.GetConnection();
             await connection.ExecuteAsync(@"
@@ -1092,14 +1092,14 @@ WHERE
             });
         }
 
-        public async Task<int> CreateMovementBalanceAdjustmentAsync(int userId, int creditsQty, UserTypeEnum currentUserType, UserTypeEnum newUserType)
+        public async Task<int> CreateMovementBalanceAdjustmentAsync(int userId, int creditsQty, UserType currentUserType, UserType newUserType)
         {
             var conceptEnglish = string.Empty;
             var conceptSpanish = string.Empty;
 
-            if (newUserType == UserTypeEnum.MONTHLY)
+            if (newUserType == UserType.MONTHLY)
             {
-                if (currentUserType == UserTypeEnum.MONTHLY)
+                if (currentUserType == UserType.MONTHLY)
                 {
                     conceptEnglish = "Changed between Monthlies plans";
                     conceptSpanish = "Cambio entre planes Mensuales";
@@ -1112,7 +1112,7 @@ WHERE
             }
             else
             {
-                if (newUserType == UserTypeEnum.INDIVIDUAL)
+                if (newUserType == UserType.INDIVIDUAL)
                 {
                     conceptEnglish = "Changed to Prepaid";
                     conceptSpanish = "Cambio a Prepago";
@@ -1156,10 +1156,10 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
         {
             return idBillingCountry switch
             {
-                (int)CountryEnum.Colombia => (int)ResponsabileBillingEnum.BorisMarketing,
-                (int)CountryEnum.Mexico => (int)ResponsabileBillingEnum.RC,
-                (int)CountryEnum.Argentina => (int)ResponsabileBillingEnum.GBBISIDE,
-                _ => (int)ResponsabileBillingEnum.GBBISIDE,
+                (int)Country.Colombia => (int)ResponsabileBilling.BorisMarketing,
+                (int)Country.Mexico => (int)ResponsabileBilling.RC,
+                (int)Country.Argentina => (int)ResponsabileBilling.GBBISIDE,
+                _ => (int)ResponsabileBilling.GBBISIDE,
             };
         }
     }

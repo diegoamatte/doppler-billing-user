@@ -1,6 +1,6 @@
 namespace Doppler.BillingUser.Enums
 {
-    public enum MercadoPagoPaymentStatusEnum
+    public enum MercadoPagoPaymentStatus
     {
         /// <summary>
         /// The payment has been approved and accredited.

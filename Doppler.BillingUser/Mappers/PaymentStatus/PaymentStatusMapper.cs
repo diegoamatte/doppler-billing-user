@@ -4,13 +4,13 @@ namespace Doppler.BillingUser.Mappers.PaymentStatus
 {
     public class PaymentStatusMapper : IPaymentStatusMapper
     {
-        public PaymentStatusEnum MapToPaymentStatus(MercadoPagoPaymentStatusEnum status)
+        public Enums.PaymentStatus MapToPaymentStatus(MercadoPagoPaymentStatus status)
         {
             return status switch
             {
-                MercadoPagoPaymentStatusEnum.Approved or MercadoPagoPaymentStatusEnum.Authorized => PaymentStatusEnum.Approved,
-                MercadoPagoPaymentStatusEnum.In_Mediation or MercadoPagoPaymentStatusEnum.In_Process or MercadoPagoPaymentStatusEnum.Pending => PaymentStatusEnum.Pending,
-                _ => PaymentStatusEnum.DeclinedPaymentTransaction,
+                MercadoPagoPaymentStatus.Approved or MercadoPagoPaymentStatus.Authorized => Enums.PaymentStatus.Approved,
+                MercadoPagoPaymentStatus.In_Mediation or MercadoPagoPaymentStatus.In_Process or MercadoPagoPaymentStatus.Pending => Enums.PaymentStatus.Pending,
+                _ => Enums.PaymentStatus.DeclinedPaymentTransaction,
             };
         }
     }

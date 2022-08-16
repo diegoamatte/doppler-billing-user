@@ -1,6 +1,6 @@
 namespace Doppler.BillingUser.Enums
 {
-    public enum InvoiceBillingTypeEnum
+    public enum InvoiceBillingType
     {
         QBL = 1,
         MERCADOPAGO = 3

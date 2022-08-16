@@ -77,7 +77,7 @@ namespace Doppler.BillingUser.Test
                 Email = "test@example.com",
                 BillingEmails = "test@example.com, test2@example.com",
                 SapProperties = "{\"ContractCurrency\" : false,\"GovernmentAccount\" : false,\"Premium\" : false,\"Plus\" : false,\"ComercialPartner\" : false,\"MarketingPartner\" : false,\"OnBoarding\" : false,\"Layout\" : false,\"Datahub\" : false,\"PushNotification\" : false,\"ExclusiveIp\" : false,\"Advisory\" : false,\"Reports\" : false,\"SMS\" : false}",
-                IdResponsabileBilling = (int)ResponsabileBillingEnum.QBL
+                IdResponsabileBilling = (int)ResponsabileBilling.QBL
             };
             var mockConnection = new Mock<DbConnection>();
             mockConnection.SetupDapperAsync(c => c.QueryFirstOrDefaultAsync<User>(null, null, null, null, null))
@@ -123,7 +123,7 @@ namespace Doppler.BillingUser.Test
                 BillingEmails = "test@example.com, test2@example.com",
                 SapProperties =
                     "{\"ContractCurrency\" : false,\"GovernmentAccount\" : false,\"Premium\" : false,\"Plus\" : false,\"ComercialPartner\" : false,\"MarketingPartner\" : false,\"OnBoarding\" : false,\"Layout\" : false,\"Datahub\" : false,\"PushNotification\" : false,\"ExclusiveIp\" : false,\"Advisory\" : false,\"Reports\" : false,\"SMS\" : false}",
-                IdResponsabileBilling = (int)ResponsabileBillingEnum.GBBISIDE
+                IdResponsabileBilling = (int)ResponsabileBilling.GBBISIDE
             };
 
             var mockConnection = new Mock<DbConnection>();
@@ -170,7 +170,7 @@ namespace Doppler.BillingUser.Test
             {
                 BillingEmails = "test@example.com, test2@example.com",
                 SapProperties = "{\"ContractCurrency\" : false,\"GovernmentAccount\" : false,\"Premium\" : false,\"Plus\" : false,\"ComercialPartner\" : false,\"MarketingPartner\" : false,\"OnBoarding\" : false,\"Layout\" : false,\"Datahub\" : false,\"PushNotification\" : false,\"ExclusiveIp\" : false,\"Advisory\" : false,\"Reports\" : false,\"SMS\" : false}",
-                IdResponsabileBilling = (int)ResponsabileBillingEnum.GB
+                IdResponsabileBilling = (int)ResponsabileBilling.GB
             };
 
             var mockConnection = new Mock<DbConnection>();

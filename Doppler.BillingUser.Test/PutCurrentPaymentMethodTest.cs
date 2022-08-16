@@ -332,7 +332,7 @@ namespace Doppler.BillingUser.Test
                 CCExpMonth = "12",
                 CCExpYear = "25",
                 CCType = "Mastercard",
-                PaymentMethodName = PaymentMethodEnum.MP.ToString(),
+                PaymentMethodName = PaymentMethodTypes.MP.ToString(),
                 IdSelectedPlan = 13,
                 IdentificationNumber = "2334345566"
             };
@@ -343,7 +343,7 @@ namespace Doppler.BillingUser.Test
                 SapProperties = "{\"ContractCurrency\" : false,\"GovernmentAccount\" : false,\"Premium\" : false,\"Plus\" : false,\"ComercialPartner\" : false,\"MarketingPartner\" : false,\"OnBoarding\" : false,\"Layout\" : false,\"Datahub\" : false,\"PushNotification\" : false,\"ExclusiveIp\" : false,\"Advisory\" : false,\"Reports\" : false,\"SMS\" : false}",
                 CUIT = "2334345566",
                 IdConsumerType = 2,
-                IdResponsabileBilling = (int)ResponsabileBillingEnum.Mercadopago,
+                IdResponsabileBilling = (int)ResponsabileBilling.Mercadopago,
                 FirstName = "firstName"
             };
 

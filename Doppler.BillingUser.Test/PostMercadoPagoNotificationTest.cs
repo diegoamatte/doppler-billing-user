@@ -94,15 +94,15 @@ namespace Doppler.BillingUser.Test
         }
 
         [Theory]
-        [InlineData(MercadoPagoPaymentStatusEnum.Rejected, PaymentStatusEnum.Pending)]
-        [InlineData(MercadoPagoPaymentStatusEnum.Rejected, PaymentStatusEnum.Approved)]
-        [InlineData(MercadoPagoPaymentStatusEnum.Refunded, PaymentStatusEnum.Approved)]
-        [InlineData(MercadoPagoPaymentStatusEnum.Refunded, PaymentStatusEnum.Pending)]
-        [InlineData(MercadoPagoPaymentStatusEnum.Charged_Back, PaymentStatusEnum.Approved)]
-        [InlineData(MercadoPagoPaymentStatusEnum.Charged_Back, PaymentStatusEnum.Pending)]
-        [InlineData(MercadoPagoPaymentStatusEnum.Cancelled, PaymentStatusEnum.Approved)]
-        [InlineData(MercadoPagoPaymentStatusEnum.Cancelled, PaymentStatusEnum.Pending)]
-        public async Task Update_mercadopago_payment_status_calls_update_invoice_status_once_when_mp_payment_is_not_successful(MercadoPagoPaymentStatusEnum mpStatus, PaymentStatusEnum invoiceStatus)
+        [InlineData(MercadoPagoPaymentStatus.Rejected, PaymentStatus.Pending)]
+        [InlineData(MercadoPagoPaymentStatus.Rejected, PaymentStatus.Approved)]
+        [InlineData(MercadoPagoPaymentStatus.Refunded, PaymentStatus.Approved)]
+        [InlineData(MercadoPagoPaymentStatus.Refunded, PaymentStatus.Pending)]
+        [InlineData(MercadoPagoPaymentStatus.Charged_Back, PaymentStatus.Approved)]
+        [InlineData(MercadoPagoPaymentStatus.Charged_Back, PaymentStatus.Pending)]
+        [InlineData(MercadoPagoPaymentStatus.Cancelled, PaymentStatus.Approved)]
+        [InlineData(MercadoPagoPaymentStatus.Cancelled, PaymentStatus.Pending)]
+        public async Task Update_mercadopago_payment_status_calls_update_invoice_status_once_when_mp_payment_is_not_successful(MercadoPagoPaymentStatus mpStatus, PaymentStatus invoiceStatus)
         {
             // Arrange
             var invoice = new Model.AccountingEntry
@@ -122,16 +122,16 @@ namespace Doppler.BillingUser.Test
             var response = await _client.PostAsJsonAsync($"accounts/test1@example.com/integration/mercadopagonotification", _notification);
 
             // Assert
-            _billingRepository.Verify(br => br.UpdateInvoiceStatus(invoice.IdAccountingEntry, PaymentStatusEnum.DeclinedPaymentTransaction), Times.Once);
+            _billingRepository.Verify(br => br.UpdateInvoiceStatus(invoice.IdAccountingEntry, PaymentStatus.DeclinedPaymentTransaction), Times.Once);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
         [Theory]
-        [InlineData(MercadoPagoPaymentStatusEnum.Approved, PaymentStatusEnum.Pending)]
-        [InlineData(MercadoPagoPaymentStatusEnum.Approved, PaymentStatusEnum.DeclinedPaymentTransaction)]
-        [InlineData(MercadoPagoPaymentStatusEnum.Authorized, PaymentStatusEnum.Pending)]
-        [InlineData(MercadoPagoPaymentStatusEnum.Authorized, PaymentStatusEnum.DeclinedPaymentTransaction)]
-        public async Task Update_mercadopago_payment_calls_update_invoice_and_create_payment_when_payment_is_approved(MercadoPagoPaymentStatusEnum paymentStatus, PaymentStatusEnum invoiceStatus)
+        [InlineData(MercadoPagoPaymentStatus.Approved, PaymentStatus.Pending)]
+        [InlineData(MercadoPagoPaymentStatus.Approved, PaymentStatus.DeclinedPaymentTransaction)]
+        [InlineData(MercadoPagoPaymentStatus.Authorized, PaymentStatus.Pending)]
+        [InlineData(MercadoPagoPaymentStatus.Authorized, PaymentStatus.DeclinedPaymentTransaction)]
+        public async Task Update_mercadopago_payment_calls_update_invoice_and_create_payment_when_payment_is_approved(MercadoPagoPaymentStatus paymentStatus, PaymentStatus invoiceStatus)
         {
             // Arrange
             var invoice = new AccountingEntry
@@ -153,28 +153,28 @@ namespace Doppler.BillingUser.Test
             var response = await _client.PostAsJsonAsync($"accounts/test1@example.com/integration/mercadopagonotification", _notification);
 
             // Assert
-            _billingRepository.Verify(br => br.UpdateInvoiceStatus(invoice.IdAccountingEntry, PaymentStatusEnum.Approved), Times.Once);
+            _billingRepository.Verify(br => br.UpdateInvoiceStatus(invoice.IdAccountingEntry, PaymentStatus.Approved), Times.Once);
             _billingRepository.Verify(br => br.CreatePaymentEntryAsync(invoice.IdAccountingEntry, It.IsAny<AccountingEntry>()), Times.Once);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
         [Theory]
-        [InlineData(MercadoPagoPaymentStatusEnum.Approved, PaymentStatusEnum.Approved)]
-        [InlineData(MercadoPagoPaymentStatusEnum.Pending, PaymentStatusEnum.Approved)]
-        [InlineData(MercadoPagoPaymentStatusEnum.Pending, PaymentStatusEnum.Pending)]
-        [InlineData(MercadoPagoPaymentStatusEnum.Pending, PaymentStatusEnum.DeclinedPaymentTransaction)]
-        [InlineData(MercadoPagoPaymentStatusEnum.Authorized, PaymentStatusEnum.Approved)]
-        [InlineData(MercadoPagoPaymentStatusEnum.In_Process, PaymentStatusEnum.Approved)]
-        [InlineData(MercadoPagoPaymentStatusEnum.In_Process, PaymentStatusEnum.Pending)]
-        [InlineData(MercadoPagoPaymentStatusEnum.In_Process, PaymentStatusEnum.DeclinedPaymentTransaction)]
-        [InlineData(MercadoPagoPaymentStatusEnum.In_Mediation, PaymentStatusEnum.Approved)]
-        [InlineData(MercadoPagoPaymentStatusEnum.In_Mediation, PaymentStatusEnum.Pending)]
-        [InlineData(MercadoPagoPaymentStatusEnum.In_Mediation, PaymentStatusEnum.DeclinedPaymentTransaction)]
-        [InlineData(MercadoPagoPaymentStatusEnum.Rejected, PaymentStatusEnum.DeclinedPaymentTransaction)]
-        [InlineData(MercadoPagoPaymentStatusEnum.Cancelled, PaymentStatusEnum.DeclinedPaymentTransaction)]
-        [InlineData(MercadoPagoPaymentStatusEnum.Refunded, PaymentStatusEnum.DeclinedPaymentTransaction)]
-        [InlineData(MercadoPagoPaymentStatusEnum.Charged_Back, PaymentStatusEnum.DeclinedPaymentTransaction)]
-        public async Task Update_mercadopago_payment_does_not_updates_invoice_status_or_create_payment_when_mp_payment_and_invoice_are_approved(MercadoPagoPaymentStatusEnum paymentStatus, PaymentStatusEnum invoiceStatus)
+        [InlineData(MercadoPagoPaymentStatus.Approved, PaymentStatus.Approved)]
+        [InlineData(MercadoPagoPaymentStatus.Pending, PaymentStatus.Approved)]
+        [InlineData(MercadoPagoPaymentStatus.Pending, PaymentStatus.Pending)]
+        [InlineData(MercadoPagoPaymentStatus.Pending, PaymentStatus.DeclinedPaymentTransaction)]
+        [InlineData(MercadoPagoPaymentStatus.Authorized, PaymentStatus.Approved)]
+        [InlineData(MercadoPagoPaymentStatus.In_Process, PaymentStatus.Approved)]
+        [InlineData(MercadoPagoPaymentStatus.In_Process, PaymentStatus.Pending)]
+        [InlineData(MercadoPagoPaymentStatus.In_Process, PaymentStatus.DeclinedPaymentTransaction)]
+        [InlineData(MercadoPagoPaymentStatus.In_Mediation, PaymentStatus.Approved)]
+        [InlineData(MercadoPagoPaymentStatus.In_Mediation, PaymentStatus.Pending)]
+        [InlineData(MercadoPagoPaymentStatus.In_Mediation, PaymentStatus.DeclinedPaymentTransaction)]
+        [InlineData(MercadoPagoPaymentStatus.Rejected, PaymentStatus.DeclinedPaymentTransaction)]
+        [InlineData(MercadoPagoPaymentStatus.Cancelled, PaymentStatus.DeclinedPaymentTransaction)]
+        [InlineData(MercadoPagoPaymentStatus.Refunded, PaymentStatus.DeclinedPaymentTransaction)]
+        [InlineData(MercadoPagoPaymentStatus.Charged_Back, PaymentStatus.DeclinedPaymentTransaction)]
+        public async Task Update_mercadopago_payment_does_not_updates_invoice_status_or_create_payment_when_mp_payment_and_invoice_are_approved(MercadoPagoPaymentStatus paymentStatus, PaymentStatus invoiceStatus)
         {
             var invoice = new AccountingEntry
             {
@@ -191,7 +191,7 @@ namespace Doppler.BillingUser.Test
             var response = await _client.PostAsJsonAsync($"accounts/test1@example.com/integration/mercadopagonotification", _notification);
 
             // Assert
-            _billingRepository.Verify(br => br.UpdateInvoiceStatus(It.IsAny<int>(), It.IsAny<PaymentStatusEnum>()), Times.Never);
+            _billingRepository.Verify(br => br.UpdateInvoiceStatus(It.IsAny<int>(), It.IsAny<PaymentStatus>()), Times.Never);
             _billingRepository.Verify(br => br.CreatePaymentEntryAsync(It.IsAny<int>(), It.IsAny<AccountingEntry>()), Times.Never);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
@@ -217,7 +217,7 @@ namespace Doppler.BillingUser.Test
             _userRepository.Verify(ur => ur.GetUserInformation(It.IsAny<string>()), Times.Never);
             _billingRepository.Verify(br => br.GetInvoice(It.IsAny<int>(), It.IsAny<string>()), Times.Never);
             _mercadopagoService.Verify(mps => mps.GetPaymentById(It.IsAny<long>(), It.IsAny<string>()), Times.Never);
-            _billingRepository.Verify(br => br.UpdateInvoiceStatus(It.IsAny<int>(), It.IsAny<PaymentStatusEnum>()), Times.Never);
+            _billingRepository.Verify(br => br.UpdateInvoiceStatus(It.IsAny<int>(), It.IsAny<PaymentStatus>()), Times.Never);
             _billingRepository.Verify(br => br.CreatePaymentEntryAsync(It.IsAny<int>(), It.IsAny<AccountingEntry>()), Times.Never);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }

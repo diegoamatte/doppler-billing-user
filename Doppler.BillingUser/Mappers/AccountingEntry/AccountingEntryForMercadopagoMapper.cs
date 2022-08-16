@@ -30,19 +30,19 @@ namespace Doppler.BillingUser.Mappers
 
             if (total != 0)
             {
-                var paymentDetails = await _paymentAmountService.ConvertCurrencyAmount(CurrencyTypeEnum.UsS, CurrencyTypeEnum.sARG, total);
+                var paymentDetails = await _paymentAmountService.ConvertCurrencyAmount(CurrencyType.UsS, CurrencyType.sARG, total);
                 rate = paymentDetails.CurrencyRate;
                 invoiceTaxes = paymentDetails.Taxes;
             }
             else
             {
-                payment.Status = PaymentStatusEnum.Approved;
+                payment.Status = Enums.PaymentStatus.Approved;
             }
 
             return new AccountingEntry
             {
                 IdClient = user.IdUser,
-                IdCurrencyType = (int)CurrencyTypeEnum.sARG,
+                IdCurrencyType = (int)CurrencyType.sARG,
                 CurrencyRate = rate,
                 Taxes = invoiceTaxes,
                 Amount = total,
@@ -52,7 +52,7 @@ namespace Doppler.BillingUser.Mappers
                 AccountingTypeDescription = AccountingEntryTypeDescriptionInvoice,
                 InvoiceNumber = 0,
                 IdAccountType = UserAccountType,
-                IdInvoiceBillingType = (int)InvoiceBillingTypeEnum.MERCADOPAGO,
+                IdInvoiceBillingType = (int)InvoiceBillingType.MERCADOPAGO,
                 AuthorizationNumber = payment.AuthorizationNumber,
                 AccountEntryType = AccountEntryTypeInvoice
             };

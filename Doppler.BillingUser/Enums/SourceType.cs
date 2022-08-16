@@ -1,6 +1,6 @@
 namespace Doppler.BillingUser.Enums
 {
-    public enum SourceTypeEnum
+    public enum SourceType
     {
         UpgradeId = 2,
         BuyCreditsId = 3,

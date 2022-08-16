@@ -40,6 +40,6 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
 
         public string Email { get; set; }
 
-        public CardTypeEnum CardType { get; set; }
+        public CardType CardType { get; set; }
     }
 }

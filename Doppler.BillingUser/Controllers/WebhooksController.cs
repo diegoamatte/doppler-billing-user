@@ -71,14 +71,14 @@ namespace Doppler.BillingUser.Controllers
             var payment = await _mercadoPagoService.GetPaymentById(notification.Data.Id, accountname);
 
             var status = _paymentStatusMapper.MapToPaymentStatus(payment.Status);
-            if (status == PaymentStatusEnum.Pending && invoice.Status == PaymentStatusEnum.Approved)
+            if (status == PaymentStatus.Pending && invoice.Status == PaymentStatus.Approved)
             {
                 return new OkObjectResult("Successful");
             }
 
-            if (status == PaymentStatusEnum.DeclinedPaymentTransaction && invoice.Status != PaymentStatusEnum.DeclinedPaymentTransaction)
+            if (status == PaymentStatus.DeclinedPaymentTransaction && invoice.Status != PaymentStatus.DeclinedPaymentTransaction)
             {
-                if (invoice.Status == PaymentStatusEnum.Approved)
+                if (invoice.Status == PaymentStatus.Approved)
                 {
                     LogErrorPaymentRejectedWithReason(invoice.IdAccountingEntry, payment.StatusDetail);
                 }
@@ -87,12 +87,12 @@ namespace Doppler.BillingUser.Controllers
                 return new OkObjectResult("Successful");
             } 
 
-            if (status == PaymentStatusEnum.Approved && invoice.Status != PaymentStatusEnum.Approved)
+            if (status == PaymentStatus.Approved && invoice.Status != PaymentStatus.Approved)
             {
                 var accountingEntryMapper = new AccountingEntryForMercadopagoMapper(_paymentAmountService);
                 var encryptedCreditCard = await _userRepository.GetEncryptedCreditCard(accountname);
                 var paymentEntry = await accountingEntryMapper.MapToPaymentAccountingEntry(invoice, encryptedCreditCard);
-                await _billingRepository.UpdateInvoiceStatus(invoice.IdAccountingEntry, PaymentStatusEnum.Approved);
+                await _billingRepository.UpdateInvoiceStatus(invoice.IdAccountingEntry, PaymentStatus.Approved);
                 await _billingRepository.CreatePaymentEntryAsync(invoice.IdAccountingEntry, paymentEntry);
 
                 await _emailTemplatesService.SendNotificationForMercadoPagoPaymentApproved(user.IdUser, user.Email);

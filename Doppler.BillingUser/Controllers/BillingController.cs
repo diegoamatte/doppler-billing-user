@@ -62,27 +62,27 @@ namespace Doppler.BillingUser.Controllers
             DateTimeZoneHandling = DateTimeZoneHandling.Utc,
             NullValueHandling = NullValueHandling.Ignore
         };
-        private static readonly List<UserTypeEnum> AllowedPlanTypesForBilling = new List<UserTypeEnum>
+        private static readonly List<UserType> AllowedPlanTypesForBilling = new List<UserType>
         {
-            UserTypeEnum.INDIVIDUAL,
-            UserTypeEnum.MONTHLY,
-            UserTypeEnum.SUBSCRIBERS
+            UserType.INDIVIDUAL,
+            UserType.MONTHLY,
+            UserType.SUBSCRIBERS
         };
-        private static readonly List<PaymentMethodEnum> AllowedPaymentMethodsForBilling = new List<PaymentMethodEnum>
+        private static readonly List<PaymentMethodTypes> AllowedPaymentMethodsForBilling = new List<PaymentMethodTypes>
         {
-            PaymentMethodEnum.CC,
-            PaymentMethodEnum.TRANSF,
-            PaymentMethodEnum.MP
-        };
-
-        private static readonly List<CountryEnum> AllowedCountriesForTransfer = new List<CountryEnum>
-        {
-            CountryEnum.Colombia,
-            CountryEnum.Mexico,
-            CountryEnum.Argentina
+            PaymentMethodTypes.CC,
+            PaymentMethodTypes.TRANSF,
+            PaymentMethodTypes.MP
         };
 
-        private static readonly List<UserTypeEnum> AllowedUpdatePlanTypesForBilling = new List<UserTypeEnum>
+        private static readonly List<Country> AllowedCountriesForTransfer = new List<Country>
+        {
+            Country.Colombia,
+            Country.Mexico,
+            Country.Argentina
+        };
+
+        private static readonly List<UserType> AllowedUpdatePlanTypesForBilling = new List<UserType>
         {
             UserTypeEnum.MONTHLY,
             UserTypeEnum.SUBSCRIBERS,
@@ -111,7 +111,7 @@ namespace Doppler.BillingUser.Controllers
         partial void LogErrorFailedCreatingNewAgreementForUserWithMessage(string accountname, string message);
 
         [LoggerMessage(7, LogLevel.Error, "The paymentMethod '{paymentMethod}' does not have a mapper.")]
-        partial void LogErrorPaymentMethodDontHaveMapper(PaymentMethodEnum paymentMethod);
+        partial void LogErrorPaymentMethodDontHaveMapper(PaymentMethodTypes paymentMethod);
 
 
         public BillingController(
@@ -185,7 +185,7 @@ namespace Doppler.BillingUser.Controllers
             {
                 var currentPaymentMethod = await _billingRepository.GetCurrentPaymentMethod(accountname);
 
-                if (currentPaymentMethod != null & currentPaymentMethod.PaymentMethodName == PaymentMethodEnum.TRANSF.ToString())
+                if (currentPaymentMethod != null & currentPaymentMethod.PaymentMethodName == PaymentMethodTypes.TRANSF.ToString())
                 {
                     var userInformation = await _userRepository.GetUserInformation(accountname);
                     await _billingRepository.SetEmptyPaymentMethod(userInformation.IdUser);
@@ -295,7 +295,7 @@ namespace Doppler.BillingUser.Controllers
                     return new BadRequestObjectResult("Invalid payment method");
                 }
 
-                if (user.PaymentMethod == PaymentMethodEnum.TRANSF && !AllowedCountriesForTransfer.Any(p => (int)p == user.IdBillingCountry))
+                if (user.PaymentMethod == PaymentMethodTypes.TRANSF && !AllowedCountriesForTransfer.Any(p => (int)p == user.IdBillingCountry))
                 {
                     var messageErrorTransference = $"payment method {user.PaymentMethod} it's only supported for {AllowedCountriesForTransfer.Select(p => p)}";
                     LogErrorFailedCreatingNewAgreementForUserWithMessage(accountname, messageErrorTransference);
@@ -351,7 +351,7 @@ namespace Doppler.BillingUser.Controllers
                 CreditCardPayment payment = null;
 
                 if (agreementInformation.Total.GetValueOrDefault() > 0 &&
-                    (user.PaymentMethod == PaymentMethodEnum.CC || user.PaymentMethod == PaymentMethodEnum.MP))
+                    (user.PaymentMethod == PaymentMethodTypes.CC || user.PaymentMethod == PaymentMethodTypes.MP))
                 {
                     encryptedCreditCard = await _userRepository.GetEncryptedCreditCard(accountname);
                     if (encryptedCreditCard == null)
@@ -372,7 +372,7 @@ namespace Doppler.BillingUser.Controllers
                     AccountingEntry paymentEntry = null;
                     authorizationNumber = payment.AuthorizationNumber;
 
-                    if (payment.Status == PaymentStatusEnum.Approved)
+                    if (payment.Status == PaymentStatus.Approved)
                     {
                         paymentEntry = await accountEntyMapper.MapToPaymentAccountingEntry(invoiceEntry, encryptedCreditCard);
                     }
@@ -386,7 +386,7 @@ namespace Doppler.BillingUser.Controllers
                 if (currentPlan == null)
                 {
                     var billingCreditMapper = GetBillingCreditMapper(user.PaymentMethod);
-                    var billingCreditAgreement = await billingCreditMapper.MapToBillingCreditAgreement(agreementInformation, user, newPlan, promotion, payment, BillingCreditTypeEnum.UpgradeRequest);
+                    var billingCreditAgreement = await billingCreditMapper.MapToBillingCreditAgreement(agreementInformation, user, newPlan, promotion, payment, BillingCreditType.UpgradeRequest);
                     billingCreditId = await _billingRepository.CreateBillingCreditAsync(billingCreditAgreement);
 
                     user.IdCurrentBillingCredit = billingCreditId;
@@ -395,7 +395,7 @@ namespace Doppler.BillingUser.Controllers
                     user.UTCFirstPayment = !user.UpgradePending ? DateTime.UtcNow : null;
                     user.UTCUpgrade = user.UTCFirstPayment;
 
-                    if (newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS && newPlan.SubscribersQty.HasValue && !user.UpgradePending)
+                    if (newPlan.IdUserType == UserType.SUBSCRIBERS && newPlan.SubscribersQty.HasValue && !user.UpgradePending)
                     {
                         user.MaxSubscribers = newPlan.SubscribersQty.Value;
                     }
@@ -406,7 +406,7 @@ namespace Doppler.BillingUser.Controllers
 
                     if (!user.UpgradePending)
                     {
-                        if (newPlan.IdUserType != UserTypeEnum.SUBSCRIBERS)
+                        if (newPlan.IdUserType != UserType.SUBSCRIBERS)
                         {
                             await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan);
                         }
@@ -430,11 +430,11 @@ namespace Doppler.BillingUser.Controllers
                     }
 
                     //Send notifications
-                    SendNotifications(accountname, newPlan, user, partialBalance, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditTypeEnum.UpgradeRequest, currentPlan, null);
+                    SendNotifications(accountname, newPlan, user, partialBalance, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditType.UpgradeRequest, currentPlan, null);
                 }
                 else
                 {
-                    if (currentPlan.IdUserType == UserTypeEnum.MONTHLY && newPlan.IdUserType == UserTypeEnum.MONTHLY)
+                    if (currentPlan.IdUserType == UserType.MONTHLY && newPlan.IdUserType == UserType.MONTHLY)
                     {
                         if (currentPlan.IdUserTypePlan != newPlan.IdUserTypePlan)
                         {
@@ -443,7 +443,7 @@ namespace Doppler.BillingUser.Controllers
                     }
                     else
                     {
-                        if (currentPlan.IdUserType == UserTypeEnum.SUBSCRIBERS && newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS)
+                        if (currentPlan.IdUserType == UserType.SUBSCRIBERS && newPlan.IdUserType == UserType.SUBSCRIBERS)
                         {
                             billingCreditId = await ChangeBetweenSubscribersPlans(currentPlan, newPlan, user, agreementInformation, promotion, payment);
                         }
@@ -455,13 +455,13 @@ namespace Doppler.BillingUser.Controllers
                 }
 
                 if (agreementInformation.Total.GetValueOrDefault() > 0 &&
-                    ((user.PaymentMethod == PaymentMethodEnum.CC) ||
-                    (user.PaymentMethod == PaymentMethodEnum.MP) ||
-                    (user.PaymentMethod == PaymentMethodEnum.TRANSF && user.IdBillingCountry == (int)CountryEnum.Argentina)))
+                    ((user.PaymentMethod == PaymentMethodTypes.CC) ||
+                    (user.PaymentMethod == PaymentMethodTypes.MP) ||
+                    (user.PaymentMethod == PaymentMethodTypes.TRANSF && user.IdBillingCountry == (int)Country.Argentina)))
                 {
                     var billingCredit = await _billingRepository.GetBillingCredit(billingCreditId);
-                    var cardNumber = user.PaymentMethod == PaymentMethodEnum.CC ? _encryptionService.DecryptAES256(encryptedCreditCard.Number) : "";
-                    var holderName = user.PaymentMethod == PaymentMethodEnum.CC ? _encryptionService.DecryptAES256(encryptedCreditCard.HolderName) : "";
+                    var cardNumber = user.PaymentMethod == PaymentMethodTypes.CC ? _encryptionService.DecryptAES256(encryptedCreditCard.Number) : "";
+                    var holderName = user.PaymentMethod == PaymentMethodTypes.CC ? _encryptionService.DecryptAES256(encryptedCreditCard.HolderName) : "";
 
                     if (billingCredit != null)
                     {
@@ -586,7 +586,7 @@ namespace Doppler.BillingUser.Controllers
             string promocode,
             int discountId,
             CreditCardPayment payment,
-            BillingCreditTypeEnum billingCreditType,
+            BillingCreditType billingCreditType,
             UserTypePlanInformation currentPlan,
             PlanAmountDetails amountDetails)
         {
@@ -597,15 +597,15 @@ namespace Doppler.BillingUser.Controllers
             switch (billingCreditType)
             {
                 case BillingCreditTypeEnum.UpgradeRequest:
-                    isUpgradeApproved = (user.PaymentMethod == PaymentMethodEnum.CC || !BillingHelper.IsUpgradePending(user, promotion, payment));
+                    isUpgradeApproved = (user.PaymentMethod == PaymentMethod.CC || !BillingHelper.IsUpgradePending(user, promotion, payment));
 
-                    if (newPlan.IdUserType == UserTypeEnum.INDIVIDUAL)
+                    if (newPlan.IdUserType == UserType.INDIVIDUAL)
                     {
                         await _emailTemplatesService.SendNotificationForCredits(accountname, userInformation, newPlan, user, partialBalance, promotion, promocode, !isUpgradeApproved);
                     }
                     else
                     {
-                        if (isUpgradeApproved && newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS)
+                        if (isUpgradeApproved && newPlan.IdUserType == UserType.SUBSCRIBERS)
                         {
                             await _emailTemplatesService.SendNotificationForSuscribersPlan(accountname, userInformation, newPlan);
                         }
@@ -614,8 +614,8 @@ namespace Doppler.BillingUser.Controllers
                     }
 
                     return;
-                case BillingCreditTypeEnum.UpgradeBetweenMonthlies:
-                case BillingCreditTypeEnum.UpgradeBetweenSubscribers:
+                case BillingCreditType.UpgradeBetweenMonthlies:
+                case BillingCreditType.UpgradeBetweenSubscribers:
                     await _emailTemplatesService.SendNotificationForUpdatePlan(accountname, userInformation, currentPlan, newPlan, user, promotion, promocode, discountId, planDiscountInformation, amountDetails);
                     return;
                 case BillingCreditTypeEnum.Credit_Buyed_CC:
@@ -628,31 +628,31 @@ namespace Doppler.BillingUser.Controllers
             }
         }
 
-        private async Task<CreditCardPayment> CreateCreditCardPayment(decimal total, int userId, string accountname, PaymentMethodEnum paymentMethod)
+        private async Task<CreditCardPayment> CreateCreditCardPayment(decimal total, int userId, string accountname, PaymentMethodTypes paymentMethod)
         {
             var encryptedCreditCard = await _userRepository.GetEncryptedCreditCard(accountname);
 
             switch (paymentMethod)
             {
-                case PaymentMethodEnum.CC:
+                case PaymentMethodTypes.CC:
                     var authorizationNumber = await _paymentGateway.CreateCreditCardPayment(total, encryptedCreditCard, userId);
-                    return new CreditCardPayment { Status = PaymentStatusEnum.Approved, AuthorizationNumber = authorizationNumber };
-                case PaymentMethodEnum.MP:
-                    var paymentDetails = await _paymentAmountService.ConvertCurrencyAmount(CurrencyTypeEnum.UsS, CurrencyTypeEnum.sARG, total);
+                    return new CreditCardPayment { Status = PaymentStatus.Approved, AuthorizationNumber = authorizationNumber };
+                case PaymentMethodTypes.MP:
+                    var paymentDetails = await _paymentAmountService.ConvertCurrencyAmount(CurrencyType.UsS, CurrencyType.sARG, total);
                     var mercadoPagoPayment = await _mercadoPagoService.CreatePayment(accountname, userId, paymentDetails.Total, encryptedCreditCard);
                     return new CreditCardPayment { Status = _paymentStatusMapper.MapToPaymentStatus(mercadoPagoPayment.Status), AuthorizationNumber = mercadoPagoPayment.Id.ToString(CultureInfo.InvariantCulture) };
                 default:
-                    return new CreditCardPayment { Status = PaymentStatusEnum.Approved };
+                    return new CreditCardPayment { Status = PaymentStatus.Approved };
             }
         }
 
-        private IAccountingEntryMapper GetAccountingEntryMapper(PaymentMethodEnum paymentMethod)
+        private IAccountingEntryMapper GetAccountingEntryMapper(PaymentMethodTypes paymentMethod)
         {
             switch (paymentMethod)
             {
-                case PaymentMethodEnum.CC:
+                case PaymentMethodTypes.CC:
                     return new AccountingEntryForCreditCardMapper();
-                case PaymentMethodEnum.MP:
+                case PaymentMethodTypes.MP:
                     return new AccountingEntryForMercadopagoMapper(_paymentAmountService);
                 default:
                     LogErrorPaymentMethodDontHaveMapper(paymentMethod);
@@ -660,15 +660,15 @@ namespace Doppler.BillingUser.Controllers
             }
         }
 
-        private IBillingCreditMapper GetBillingCreditMapper(PaymentMethodEnum paymentMethod)
+        private IBillingCreditMapper GetBillingCreditMapper(PaymentMethodTypes paymentMethod)
         {
             switch (paymentMethod)
             {
-                case PaymentMethodEnum.CC:
+                case PaymentMethodTypes.CC:
                     return new BillingCreditForCreditCardMapper(_billingRepository, _encryptionService);
-                case PaymentMethodEnum.MP:
+                case PaymentMethodTypes.MP:
                     return new BillingCreditForMercadopagoMapper(_billingRepository, _encryptionService, _paymentAmountService);
-                case PaymentMethodEnum.TRANSF:
+                case PaymentMethodTypes.TRANSF:
                     return new BillingCreditForTransferMapper(_billingRepository);
                 default:
                     LogErrorPaymentMethodDontHaveMapper(paymentMethod);
@@ -697,7 +697,7 @@ namespace Doppler.BillingUser.Controllers
                 }
 
                 var billingCreditMapper = GetBillingCreditMapper(user.PaymentMethod);
-                var billingCreditAgreement = await billingCreditMapper.MapToBillingCreditAgreement(agreementInformation, user, newPlan, promotion, payment, BillingCreditTypeEnum.UpgradeBetweenMonthlies);
+                var billingCreditAgreement = await billingCreditMapper.MapToBillingCreditAgreement(agreementInformation, user, newPlan, promotion, payment, BillingCreditType.UpgradeBetweenMonthlies);
                 billingCreditAgreement.BillingCredit.DiscountPlanFeeAdmin = currentBillingCredit.DiscountPlanFeeAdmin;
 
                 var billingCreditId = await _billingRepository.CreateBillingCreditAsync(billingCreditAgreement);
@@ -711,7 +711,7 @@ namespace Doppler.BillingUser.Controllers
                 await _userRepository.UpdateUserBillingCredit(user);
 
                 var partialBalance = await _userRepository.GetAvailableCredit(user.IdUser);
-                await _billingRepository.CreateMovementBalanceAdjustmentAsync(user.IdUser, 0, UserTypeEnum.MONTHLY, UserTypeEnum.MONTHLY);
+                await _billingRepository.CreateMovementBalanceAdjustmentAsync(user.IdUser, 0, UserType.MONTHLY, UserType.MONTHLY);
                 var currentMonthlyAddedEmailsWithBilling = await _userRepository.GetCurrentMonthlyAddedEmailsWithBillingAsync(user.IdUser);
 
                 await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan, currentMonthlyAddedEmailsWithBilling);
@@ -722,7 +722,7 @@ namespace Doppler.BillingUser.Controllers
                 }
 
                 //Send notifications
-                SendNotifications(user.Email, newPlan, user, partialBalance, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditTypeEnum.UpgradeBetweenMonthlies, currentPlan, amountDetails);
+                SendNotifications(user.Email, newPlan, user, partialBalance, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditType.UpgradeBetweenMonthlies, currentPlan, amountDetails);
 
                 return billingCreditId;
             }
@@ -751,7 +751,7 @@ namespace Doppler.BillingUser.Controllers
                 }
 
                 var billingCreditMapper = GetBillingCreditMapper(user.PaymentMethod);
-                var billingCreditAgreement = await billingCreditMapper.MapToBillingCreditAgreement(agreementInformation, user, newPlan, promotion, payment, BillingCreditTypeEnum.UpgradeBetweenSubscribers);
+                var billingCreditAgreement = await billingCreditMapper.MapToBillingCreditAgreement(agreementInformation, user, newPlan, promotion, payment, BillingCreditType.UpgradeBetweenSubscribers);
                 billingCreditAgreement.BillingCredit.DiscountPlanFeeAdmin = currentBillingCredit.DiscountPlanFeeAdmin;
 
                 var billingCreditId = await _billingRepository.CreateBillingCreditAsync(billingCreditAgreement);
@@ -772,7 +772,7 @@ namespace Doppler.BillingUser.Controllers
                 }
 
                 //Send notifications
-                SendNotifications(user.Email, newPlan, user, 0, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditTypeEnum.UpgradeBetweenSubscribers, currentPlan, amountDetails);
+                SendNotifications(user.Email, newPlan, user, 0, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditType.UpgradeBetweenSubscribers, currentPlan, amountDetails);
 
                 //Activate StandBy Subscribers
                 var userInformation = await _userRepository.GetUserInformation(user.Email);

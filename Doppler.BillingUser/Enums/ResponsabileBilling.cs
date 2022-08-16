@@ -1,6 +1,6 @@
 namespace Doppler.BillingUser.Enums
 {
-    public enum ResponsabileBillingEnum
+    public enum ResponsabileBilling
     {
         GB = 1,
         QBL = 2,

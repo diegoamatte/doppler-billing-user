@@ -5,11 +5,11 @@ namespace Doppler.BillingUser.Utils
 {
     public static class SourceTypeHelper
     {
-        public static SourceTypeEnum SourceTypeEnumMapper(UserTypePlanInformation planInformation)
+        public static SourceType SourceTypeEnumMapper(UserTypePlanInformation planInformation)
         {
-            return planInformation.IdUserType == UserTypeEnum.INDIVIDUAL
-                ? SourceTypeEnum.BuyCreditsId
-                : SourceTypeEnum.UpgradeId;
+            return planInformation.IdUserType == UserType.INDIVIDUAL
+                ? SourceType.BuyCreditsId
+                : SourceType.UpgradeId;
         }
     }
 }

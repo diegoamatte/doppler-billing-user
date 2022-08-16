@@ -163,7 +163,7 @@ namespace Doppler.BillingUser.Test
             billingRepositoryMock.Setup(x => x.GetBillingInformation("test1@example.com"))
                 .ReturnsAsync(currentBillingInformation);
             billingRepositoryMock.Setup(x => x.GetCurrentPaymentMethod("test1@example.com"))
-                .ReturnsAsync(new PaymentMethod { PaymentMethodName = PaymentMethodEnum.TRANSF.ToString() });
+                .ReturnsAsync(new PaymentMethod { PaymentMethodName = PaymentMethodTypes.TRANSF.ToString() });
 
             var userRepositoryMock = new Mock<IUserRepository>();
             userRepositoryMock.Setup(x => x.GetUserInformation(It.IsAny<string>())).ReturnsAsync(new User()

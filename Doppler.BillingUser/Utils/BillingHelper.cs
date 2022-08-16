@@ -16,9 +16,9 @@ namespace Doppler.BillingUser.Utils
         {
             return user.PaymentMethod switch
             {
-                PaymentMethodEnum.CC => false,
-                PaymentMethodEnum.TRANSF => promotion == null || (promotion.DiscountPercentage.HasValue && promotion.DiscountPercentage.Value < 100) || !promotion.DiscountPercentage.HasValue,
-                PaymentMethodEnum.MP => creditCardPayment?.Status == PaymentStatusEnum.Pending &&
+                PaymentMethodTypes.CC => false,
+                PaymentMethodTypes.TRANSF => promotion == null || (promotion.DiscountPercentage.HasValue && promotion.DiscountPercentage.Value < 100) || !promotion.DiscountPercentage.HasValue,
+                PaymentMethodTypes.MP => creditCardPayment?.Status == PaymentStatus.Pending &&
                                         (promotion == null || (promotion.DiscountPercentage.HasValue && promotion.DiscountPercentage.Value < 100) || !promotion.DiscountPercentage.HasValue),
                 _ => true,
             };
@@ -29,14 +29,14 @@ namespace Doppler.BillingUser.Utils
             var sapBilling = new SapBillingDto
             {
                 Id = billingCredit.IdUser,
-                CreditsOrSubscribersQuantity = newUserPlan.IdUserType == UserTypeEnum.SUBSCRIBERS ? newUserPlan.SubscribersQty.GetValueOrDefault() : billingCredit.CreditsQty.GetValueOrDefault(),
+                CreditsOrSubscribersQuantity = newUserPlan.IdUserType == UserType.SUBSCRIBERS ? newUserPlan.SubscribersQty.GetValueOrDefault() : billingCredit.CreditsQty.GetValueOrDefault(),
                 IsCustomPlan = (new[] { 0, 9, 17 }).Contains(billingCredit.IdUserTypePlan),
                 IsPlanUpgrade = true, // TODO: Check when the other types of purchases are implemented.
                 Currency = CurrencyTypeUsd,
                 Periodicity = BillingHelper.GetPeriodicity(newUserPlan, billingCredit),
                 PeriodMonth = billingCredit.Date.Month,
                 PeriodYear = billingCredit.Date.Year,
-                PlanFee = newUserPlan.IdUserType == UserTypeEnum.SUBSCRIBERS ? billingCredit.PlanFee * (billingCredit.TotalMonthPlan ?? 1) : billingCredit.PlanFee,
+                PlanFee = newUserPlan.IdUserType == UserType.SUBSCRIBERS ? billingCredit.PlanFee * (billingCredit.TotalMonthPlan ?? 1) : billingCredit.PlanFee,
                 Discount = (billingCredit.DiscountPlanFee) +
                     billingCredit.DiscountPlanFeeAdmin.GetValueOrDefault() +
                     billingCredit.DiscountPlanFeePromotion.GetValueOrDefault(),
@@ -70,7 +70,7 @@ namespace Doppler.BillingUser.Utils
 
         public static int? GetPeriodicity(UserTypePlanInformation newUserPlan, BillingCredit billingCredit)
         {
-            return newUserPlan.IdUserType == UserTypeEnum.INDIVIDUAL ?
+            return newUserPlan.IdUserType == UserType.INDIVIDUAL ?
                 null : billingCredit.TotalMonthPlan == 3 ?
                 1 : billingCredit.TotalMonthPlan == 6 ?
                 2 : billingCredit.TotalMonthPlan == 12 ? 3 : 0;

@@ -24,7 +24,7 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
             _paymentAmountService = paymentAmountService;
         }
 
-        public async Task<BillingCreditAgreement> MapToBillingCreditAgreement(AgreementInformation agreementInformation, UserBillingInformation user, UserTypePlanInformation newUserTypePlan, Promotion promotion, CreditCardPayment payment, BillingCreditTypeEnum billingCreditType)
+        public async Task<BillingCreditAgreement> MapToBillingCreditAgreement(AgreementInformation agreementInformation, UserBillingInformation user, UserTypePlanInformation newUserTypePlan, Promotion promotion, CreditCardPayment payment, BillingCreditType billingCreditType)
         {
             var currentPaymentMethod = await _billingRepository.GetPaymentMethodByUserName(user.Email);
 
@@ -67,7 +67,7 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
                 IdBillingCreditType = (int)billingCreditType
             };
 
-            if (newUserTypePlan.IdUserType == UserTypeEnum.SUBSCRIBERS)
+            if (newUserTypePlan.IdUserType == UserType.SUBSCRIBERS)
             {
                 var planDiscountInformation = await _billingRepository.GetPlanDiscountInformation(agreementInformation.DiscountId);
 
@@ -83,12 +83,12 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
 
             if (agreementInformation.Total != 0)
             {
-                var amountDetails = await _paymentAmountService.ConvertCurrencyAmount(CurrencyTypeEnum.UsS, CurrencyTypeEnum.sARG, agreementInformation.Total.Value);
+                var amountDetails = await _paymentAmountService.ConvertCurrencyAmount(CurrencyType.UsS, CurrencyType.sARG, agreementInformation.Total.Value);
                 buyCreditAgreement.BillingCredit.Taxes = (double)amountDetails.Taxes;
             }
 
 
-            buyCreditAgreement.IdResponsabileBilling = (int)ResponsabileBillingEnum.Mercadopago;
+            buyCreditAgreement.IdResponsabileBilling = (int)ResponsabileBilling.Mercadopago;
 
             return buyCreditAgreement;
         }

@@ -1,6 +1,6 @@
 namespace Doppler.BillingUser.Enums
 {
-    public enum CardTypeEnum
+    public enum CardType
     {
         Unknown = 0,
         Visa = 1,

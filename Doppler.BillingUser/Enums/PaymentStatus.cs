@@ -1,6 +1,6 @@
 namespace Doppler.BillingUser.Enums
 {
-    public enum PaymentStatusEnum
+    public enum PaymentStatus
     {
         Approved,
         Pending,

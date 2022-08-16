@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Doppler.BillingUser.Enums
 {
-    public static class SapDictionary
+    public static class SapStates
     {
         public static readonly Dictionary<int, string> StatesDictionary = new Dictionary<int, string>
         {
