@@ -756,7 +756,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
             new
             {
                 @idUser = billingCredit.IdUser,
-                @date = billingCredit.ActivationDate.HasValue ? billingCredit.ActivationDate.Value : DateTime.UtcNow,
+                @date = billingCredit.ActivationDate ?? DateTime.UtcNow,
                 @idUserType = newUserTypePlan.IdUserType,
                 @creditsQty = currentMonthlyAddedEmailsWithBilling == null ?
                     billingCredit.TotalCreditsQty.Value :
