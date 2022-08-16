@@ -6,7 +6,7 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
 {
     public class FirstDataService : IFirstDataService
     {
-        private IEncryptionService _encryptionService;
+        private readonly IEncryptionService _encryptionService;
         private readonly IOptions<FirstDataSettings> _options;
 
         public FirstDataService(IEncryptionService encryptionService, IOptions<FirstDataSettings> options)

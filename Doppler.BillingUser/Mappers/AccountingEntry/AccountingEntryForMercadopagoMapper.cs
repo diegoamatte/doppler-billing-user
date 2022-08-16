@@ -10,7 +10,7 @@ namespace Doppler.BillingUser.Mappers
 {
     public class AccountingEntryForMercadopagoMapper : IAccountingEntryMapper
     {
-        private IPaymentAmountHelper _paymentAmountService;
+        private readonly IPaymentAmountHelper _paymentAmountService;
         private const string AccountingEntryTypeDescriptionInvoice = "Invoice";
         private const int UserAccountType = 1;
         private const string AccountEntryTypeInvoice = "I";

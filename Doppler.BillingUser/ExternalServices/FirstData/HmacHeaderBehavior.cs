@@ -36,7 +36,7 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
         }
     }
 
-    class HmacHeaderInspector : IClientMessageInspector
+    internal class HmacHeaderInspector : IClientMessageInspector
     {
         private readonly string _hmac;
         private readonly string _keyId;

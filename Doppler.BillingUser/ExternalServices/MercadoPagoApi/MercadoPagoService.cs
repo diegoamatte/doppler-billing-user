@@ -22,10 +22,9 @@ namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
         private readonly ILogger<MercadoPagoService> _logger;
         private readonly IEncryptionService _encryptionService;
         private readonly IEmailTemplatesService _emailTemplatesService;
-
-        const string TransactionDescription = "Doppler Email Marketing";
-        const string Description = "MERPAGO*DOPPLER";
-        const string Master = "master";
+        private const string TransactionDescription = "Doppler Email Marketing";
+        private const string Description = "MERPAGO*DOPPLER";
+        private const string Master = "master";
 
         [LoggerMessage(0, LogLevel.Error, "Error to get payment for user: {accountname} with payment ID: {id}")]
         partial void LogErrorGetPaymentForUserWithPaymentId(string accountname, long id);
