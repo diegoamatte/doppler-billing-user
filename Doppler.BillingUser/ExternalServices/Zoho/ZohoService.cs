@@ -12,7 +12,7 @@ namespace Doppler.BillingUser.ExternalServices.Zoho
         private readonly IOptions<ZohoSettings> _options;
         private readonly IFlurlClient _flurlZohoClient;
         private readonly IFlurlClient _flurlZohoAuthenticationClient;
-        private string accessToken;
+        private string _accessToken;
 
         public ZohoService(
             IOptions<ZohoSettings> options,
@@ -36,7 +36,7 @@ namespace Doppler.BillingUser.ExternalServices.Zoho
 
             if (response != null)
             {
-                accessToken = response.AccessToken;
+                _accessToken = response.AccessToken;
             }
         }
 
@@ -44,7 +44,7 @@ namespace Doppler.BillingUser.ExternalServices.Zoho
         {
             var entity = await _flurlZohoClient.Request(new UriTemplate($"{_options.Value.BaseUrl}{moduleName}/search").Resolve())
                 .SetQueryParam("criteria", criteria)
-                .WithHeader("Authorization", $"Zoho-oauthtoken {accessToken}")
+                .WithHeader("Authorization", $"Zoho-oauthtoken {_accessToken}")
                 .GetJsonAsync<T>();
 
             return entity;
@@ -53,7 +53,7 @@ namespace Doppler.BillingUser.ExternalServices.Zoho
         public async Task<ZohoUpdateResponse> UpdateZohoEntityAsync(string body, string entityId, string moduleName)
         {
             var entity = await _flurlZohoClient.Request(new UriTemplate($"{_options.Value.BaseUrl}{moduleName}/{entityId}").Resolve())
-                .WithHeader("Authorization", $"Zoho-oauthtoken {accessToken}")
+                .WithHeader("Authorization", $"Zoho-oauthtoken {_accessToken}")
                 .PutStringAsync(body).ReceiveJson<ZohoUpdateResponse>();
             return entity;
         }

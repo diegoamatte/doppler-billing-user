@@ -31,12 +31,12 @@ namespace Doppler.BillingUser.Test
 {
     public class BillingControllerTest : IClassFixture<WebApplicationFactory<Startup>>
     {
-        private readonly WebApplicationFactory<Startup> factory;
+        private readonly WebApplicationFactory<Startup> _factory;
         private const string TOKEN_ACCOUNT_123_TEST1_AT_EXAMPLE_DOT_COM_EXPIRE_20330518 = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOjEyMywidW5pcXVlX25hbWUiOiJ0ZXN0MUBleGFtcGxlLmNvbSIsInJvbGUiOiJVU0VSIiwiZXhwIjoyMDAwMDAwMDAwfQ.C4shc2SZqolHSpxSLU3GykR0A0Zyh0fofqNirS3CmeY4ZerofgRry7m9AMFyn1SG-rmLDpFJIObFA2dn7nN6uKf5gCTEIwGAB71LfAeVaEfOeF1SvLJh3-qGXknqinsrX8tuBhoaHmpWpvdp0PW-8PmLuBq-D4GWBGyrP73sx_qQi322E2_PJGfudygbahdQ9v4SnBh7AOlaLKSXhGRT-qsMCxZJXpHM7cZsaBkOlo8x_LEWbbkf7Ub6q3mWaQsR30NlJVTaRMY9xWrRMV_iZocREg2EI33mMBa5zhuyQ-hXENp5M9FgS_9B-j3LpFJoJyVFZG2beBRxU8tnqKan3A";
 
         public BillingControllerTest(WebApplicationFactory<Startup> factory)
         {
-            this.factory = factory;
+            _factory = factory;
         }
 
         [Fact]
@@ -135,7 +135,7 @@ namespace Doppler.BillingUser.Test
                     Url = "https://hooks.slack.com/services/test"
                 });
 
-            var client = factory.WithWebHostBuilder(builder =>
+            var client = _factory.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureTestServices(services =>
                 {

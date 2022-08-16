@@ -21,7 +21,7 @@ namespace Doppler.BillingUser.Controllers
         private readonly IMercadoPagoService _mercadoPagoService;
         private readonly IPaymentStatusMapper _paymentStatusMapper;
         private readonly IEmailTemplatesService _emailTemplatesService;
-        private readonly string PAYMENT_UPDATED = "payment.updated";
+        private readonly string _paymentUpdated = "payment.updated";
 
         [LoggerMessage(0, LogLevel.Error, "Invoice with authorization number: {authorizationNumber} was not found.")]
         partial void LogErrorAuthorizationNotFound(long authorizationNumber);
@@ -50,7 +50,7 @@ namespace Doppler.BillingUser.Controllers
         [HttpPost("/accounts/{accountname}/integration/mercadopagonotification")]
         public async Task<IActionResult> UpdateMercadoPagoPaymentStatusAsync([FromRoute] string accountname, [FromBody] MercadoPagoNotification notification)
         {
-            if (notification.Action != PAYMENT_UPDATED)
+            if (notification.Action != _paymentUpdated)
             {
                 return new OkObjectResult("Successful");
             }

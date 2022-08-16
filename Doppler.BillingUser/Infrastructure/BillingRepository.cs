@@ -1010,7 +1010,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
         public async Task<int> CreatePaymentEntryAsync(int invoiceId, AccountingEntry paymentEntry)
         {
             using var connection = _connectionFactory.GetConnection();
-            var IdAccountingEntry = await connection.QueryFirstOrDefaultAsync<int>(@"
+            var idAccountingEntry = await connection.QueryFirstOrDefaultAsync<int>(@"
 INSERT INTO [dbo].[AccountingEntry]
     ([IdClient],
     [IdInvoice],
@@ -1072,7 +1072,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @taxes = paymentEntry.Taxes
             });
 
-            return IdAccountingEntry;
+            return idAccountingEntry;
         }
 
         public async Task UpdateInvoiceStatus(int id, PaymentStatusEnum status)

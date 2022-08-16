@@ -83,7 +83,7 @@ namespace Doppler.BillingUser.ExternalServices.AccountPlansApi
         {
             try
             {
-                var PlanAmountDetails = await _flurlClient.Request(new UriTemplate(_options.Value.CalculateUrlTemplate)
+                var planAmountDetails = await _flurlClient.Request(new UriTemplate(_options.Value.CalculateUrlTemplate)
                     .AddParameter("accountname", accountName)
                     .AddParameter("planId", agreementInformation.PlanId)
                     .AddParameter("discountId", agreementInformation.DiscountId)
@@ -92,7 +92,7 @@ namespace Doppler.BillingUser.ExternalServices.AccountPlansApi
                     .WithHeader("Authorization", $"Bearer {await _usersApiTokenGetter.GetTokenAsync()}")
                     .GetJsonAsync<PlanAmountDetails>();
 
-                return PlanAmountDetails;
+                return planAmountDetails;
             }
             catch (Exception)
             {

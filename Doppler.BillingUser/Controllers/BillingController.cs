@@ -55,7 +55,7 @@ namespace Doppler.BillingUser.Controllers
         private readonly IMercadoPagoService _mercadoPagoService;
         private readonly IPaymentStatusMapper _paymentStatusMapper;
         private readonly IPaymentAmountHelper _paymentAmountService;
-        private readonly JsonSerializerSettings settings = new JsonSerializerSettings
+        private readonly JsonSerializerSettings _settings = new JsonSerializerSettings
         {
             DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'Z'",
             DateFormatHandling = DateFormatHandling.IsoDateFormat,
@@ -525,7 +525,7 @@ namespace Doppler.BillingUser.Controllers
                                 {
                                     var lead = response.Data.FirstOrDefault();
                                     BillingHelper.MapForUpgrade(lead, zohoDto);
-                                    var body = JsonConvert.SerializeObject(new ZohoUpdateModel<ZohoEntityLead> { Data = new List<ZohoEntityLead> { lead } }, settings);
+                                    var body = JsonConvert.SerializeObject(new ZohoUpdateModel<ZohoEntityLead> { Data = new List<ZohoEntityLead> { lead } }, _settings);
                                     await _zohoService.UpdateZohoEntityAsync(body, lead.Id, "Leads");
                                 }
                             }
@@ -538,7 +538,7 @@ namespace Doppler.BillingUser.Controllers
                                     {
                                         var account = response.Data.FirstOrDefault();
                                         BillingHelper.MapForUpgrade(account, zohoDto);
-                                        var body = JsonConvert.SerializeObject(new ZohoUpdateModel<ZohoEntityAccount> { Data = new List<ZohoEntityAccount> { account } }, settings);
+                                        var body = JsonConvert.SerializeObject(new ZohoUpdateModel<ZohoEntityAccount> { Data = new List<ZohoEntityAccount> { account } }, _settings);
                                         await _zohoService.UpdateZohoEntityAsync(body, account.Id, "Accounts");
                                     }
                                 }
