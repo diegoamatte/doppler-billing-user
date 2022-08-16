@@ -22,9 +22,6 @@ namespace Doppler.BillingUser.Controllers
         }
 
         [HttpGet]
-        public IEnumerable<WeatherForecast> Get()
-        {
-            return _service.GetForecasts();
-        }
+        public IEnumerable<WeatherForecast> Get() => _service.GetForecasts();
     }
 }

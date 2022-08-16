@@ -8,7 +8,10 @@ namespace Doppler.BillingUser.Authorization
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public CurrentRequestApiTokenGetter(IHttpContextAccessor httpContextAccessor) => _httpContextAccessor = httpContextAccessor;
+        public CurrentRequestApiTokenGetter(IHttpContextAccessor httpContextAccessor)
+        {
+            _httpContextAccessor = httpContextAccessor;
+        }
 
         public async Task<string> GetTokenAsync() => await _httpContextAccessor.HttpContext?.GetTokenAsync("Bearer", "access_token");
     }

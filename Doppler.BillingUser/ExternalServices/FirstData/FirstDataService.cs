@@ -15,44 +15,20 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
             _options = options;
         }
 
-        public string GetUsername()
-        {
-            return _encryptionService.DecryptAES256(_options.Value.FirstDataUsername);
-        }
+        public string GetUsername() => _encryptionService.DecryptAES256(_options.Value.FirstDataUsername);
 
-        public string GetPassword()
-        {
-            return _encryptionService.DecryptAES256(_options.Value.FirstDataPassword);
-        }
+        public string GetPassword() => _encryptionService.DecryptAES256(_options.Value.FirstDataPassword);
 
-        public string GetHmac()
-        {
-            return _encryptionService.DecryptAES256(_options.Value.FirstDataHmac);
-        }
+        public string GetHmac() => _encryptionService.DecryptAES256(_options.Value.FirstDataHmac);
 
-        public string GetKeyId()
-        {
-            return _encryptionService.DecryptAES256(_options.Value.FirstDataKeyId);
-        }
+        public string GetKeyId() => _encryptionService.DecryptAES256(_options.Value.FirstDataKeyId);
 
-        public bool GetIsDemo()
-        {
-            return _options.Value.FirstDataDemo;
-        }
+        public bool GetIsDemo() => _options.Value.FirstDataDemo;
 
-        public int GetAmountToValidate()
-        {
-            return int.Parse(_options.Value.FirstDataAmountToValidate, CultureInfo.InvariantCulture);
-        }
+        public int GetAmountToValidate() => int.Parse(_options.Value.FirstDataAmountToValidate, CultureInfo.InvariantCulture);
 
-        public string GetFirstDataServiceSoap()
-        {
-            return _options.Value.FirstDataServiceSoap;
-        }
+        public string GetFirstDataServiceSoap() => _options.Value.FirstDataServiceSoap;
 
-        public string GetFirstDataServiceSoapDemo()
-        {
-            return _options.Value.FirstDataServiceSoapDemo;
-        }
+        public string GetFirstDataServiceSoapDemo() => _options.Value.FirstDataServiceSoapDemo;
     }
 }

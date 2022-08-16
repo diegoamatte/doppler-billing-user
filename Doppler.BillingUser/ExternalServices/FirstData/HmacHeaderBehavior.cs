@@ -25,10 +25,7 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
         {
         }
 
-        public void ApplyClientBehavior(ServiceEndpoint endpoint, ClientRuntime clientRuntime)
-        {
-            clientRuntime.ClientMessageInspectors.Add(new HmacHeaderInspector(_hmac, _keyId));
-        }
+        public void ApplyClientBehavior(ServiceEndpoint endpoint, ClientRuntime clientRuntime) => clientRuntime.ClientMessageInspectors.Add(new HmacHeaderInspector(_hmac, _keyId));
 
         public void ApplyDispatchBehavior(ServiceEndpoint endpoint, EndpointDispatcher endpointDispatcher)
         {

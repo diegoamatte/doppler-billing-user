@@ -24,10 +24,7 @@ namespace Doppler.BillingUser.Test
 {
     public class ExternalControllersFeatureProvider : IApplicationFeatureProvider<ControllerFeature>
     {
-        public void PopulateFeature(IEnumerable<ApplicationPart> parts, ControllerFeature feature)
-        {
-            feature.Controllers.Add(typeof(HelloController).GetTypeInfo());
-        }
+        public void PopulateFeature(IEnumerable<ApplicationPart> parts, ControllerFeature feature) => feature.Controllers.Add(typeof(HelloController).GetTypeInfo());
     }
     public class AuthorizationTest
         : IClassFixture<WebApplicationFactory<Startup>>

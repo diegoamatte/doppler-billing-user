@@ -9,9 +9,6 @@ namespace Doppler.BillingUser.Utils
             return $"{new string('*', start)}{cardNumber.Substring(start, clearChars)}";
         }
 
-        public static string ObfuscateVerificationCode(string code)
-        {
-            return $"{new string('*', code.Length)}";
-        }
+        public static string ObfuscateVerificationCode(string code) => $"{new string('*', code.Length)}";
     }
 }

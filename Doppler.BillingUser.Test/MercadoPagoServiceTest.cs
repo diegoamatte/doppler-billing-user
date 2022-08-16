@@ -179,7 +179,10 @@ namespace Doppler.BillingUser.Test
             });
 
             // Act
-            async Task CallFunc() => await service.CreatePayment(_accountname, _userId, _total, _creditCard);
+            async Task CallFunc()
+            {
+                await service.CreatePayment(_accountname, _userId, _total, _creditCard);
+            }
 
             // Assert
             var caughtException = await Assert.ThrowsAsync<DopplerApplicationException>(CallFunc);
@@ -207,7 +210,10 @@ namespace Doppler.BillingUser.Test
             httpTest.RespondWith(status: 500);
 
             // Act
-            async Task CallFunc() => await service.CreatePayment(_accountname, _userId, _total, _creditCard);
+            async Task CallFunc()
+            {
+                await service.CreatePayment(_accountname, _userId, _total, _creditCard);
+            }
 
             // Assert
             var caughtException = await Assert.ThrowsAsync<DopplerApplicationException>(CallFunc);
