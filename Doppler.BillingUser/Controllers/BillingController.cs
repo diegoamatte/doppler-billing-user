@@ -85,7 +85,8 @@ namespace Doppler.BillingUser.Controllers
         private static readonly List<UserTypeEnum> AllowedUpdatePlanTypesForBilling = new List<UserTypeEnum>
         {
             UserTypeEnum.MONTHLY,
-            UserTypeEnum.SUBSCRIBERS
+            UserTypeEnum.SUBSCRIBERS,
+            UserTypeEnum.INDIVIDUAL
         };
 
         public BillingController(
@@ -441,6 +442,10 @@ namespace Doppler.BillingUser.Controllers
                         {
                             billingCreditId = await ChangeBetweenSubscribersPlans(currentPlan, newPlan, user, agreementInformation, promotion, payment);
                         }
+                        else if (currentPlan.IdUserType == UserTypeEnum.INDIVIDUAL && newPlan.IdUserType == UserTypeEnum.INDIVIDUAL)
+                        {
+                            billingCreditId = await BuyCredits(currentPlan, newPlan, user, agreementInformation, promotion, payment);
+                        }
                     }
                 }
 
@@ -583,11 +588,12 @@ namespace Doppler.BillingUser.Controllers
         {
             User userInformation = await _userRepository.GetUserInformation(accountname);
             var planDiscountInformation = await _billingRepository.GetPlanDiscountInformation(discountId);
+            bool isUpgradeApproved;
 
             switch (billingCreditType)
             {
                 case BillingCreditTypeEnum.UpgradeRequest:
-                    bool isUpgradeApproved = (user.PaymentMethod == PaymentMethodEnum.CC || !BillingHelper.IsUpgradePending(user, promotion, payment));
+                    isUpgradeApproved = (user.PaymentMethod == PaymentMethodEnum.CC || !BillingHelper.IsUpgradePending(user, promotion, payment));
 
                     if (newPlan.IdUserType == UserTypeEnum.INDIVIDUAL)
                     {
@@ -607,6 +613,11 @@ namespace Doppler.BillingUser.Controllers
                 case BillingCreditTypeEnum.Upgrade_Between_Monthlies:
                 case BillingCreditTypeEnum.Upgrade_Between_Subscribers:
                     await _emailTemplatesService.SendNotificationForUpdatePlan(accountname, userInformation, currentPlan, newPlan, user, promotion, promocode, discountId, planDiscountInformation, amountDetails);
+                    return;
+                case BillingCreditTypeEnum.Credit_Buyed_CC:
+                case BillingCreditTypeEnum.Credit_Request:
+                    isUpgradeApproved = (user.PaymentMethod == PaymentMethodEnum.CC || !BillingHelper.IsUpgradePending(user, promotion, payment));
+                    await _emailTemplatesService.SendNotificationForCredits(accountname, userInformation, newPlan, user, partialBalance, promotion, promocode, !isUpgradeApproved);
                     return;
                 default:
                     return;
@@ -770,6 +781,43 @@ namespace Doppler.BillingUser.Controllers
             }
 
             return 0;
+        }
+
+        private async Task<int> BuyCredits(UserTypePlanInformation currentPlan, UserTypePlanInformation newPlan, UserBillingInformation user, AgreementInformation agreementInformation, Promotion promotion, CreditCardPayment payment)
+        {
+            var currentBillingCredit = await _billingRepository.GetBillingCredit(user.IdCurrentBillingCredit);
+            var billingCreditType = user.PaymentMethod == PaymentMethodEnum.CC ? BillingCreditTypeEnum.Credit_Buyed_CC : BillingCreditTypeEnum.Credit_Request;
+            var billingCreditMapper = GetBillingCreditMapper(user.PaymentMethod);
+            var billingCreditAgreement = await billingCreditMapper.MapToBillingCreditAgreement(agreementInformation, user, newPlan, promotion, payment, billingCreditType);
+            billingCreditAgreement.BillingCredit.DiscountPlanFeeAdmin = currentBillingCredit.DiscountPlanFeeAdmin;
+
+            var billingCreditId = await _billingRepository.CreateBillingCreditAsync(billingCreditAgreement);
+
+            user.IdCurrentBillingCredit = billingCreditId;
+            user.OriginInbound = agreementInformation.OriginInbound;
+            user.UpgradePending = BillingHelper.IsUpgradePending(user, promotion, payment);
+            user.UTCUpgrade = !user.UpgradePending ? DateTime.UtcNow : null;
+
+            await _userRepository.UpdateUserBillingCredit(user);
+
+            var partialBalance = 0;
+
+            if (!user.UpgradePending)
+            {
+                partialBalance = await _userRepository.GetAvailableCredit(user.IdUser);
+                await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan);
+            }
+
+            if (promotion != null)
+            {
+                await _promotionRepository.IncrementUsedTimes(promotion);
+            }
+
+            //Send notifications
+            SendNotifications(user.Email, newPlan, user, partialBalance, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, billingCreditType, currentPlan, null);
+
+
+            return billingCreditId;
         }
     }
 }
