@@ -42,34 +42,32 @@ namespace Doppler.BillingUser.Test
             IFlurlClientFactory factory = new PerBaseUrlFlurlClientFactory();
             var sut = new RelayEmailSender(Options.Create(configuration), Mock.Of<ILogger<RelayEmailSender>>(), factory);
 
-            using (var httpTest = new HttpTest())
-            {
-                // Act
-                await sut.SendWithTemplateAsync(
-                    templateId,
-                    new { demoData },
-                    new[] { toEmail },
-                    bcc: new[] { bccEmail });
+            using var httpTest = new HttpTest();
+            // Act
+            await sut.SendWithTemplateAsync(
+                templateId,
+                new { demoData },
+                new[] { toEmail },
+                bcc: new[] { bccEmail });
 
-                // Assert
-                httpTest
-                    .ShouldHaveCalled(expectedUrl)
-                    .WithVerb(HttpMethod.Post)
-                    .WithOAuthBearerToken(apiKey)
-                    .WithRequestJson(new
+            // Assert
+            httpTest
+                .ShouldHaveCalled(expectedUrl)
+                .WithVerb(HttpMethod.Post)
+                .WithOAuthBearerToken(apiKey)
+                .WithRequestJson(new
+                {
+                    from_name = (string)null,
+                    from_email = (string)null,
+                    recipients = new[]
                     {
-                        from_name = (string)null,
-                        from_email = (string)null,
-                        recipients = new[]
-                        {
                             new { email = toEmail, type = "to" },
                             new { email = bccEmail, type = "bcc" },
-                        },
-                        attachments = (object)null,
-                        model = new { demoData },
-                        reply_to = new { email = configuration.ReplyToAddress, name = configuration.FromName }
-                    });
-            }
+                    },
+                    attachments = (object)null,
+                    model = new { demoData },
+                    reply_to = new { email = configuration.ReplyToAddress, name = configuration.FromName }
+                });
         }
     }
 }

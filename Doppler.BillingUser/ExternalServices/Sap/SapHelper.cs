@@ -17,7 +17,9 @@ namespace Doppler.BillingUser.ExternalServices.Sap
         public static string GetBillingStateId(User user)
         {
             if (user.BillingStateCountryCode != "US")
+            {
                 return string.Empty;
+            }
 
             SapDictionary.StatesDictionary.TryGetValue(user.IdBillingState, out var stateIdUs);
 

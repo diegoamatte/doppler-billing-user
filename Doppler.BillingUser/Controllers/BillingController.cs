@@ -425,7 +425,9 @@ namespace Doppler.BillingUser.Controllers
                     }
 
                     if (promotion != null)
+                    {
                         await _promotionRepository.IncrementUsedTimes(promotion);
+                    }
 
                     //Send notifications
                     SendNotifications(accountname, newPlan, user, partialBalance, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditTypeEnum.UpgradeRequest, currentPlan, null);
@@ -503,9 +505,13 @@ namespace Doppler.BillingUser.Controllers
                         {
                             zohoDto.PromoCodo = agreementInformation.Promocode;
                             if (promotion.ExtraCredits.HasValue && promotion.ExtraCredits.Value != 0)
+                            {
                                 zohoDto.DiscountType = ZohoDopplerValues.Credits;
+                            }
                             else if (promotion.DiscountPercentage.HasValue && promotion.DiscountPercentage.Value != 0)
+                            {
                                 zohoDto.DiscountType = ZohoDopplerValues.Discount;
+                            }
                         }
 
                         try
@@ -711,7 +717,9 @@ namespace Doppler.BillingUser.Controllers
                 await _billingRepository.CreateMovementCreditAsync(billingCreditId, partialBalance, user, newPlan, currentMonthlyAddedEmailsWithBilling);
 
                 if (promotion != null)
+                {
                     await _promotionRepository.IncrementUsedTimes(promotion);
+                }
 
                 //Send notifications
                 SendNotifications(user.Email, newPlan, user, partialBalance, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditTypeEnum.UpgradeBetweenMonthlies, currentPlan, amountDetails);
@@ -759,7 +767,9 @@ namespace Doppler.BillingUser.Controllers
                 await _userRepository.UpdateUserBillingCredit(user);
 
                 if (promotion != null)
+                {
                     await _promotionRepository.IncrementUsedTimes(promotion);
+                }
 
                 //Send notifications
                 SendNotifications(user.Email, newPlan, user, 0, promotion, agreementInformation.Promocode, agreementInformation.DiscountId, payment, BillingCreditTypeEnum.UpgradeBetweenSubscribers, currentPlan, amountDetails);

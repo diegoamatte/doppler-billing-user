@@ -139,7 +139,9 @@ WHERE
             result.IdConsumerType = ConsumerTypeHelper.GetConsumerType(result.IdConsumerType);
 
             if (result is not { PaymentMethodName: "CC" or "MP" })
+            {
                 return result;
+            }
 
             result.CCHolderFullName = _encryptionService.DecryptAES256(result.CCHolderFullName);
             result.CCNumber = CreditCardHelper.ObfuscateNumber(_encryptionService.DecryptAES256(result.CCNumber));
@@ -164,9 +166,9 @@ WHERE
                     @email = accountName
                 });
 
-            if (user is null) return null;
-
-            return new EmailRecipients
+            return user is null
+                ? null
+                : new EmailRecipients
             {
                 Recipients = string.IsNullOrEmpty(user.BillingEmails) ? Array.Empty<string>() : user.BillingEmails.Replace(" ", string.Empty).Split(',')
             };
