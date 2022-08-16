@@ -16,9 +16,9 @@ namespace Doppler.BillingUser.Services
             _currencyRepository = currencyRepository;
         }
 
-        public async Task<PaymentAmountDetail> ConvertCurrencyAmount(CurrencyType from, CurrencyType to, decimal fromValue)
+        public async Task<PaymentAmountDetail> ConvertCurrencyAmount(CurrencyType fromCurrencyType, CurrencyType toCurrencyType, decimal fromValue)
         {
-            var currencyRate = await _currencyRepository.GetCurrencyRateAsync((int)from, (int)to, DateTime.UtcNow);
+            var currencyRate = await _currencyRepository.GetCurrencyRateAsync((int)fromCurrencyType, (int)toCurrencyType, DateTime.UtcNow);
             var totalWithoutTaxes = decimal.Round(fromValue * currencyRate, 2, MidpointRounding.AwayFromZero);
             var taxesInFromCurrency = decimal.Round(fromValue * _taxRate, 2, MidpointRounding.AwayFromZero);
             var taxes = decimal.Round(totalWithoutTaxes * _taxRate, 2, MidpointRounding.AwayFromZero);

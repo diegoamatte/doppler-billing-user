@@ -37,7 +37,7 @@ namespace Doppler.BillingUser.Infrastructure
             _paymentGateway = paymentGateway;
             _sapService = sapService;
         }
-        public async Task<BillingInformation> GetBillingInformation(string email)
+        public async Task<BillingInformation> GetBillingInformation(string accountName)
         {
             using var connection = _connectionFactory.GetConnection();
 
@@ -57,7 +57,7 @@ FROM
     LEFT JOIN [Country] CO ON S.IdCountry = CO.IdCountry
 WHERE
     U.Email = @email",
-                new { email });
+                new { accountName });
             return results.FirstOrDefault();
         }
 

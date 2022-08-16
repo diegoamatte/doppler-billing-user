@@ -32,7 +32,7 @@ namespace Doppler.BillingUser.Services
                         amount = newPlan.Fee,
                         year = DateTime.UtcNow.Year
                     },
-                    to: new[] { accountname });
+                    toEmail: new[] { accountname });
         }
 
         public Task<bool> SendActivatedStandByEmail(string language, string fistName, int standByAmount, string sendTo)
@@ -49,7 +49,7 @@ namespace Doppler.BillingUser.Services
                         year = DateTime.Now.Year,
                         isOnlyOneSubscriber = standByAmount == 1,
                     },
-                    to: new[] { sendTo });
+                    toEmail: new[] { sendTo });
         }
 
         public Task SendNotificationForUpgradePlan(string accountname, User userInformation, UserTypePlanInformation newPlan, UserBillingInformation user, Promotion promotion, string promocode, int discountId, PlanDiscountInformation planDiscountInformation, bool isUpgradePending)
@@ -79,7 +79,7 @@ namespace Doppler.BillingUser.Services
                         isDiscountWith12Months = planDiscountInformation != null && planDiscountInformation.MonthPlan == 12,
                         year = DateTime.UtcNow.Year
                     },
-                    to: new[] { accountname });
+                    toEmail: new[] { accountname });
 
             var templateAdmin = !isUpgradePending ?
                 _emailSettings.Value.UpgradeAccountTemplateAdminTemplateId :
@@ -132,7 +132,7 @@ namespace Doppler.BillingUser.Services
                         discountMonthPlan = planDiscountInformation != null ? planDiscountInformation.MonthPlan : 0,
                         year = DateTime.UtcNow.Year
                     },
-                    to: new[] { _emailSettings.Value.AdminEmail },
+                    toEmail: new[] { _emailSettings.Value.AdminEmail },
                     replyTo: _emailSettings.Value.InfoDopplerAppsEmail);
 
             return Task.WhenAll(adminEmail, upgradeEmail);
@@ -162,7 +162,7 @@ namespace Doppler.BillingUser.Services
                         availableCreditsQty = partialBalance + newPlan.EmailQty + (promotion != null ? promotion.ExtraCredits ?? 0 : 0),
                         year = DateTime.UtcNow.Year
                     },
-                    to: new[] { accountname });
+                    toEmail: new[] { accountname });
 
             var templateAdmin = !isUpgradePending ?
                 _emailSettings.Value.CreditsApprovedAdminTemplateId :
@@ -214,7 +214,7 @@ namespace Doppler.BillingUser.Services
                         isPaymentMethodTransf = user.PaymentMethod == PaymentMethodTypes.TRANSF,
                         year = DateTime.UtcNow.Year
                     },
-                    to: new[] { _emailSettings.Value.AdminEmail });
+                    toEmail: new[] { _emailSettings.Value.AdminEmail });
 
             return Task.WhenAll(creditsEmail, adminEmail);
         }
@@ -237,7 +237,7 @@ namespace Doppler.BillingUser.Services
                         bankMessage,
                         year = DateTime.UtcNow.Year
                     },
-                    to: new[] { _emailSettings.Value.CommercialEmail, _emailSettings.Value.BillingEmail },
+                    toEmail: new[] { _emailSettings.Value.CommercialEmail, _emailSettings.Value.BillingEmail },
                     replyTo: _emailSettings.Value.InfoDopplerAppsEmail);
         }
 
@@ -254,7 +254,7 @@ namespace Doppler.BillingUser.Services
                         email = accountname,
                         year = DateTime.UtcNow.Year
                     },
-                    to: new[] { _emailSettings.Value.AdminEmail });
+                    toEmail: new[] { _emailSettings.Value.AdminEmail });
         }
 
         public Task SendNotificationForMercadoPagoPaymentInProcess(int userId, string accountname, string errorCode, string errorMessage)
@@ -272,7 +272,7 @@ namespace Doppler.BillingUser.Services
                         errorMessage,
                         year = DateTime.UtcNow.Year
                     },
-                    to: new[] { _emailSettings.Value.CommercialEmail, _emailSettings.Value.BillingEmail });
+                    toEmail: new[] { _emailSettings.Value.CommercialEmail, _emailSettings.Value.BillingEmail });
         }
 
         public Task SendNotificationForUpdatePlan(
@@ -310,7 +310,7 @@ namespace Doppler.BillingUser.Services
                         isDiscountWith12Months = planDiscountInformation != null && planDiscountInformation.MonthPlan == 12,
                         year = DateTime.UtcNow.Year
                     },
-                    to: new[] { accountname });
+                    toEmail: new[] { accountname });
 
             var templateAdmin = _emailSettings.Value.UpdatePlanAdminTemplateId;
 
@@ -382,7 +382,7 @@ namespace Doppler.BillingUser.Services
                         total = amountDetails != null ? amountDetails.Total : 0,
                         year = DateTime.UtcNow.Year
                     },
-                    to: new[] { _emailSettings.Value.AdminEmail },
+                    toEmail: new[] { _emailSettings.Value.AdminEmail },
                     replyTo: _emailSettings.Value.InfoDopplerAppsEmail);
 
             return Task.WhenAll(updatePlanAdminEmail, updatePlanEmail);

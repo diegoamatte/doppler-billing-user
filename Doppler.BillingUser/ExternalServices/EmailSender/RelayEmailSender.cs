@@ -30,7 +30,7 @@ namespace Doppler.BillingUser.ExternalServices.EmailSender
         public async Task<bool> SafeSendWithTemplateAsync(
             string templateId,
             object templateModel,
-            IEnumerable<string> to,
+            IEnumerable<string> toEmail,
             IEnumerable<string> cc = null,
             IEnumerable<string> bcc = null,
             string fromName = null,
@@ -42,7 +42,7 @@ namespace Doppler.BillingUser.ExternalServices.EmailSender
             {
                 try
                 {
-                    await SendWithTemplateAsync(templateId, templateModel, to, cc, bcc, fromName, fromAddress, replyTo, attachments, cancellationToken);
+                    await SendWithTemplateAsync(templateId, templateModel, toEmail, cc, bcc, fromName, fromAddress, replyTo, attachments, cancellationToken);
                     return true;
                 }
                 catch (Exception ex)
@@ -55,7 +55,7 @@ namespace Doppler.BillingUser.ExternalServices.EmailSender
 
         public async Task SendWithTemplateAsync(
             string templateId, object templateModel,
-            IEnumerable<string> to,
+            IEnumerable<string> toEmail,
             IEnumerable<string> cc = null,
             IEnumerable<string> bcc = null,
             string fromName = null,
@@ -66,7 +66,7 @@ namespace Doppler.BillingUser.ExternalServices.EmailSender
             )
         {
             var recipients = (
-                from emailAddress in to ?? Enumerable.Empty<string>()
+                from emailAddress in toEmail ?? Enumerable.Empty<string>()
                 select new { email = emailAddress, type = "to" }).Union(
                 from emailAddress in cc ?? Enumerable.Empty<string>() select new { email = emailAddress, type = "cc" }).Union(
                 from emailAddress in bcc ?? Enumerable.Empty<string>() select new { email = emailAddress, type = "bcc" }).ToArray();

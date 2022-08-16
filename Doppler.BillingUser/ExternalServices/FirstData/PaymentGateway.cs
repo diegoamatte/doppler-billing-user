@@ -85,12 +85,12 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
                 {
                     var errorMessage = "";
                     var approvalCode = apiResponse.EXact_Resp_Code;
-                    if (approvalCode != ResponseTypes.NORMAL_TRANSACTION)
+                    if (approvalCode != ResponseTypes.NormalTransaction)
                     {
                         errorMessage = apiResponse.EXact_Message;
                         switch (approvalCode)
                         {
-                            case ResponseTypes.DUPLICATE:
+                            case ResponseTypes.Duplicate:
                                 errorCode = PaymentErrorCode.DuplicatedPaymentTransaction;
                                 break;
                             default:

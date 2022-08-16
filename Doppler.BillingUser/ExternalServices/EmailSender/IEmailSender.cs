@@ -10,7 +10,7 @@ namespace Doppler.BillingUser.ExternalServices.EmailSender
         Task SendWithTemplateAsync(
             string templateId,
             object templateModel,
-            IEnumerable<string> to,
+            IEnumerable<string> toEmail,
             IEnumerable<string> cc = null,
             IEnumerable<string> bcc = null,
             string fromName = null,
@@ -22,7 +22,7 @@ namespace Doppler.BillingUser.ExternalServices.EmailSender
         Task<bool> SafeSendWithTemplateAsync(
             string templateId,
             object templateModel,
-            IEnumerable<string> to,
+            IEnumerable<string> toEmail,
             IEnumerable<string> cc = null,
             IEnumerable<string> bcc = null,
             string fromName = null,

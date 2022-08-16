@@ -14,7 +14,7 @@ namespace Doppler.BillingUser.Infrastructure
             _connectionFactory = connectionFactory;
         }
 
-        public async Task<decimal> GetCurrencyRateAsync(int idCurrencyTypeFrom, int idCurrencyTypeTo, DateTime date)
+        public async Task<decimal> GetCurrencyRateAsync(int idCurrencyTypeFrom, int idCurrencyTypeTo, DateTime currencyDate)
         {
             using var connection = _connectionFactory.GetConnection();
             var rate = await connection.QueryFirstOrDefaultAsync<CurrencyRate>(@"
@@ -36,7 +36,7 @@ ORDER BY R.UTCFromDate DESC",
                 {
                     idCurrencyTypeFrom,
                     idCurrencyTypeTo,
-                    date
+                    currencyDate
                 });
 
             return rate == null
@@ -44,11 +44,11 @@ ORDER BY R.UTCFromDate DESC",
                 : rate.IdCurrencyTypeFrom == idCurrencyTypeFrom && rate.IdCurrencyTypeTo == idCurrencyTypeTo ? rate.Rate : 1 / rate.Rate;
         }
 
-        public async Task<decimal> ConvertCurrencyAsync(int idCurrencyTypeFrom, int idCurrencyTypeTo, decimal amount, DateTime date, decimal? rate)
+        public async Task<decimal> ConvertCurrencyAsync(int idCurrencyTypeFrom, int idCurrencyTypeTo, decimal amount, DateTime currencyDate, decimal? rate)
         {
             if (!rate.HasValue)
             {
-                rate = await GetCurrencyRateAsync(idCurrencyTypeFrom, idCurrencyTypeTo, date);
+                rate = await GetCurrencyRateAsync(idCurrencyTypeFrom, idCurrencyTypeTo, currencyDate);
             }
 
             return decimal.Round(amount * rate.Value, 2, MidpointRounding.AwayFromZero);

@@ -5,7 +5,7 @@ namespace Doppler.BillingUser.Infrastructure
 {
     public interface ICurrencyRepository
     {
-        Task<decimal> GetCurrencyRateAsync(int idCurrencyTypeFrom, int idCurrencyTypeTo, DateTime date);
-        Task<decimal> ConvertCurrencyAsync(int idCurrencyTypeFrom, int idCurrencyTypeTo, decimal amount, DateTime date, decimal? rate);
+        Task<decimal> GetCurrencyRateAsync(int idCurrencyTypeFrom, int idCurrencyTypeTo, DateTime currencyDate);
+        Task<decimal> ConvertCurrencyAsync(int idCurrencyTypeFrom, int idCurrencyTypeTo, decimal amount, DateTime currencyDate, decimal? rate);
     }
 }
