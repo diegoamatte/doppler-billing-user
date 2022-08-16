@@ -5,6 +5,6 @@ namespace Doppler.BillingUser.DopplerSecurity
 {
     public class DopplerSecurityOptions
     {
-        public IEnumerable<SecurityKey> SigningKeys { get; set; } = new SecurityKey[0];
+        public IEnumerable<SecurityKey> SigningKeys { get; set; } = System.Array.Empty<SecurityKey>();
     }
 }

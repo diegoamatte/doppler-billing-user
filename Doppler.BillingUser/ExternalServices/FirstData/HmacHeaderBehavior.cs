@@ -102,7 +102,7 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
             return null;
         }
 
-        private string GetHashedContent(string payload)
+        private static string GetHashedContent(string payload)
         {
             var payloadBytes = Encoding.UTF8.GetBytes(payload);
             var sha1_crypto = new SHA1CryptoServiceProvider();

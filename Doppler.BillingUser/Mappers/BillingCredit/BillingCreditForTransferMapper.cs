@@ -49,7 +49,7 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
                 IdPromotion = promotion?.IdPromotion
             };
 
-            DateTime now = DateTime.UtcNow;
+            var now = DateTime.UtcNow;
             var isUpgradePending = BillingHelper.IsUpgradePending(user, promotion, payment);
 
             buyCreditAgreement.BillingCredit = new BillingCreditModel()
@@ -88,14 +88,14 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
             if (user.PaymentMethod == PaymentMethodTypes.TRANSF &&
                 (user.IdBillingCountry == (int)Country.Mexico || user.IdBillingCountry == (int)Country.Argentina))
             {
-                int iva = (user.IdBillingCountry == (int)Country.Mexico) ? MexicoIva : ArgentinaIva;
+                var iva = (user.IdBillingCountry == (int)Country.Mexico) ? MexicoIva : ArgentinaIva;
                 buyCreditAgreement.BillingCredit.Taxes = Convert.ToDouble(agreementInformation.Total * iva / 100, CultureInfo.InvariantCulture);
             }
 
             return buyCreditAgreement;
         }
 
-        private int CalculateBillingSystemByTransfer(int idBillingCountry)
+        private static int CalculateBillingSystemByTransfer(int idBillingCountry)
         {
             return idBillingCountry switch
             {

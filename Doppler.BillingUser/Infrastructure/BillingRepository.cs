@@ -1152,7 +1152,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
             return result.FirstOrDefault();
         }
 
-        private int CalculateBillingSystemByTransfer(int idBillingCountry)
+        private static int CalculateBillingSystemByTransfer(int idBillingCountry)
         {
             return idBillingCountry switch
             {
