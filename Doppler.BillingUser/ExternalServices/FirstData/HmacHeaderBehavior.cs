@@ -83,9 +83,8 @@ namespace Doppler.BillingUser.ExternalServices.FirstData
             var base64HmacSignature = GetHmacSignature(contentDigest, timeString);
 
             HttpRequestMessageProperty httpRequestMessageProperty;
-            object httpRequestMessageObject;
 
-            if (request.Properties.TryGetValue(HttpRequestMessageProperty.Name, out httpRequestMessageObject))
+            if (request.Properties.TryGetValue(HttpRequestMessageProperty.Name, out var httpRequestMessageObject))
             {
                 httpRequestMessageProperty = httpRequestMessageObject as HttpRequestMessageProperty;
                 httpRequestMessageProperty.Headers["x-gge4-content-sha1"] = contentDigest;

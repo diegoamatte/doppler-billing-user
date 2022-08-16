@@ -9,13 +9,9 @@ namespace Doppler.BillingUser.ExternalServices.Sap
     {
         public static string GetFirstName(User user)
         {
-            if (!string.IsNullOrEmpty(user.RazonSocial))
-                return user.RazonSocial;
-
-            if (!string.IsNullOrEmpty(user.BillingFirstName))
-                return user.BillingFirstName;
-
-            return user.FirstName ?? string.Empty;
+            return !string.IsNullOrEmpty(user.RazonSocial)
+                ? user.RazonSocial
+                : !string.IsNullOrEmpty(user.BillingFirstName) ? user.BillingFirstName : user.FirstName ?? string.Empty;
         }
 
         public static string GetBillingStateId(User user)

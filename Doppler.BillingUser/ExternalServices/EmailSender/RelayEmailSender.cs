@@ -81,7 +81,7 @@ namespace Doppler.BillingUser.ExternalServices.EmailSender
                 {
                     from_name = fromName ?? _config.FromName,
                     from_email = fromAddress ?? _config.FromAddress,
-                    recipients = recipients,
+                    recipients,
                     attachments = attachments?.Select(x => new
                     {
                         content_type = x.ContentType.ToString(),

@@ -79,24 +79,10 @@ namespace Doppler.BillingUser.Utils
         public static void MapForUpgrade(ZohoEntityLead lead, ZohoDTO zohoDto)
         {
             lead.Doppler = zohoDto.Doppler;
-            if (zohoDto.FirstPaymentDate == DateTime.MinValue)
-            {
-                lead.DFirstPayment = null;
-            }
-            else
-            {
-                lead.DFirstPayment = zohoDto.FirstPaymentDate;
-            }
+            lead.DFirstPayment = zohoDto.FirstPaymentDate == DateTime.MinValue ? null : zohoDto.FirstPaymentDate;
             lead.DDiscountType = zohoDto.DiscountType;
             lead.DBillingSystem = zohoDto.BillingSystem;
-            if (zohoDto.UpgradeDate == DateTime.MinValue)
-            {
-                lead.DUpgradeDate = null;
-            }
-            else
-            {
-                lead.DUpgradeDate = zohoDto.UpgradeDate;
-            }
+            lead.DUpgradeDate = zohoDto.UpgradeDate == DateTime.MinValue ? null : zohoDto.UpgradeDate;
             lead.DPromoCode = zohoDto.PromoCodo;
             lead.DDiscountTypeDesc = zohoDto.DiscountTypeDescription;
             lead.Industry = zohoDto.Industry;
@@ -105,24 +91,10 @@ namespace Doppler.BillingUser.Utils
         public static void MapForUpgrade(ZohoEntityAccount account, ZohoDTO zohoDto)
         {
             account.Doppler = zohoDto.Doppler;
-            if (zohoDto.FirstPaymentDate == DateTime.MinValue)
-            {
-                account.DFirstPayment = null;
-            }
-            else
-            {
-                account.DFirstPayment = zohoDto.FirstPaymentDate;
-            }
+            account.DFirstPayment = zohoDto.FirstPaymentDate == DateTime.MinValue ? null : zohoDto.FirstPaymentDate;
             account.DDiscountType = zohoDto.DiscountType;
             account.DBillingSystem = zohoDto.BillingSystem;
-            if (zohoDto.UpgradeDate == DateTime.MinValue)
-            {
-                account.DUpgradeDate = null;
-            }
-            else
-            {
-                account.DUpgradeDate = zohoDto.UpgradeDate;
-            }
+            account.DUpgradeDate = zohoDto.UpgradeDate == DateTime.MinValue ? null : zohoDto.UpgradeDate;
             account.DPromoCode = zohoDto.PromoCodo;
             account.DDiscountTypeDesc = zohoDto.DiscountTypeDescription;
             account.Industry = zohoDto.Industry;

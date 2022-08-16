@@ -17,7 +17,7 @@ namespace Doppler.BillingUser.ExternalServices.EmailSender
             string fromAddress = null,
             string replyTo = null,
             IEnumerable<Attachment> attachments = null,
-            CancellationToken cancellationToken = default(CancellationToken));
+            CancellationToken cancellationToken = default);
 
         Task<bool> SafeSendWithTemplateAsync(
             string templateId,
@@ -29,6 +29,6 @@ namespace Doppler.BillingUser.ExternalServices.EmailSender
             string fromAddress = null,
             string replyTo = null,
             IEnumerable<Attachment> attachments = null,
-            CancellationToken cancellationToken = default(CancellationToken));
+            CancellationToken cancellationToken = default);
     }
 }

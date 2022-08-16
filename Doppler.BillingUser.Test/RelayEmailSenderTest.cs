@@ -47,7 +47,7 @@ namespace Doppler.BillingUser.Test
                 // Act
                 await sut.SendWithTemplateAsync(
                     templateId,
-                    new { demoData = demoData },
+                    new { demoData },
                     new[] { toEmail },
                     bcc: new[] { bccEmail });
 
@@ -66,7 +66,7 @@ namespace Doppler.BillingUser.Test
                             new { email = bccEmail, type = "bcc" },
                         },
                         attachments = (object)null,
-                        model = new { demoData = demoData },
+                        model = new { demoData },
                         reply_to = new { email = configuration.ReplyToAddress, name = configuration.FromName }
                     });
             }

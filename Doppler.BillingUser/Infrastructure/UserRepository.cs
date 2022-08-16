@@ -124,7 +124,7 @@ WHERE
     [IdUserTypePlan] = @idUserTypePlan;",
                 new
                 {
-                    @idUserTypePlan = idUserTypePlan
+                    idUserTypePlan
                 });
 
             return userTypePlan;
@@ -149,7 +149,7 @@ WHERE
             new
             {
                 @idUser = user.IdUser,
-                @IdCurrentBillingCredit = user.IdCurrentBillingCredit,
+                user.IdCurrentBillingCredit,
                 @cuit = user.Cuit,
                 @utfFirstPayment = user.UTCFirstPayment,
                 @originInbound = user.OriginInbound,
@@ -176,7 +176,7 @@ ORDER BY
 DESC",
                 new
                 {
-                    @idUser = idUser
+                    idUser
                 });
 
             return partialBalance;
@@ -254,7 +254,7 @@ WHERE IdUser = @idUser AND MONTH(GETDATE()) = MONTH(Date) AND YEAR(GETDATE()) = 
     CreditsQty > 0 AND IdUserType = 2 AND IdBillingCredit IS NOT NULL",
                 new
                 {
-                    @idUser = idUser
+                    idUser
                 });
 
             return partialBalance;

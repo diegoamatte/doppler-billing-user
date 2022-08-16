@@ -44,7 +44,7 @@ namespace Doppler.BillingUser.Services
                     templateModel: new
                     {
                         firstName = fistName,
-                        standByAmount = standByAmount,
+                        standByAmount,
                         urlImagesBase = _emailSettings.Value.UrlEmailImagesBase,
                         year = DateTime.Now.Year,
                         isOnlyOneSubscriber = standByAmount == 1,
@@ -73,10 +73,10 @@ namespace Doppler.BillingUser.Services
                         isPaymentMethodTransf = user.PaymentMethod == PaymentMethodEnum.TRANSF,
                         showMonthDescription = newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS,
                         discountPlanFee = planDiscountInformation != null ? planDiscountInformation.DiscountPlanFee : 0,
-                        isDiscountWith1Month = planDiscountInformation != null ? planDiscountInformation.MonthPlan == 1 : false,
-                        isDiscountWith3Months = planDiscountInformation != null ? planDiscountInformation.MonthPlan == 3 : false,
-                        isDiscountWith6Months = planDiscountInformation != null ? planDiscountInformation.MonthPlan == 6 : false,
-                        isDiscountWith12Months = planDiscountInformation != null ? planDiscountInformation.MonthPlan == 12 : false,
+                        isDiscountWith1Month = planDiscountInformation != null && planDiscountInformation.MonthPlan == 1,
+                        isDiscountWith3Months = planDiscountInformation != null && planDiscountInformation.MonthPlan == 3,
+                        isDiscountWith6Months = planDiscountInformation != null && planDiscountInformation.MonthPlan == 6,
+                        isDiscountWith12Months = planDiscountInformation != null && planDiscountInformation.MonthPlan == 12,
                         year = DateTime.UtcNow.Year
                     },
                     to: new[] { accountname });
@@ -304,10 +304,10 @@ namespace Doppler.BillingUser.Services
                         isPaymentMethodTransf = user.PaymentMethod == PaymentMethodEnum.TRANSF,
                         showMonthDescription = newPlan.IdUserType == UserTypeEnum.SUBSCRIBERS,
                         discountPlanFee = planDiscountInformation != null ? planDiscountInformation.DiscountPlanFee : 0,
-                        isDiscountWith1Month = planDiscountInformation != null ? planDiscountInformation.MonthPlan == 1 : false,
-                        isDiscountWith3Months = planDiscountInformation != null ? planDiscountInformation.MonthPlan == 3 : false,
-                        isDiscountWith6Months = planDiscountInformation != null ? planDiscountInformation.MonthPlan == 6 : false,
-                        isDiscountWith12Months = planDiscountInformation != null ? planDiscountInformation.MonthPlan == 12 : false,
+                        isDiscountWith1Month = planDiscountInformation != null && planDiscountInformation.MonthPlan == 1,
+                        isDiscountWith3Months = planDiscountInformation != null && planDiscountInformation.MonthPlan == 3,
+                        isDiscountWith6Months = planDiscountInformation != null && planDiscountInformation.MonthPlan == 6,
+                        isDiscountWith12Months = planDiscountInformation != null && planDiscountInformation.MonthPlan == 12,
                         year = DateTime.UtcNow.Year
                     },
                     to: new[] { accountname });

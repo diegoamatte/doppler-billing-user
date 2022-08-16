@@ -164,12 +164,7 @@ namespace Doppler.BillingUser.Controllers
         {
             var billingInformation = await _billingRepository.GetBillingInformation(accountName);
 
-            if (billingInformation == null)
-            {
-                return new NotFoundResult();
-            }
-
-            return new OkObjectResult(billingInformation);
+            return billingInformation == null ? new NotFoundResult() : new OkObjectResult(billingInformation);
         }
 
         [Authorize(Policies.OwnResourceOrSuperUser)]
@@ -206,12 +201,7 @@ namespace Doppler.BillingUser.Controllers
         {
             var result = await _billingRepository.GetInvoiceRecipients(accountname);
 
-            if (result == null)
-            {
-                return new NotFoundResult();
-            }
-
-            return new OkObjectResult(result);
+            return result == null ? new NotFoundResult() : new OkObjectResult(result);
         }
 
         [Authorize(Policies.OwnResourceOrSuperUser)]
@@ -231,12 +221,7 @@ namespace Doppler.BillingUser.Controllers
 
             var currentPaymentMethod = await _billingRepository.GetCurrentPaymentMethod(accountname);
 
-            if (currentPaymentMethod == null)
-            {
-                return new NotFoundResult();
-            }
-
-            return new OkObjectResult(currentPaymentMethod);
+            return currentPaymentMethod == null ? new NotFoundResult() : new OkObjectResult(currentPaymentMethod);
         }
 
         [Authorize(Policies.OwnResourceOrSuperUser)]
@@ -275,12 +260,7 @@ namespace Doppler.BillingUser.Controllers
 
             var currentPlan = await _billingRepository.GetCurrentPlan(accountname);
 
-            if (currentPlan == null)
-            {
-                return new NotFoundResult();
-            }
-
-            return new OkObjectResult(currentPlan);
+            return currentPlan == null ? new NotFoundResult() : new OkObjectResult(currentPlan);
         }
 
         [Authorize(Policies.OwnResourceOrSuperUser)]
@@ -586,12 +566,9 @@ namespace Doppler.BillingUser.Controllers
         {
             var result = await _userRepository.UpdateUserPurchaseIntentionDate(accountname);
 
-            if (result.Equals(0))
-            {
-                return new BadRequestObjectResult("Failed updating purchase intention. Invalid account.");
-            }
-
-            return new OkObjectResult("Successfully");
+            return result.Equals(0)
+                ? new BadRequestObjectResult("Failed updating purchase intention. Invalid account.")
+                : new OkObjectResult("Successfully");
         }
 
         private async void SendNotifications(

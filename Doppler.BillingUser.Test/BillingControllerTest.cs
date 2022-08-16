@@ -179,7 +179,7 @@ namespace Doppler.BillingUser.Test
                     null,
                     null,
                     null,
-                    default(CancellationToken)),
+                    default),
                 Times.Once());
         }
     }

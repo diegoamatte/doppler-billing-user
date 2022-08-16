@@ -39,17 +39,9 @@ ORDER BY R.UTCFromDate DESC",
                     date
                 });
 
-            if (rate == null)
-            {
-                return 1;
-            }
-
-            if (rate.IdCurrencyTypeFrom == idCurrencyTypeFrom && rate.IdCurrencyTypeTo == idCurrencyTypeTo)
-            {
-                return rate.Rate;
-            }
-
-            return 1 / rate.Rate;
+            return rate == null
+                ? 1
+                : rate.IdCurrencyTypeFrom == idCurrencyTypeFrom && rate.IdCurrencyTypeTo == idCurrencyTypeTo ? rate.Rate : 1 / rate.Rate;
         }
 
         public async Task<decimal> ConvertCurrencyAsync(int idCurrencyTypeFrom, int idCurrencyTypeTo, decimal amount, DateTime date, decimal? rate)

@@ -773,8 +773,8 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @partialBalance = currentMonthlyAddedEmailsWithBilling == null ?
                     partialBalance + billingCredit.TotalCreditsQty.Value :
                     (partialBalance + billingCredit.TotalCreditsQty.Value) - currentMonthlyAddedEmailsWithBilling,
-                @conceptEnglish = conceptEnglish,
-                @conceptSpanish = conceptSpanish,
+                conceptEnglish,
+                conceptSpanish,
             });
 
             return result.FirstOrDefault();
@@ -814,7 +814,7 @@ WHERE
     IdBillingCredit = @billingCreditId",
                 new
                 {
-                    @billingCreditId = billingCreditId
+                    billingCreditId
                 });
 
             return billingCredit;
@@ -846,8 +846,8 @@ WHERE
     idClient = @idClient AND authorizationNumber = @authorizationNumber",
                 new
                 {
-                    @idClient = idClient,
-                    @authorizationNumber = authorizationNumber
+                    idClient,
+                    authorizationNumber
                 });
             return invoice;
         }
@@ -1152,8 +1152,8 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",
                 @date = DateTime.UtcNow,
                 @idUserType = newUserType,
                 @creditsQty = creditsQty * -1,
-                @conceptEnglish = conceptEnglish,
-                @conceptSpanish = conceptSpanish,
+                conceptEnglish,
+                conceptSpanish,
                 @visible = false
             });
 
