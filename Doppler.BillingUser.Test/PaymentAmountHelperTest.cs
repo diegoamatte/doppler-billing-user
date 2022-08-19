@@ -20,7 +20,7 @@ namespace Doppler.BillingUser.Test
                     new PaymentAmountDetail {
                         CurrencyRate = 0.0029850746268657m,
                         Taxes = 562.80m,
-                        Total = 9.6800m
+                        Total = 9.68m
                     }
                 },
                 new object[] {
@@ -29,7 +29,7 @@ namespace Doppler.BillingUser.Test
                     new PaymentAmountDetail {
                         CurrencyRate = 0.0079916886438104m,
                         Taxes = 446.71m,
-                        Total = 20.5700m,
+                        Total = 20.57m,
                     }
                 },
                 new object[] {
@@ -38,7 +38,7 @@ namespace Doppler.BillingUser.Test
                     new PaymentAmountDetail {
                         CurrencyRate = 0.0039370078740157m,
                         Taxes = 491.26m,
-                        Total = 11.1441m,
+                        Total = 11.14m,
                     }
                 },
             };
