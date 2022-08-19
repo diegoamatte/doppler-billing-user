@@ -662,7 +662,9 @@ namespace Doppler.BillingUser.Test
             userRepositoryMock.Setup(x => x.GetEncryptedCreditCard(It.IsAny<string>())).ReturnsAsync(creditCard);
 
             var paymentGatewayMock = new Mock<IPaymentGateway>();
+#pragma warning disable CA2201 // Do not raise reserved exception types
             paymentGatewayMock.Setup(x => x.CreateCreditCardPayment(It.IsAny<decimal>(), It.IsAny<CreditCard>(), It.IsAny<int>())).ThrowsAsync(new Exception());
+#pragma warning restore CA2201 // Do not raise reserved exception types
 
             var accountServiceMock = new Mock<IAccountPlansService>();
             accountServiceMock.Setup(x => x.IsValidTotal(It.IsAny<string>(), It.IsAny<AgreementInformation>()))
@@ -725,7 +727,9 @@ namespace Doppler.BillingUser.Test
             userRepositoryMock.Setup(x => x.GetEncryptedCreditCard(It.IsAny<string>())).ReturnsAsync(creditCard);
 
             var paymentGatewayMock = new Mock<IPaymentGateway>();
+#pragma warning disable CA2201 // Do not raise reserved exception types
             paymentGatewayMock.Setup(x => x.CreateCreditCardPayment(It.IsAny<decimal>(), It.IsAny<CreditCard>(), It.IsAny<int>())).ThrowsAsync(new Exception());
+#pragma warning restore CA2201 // Do not raise reserved exception types
 
             var billingRepositoryMock = new Mock<IBillingRepository>();
             billingRepositoryMock.Setup(x => x.CreateAccountingEntriesAsync(It.IsAny<AccountingEntry>(), It.IsAny<AccountingEntry>())).ReturnsAsync(0);
@@ -1261,8 +1265,10 @@ namespace Doppler.BillingUser.Test
                 .ReturnsAsync(creditCard);
 
             var paymentGatewayMock = new Mock<IPaymentGateway>();
+#pragma warning disable CA2201 // Do not raise reserved exception types
             paymentGatewayMock.Setup(x => x.CreateCreditCardPayment(It.IsAny<decimal>(), It.IsAny<CreditCard>(), It.IsAny<int>()))
                 .ThrowsAsync(new Exception());
+#pragma warning restore CA2201 // Do not raise reserved exception types
 
             var accountServiceMock = new Mock<IAccountPlansService>();
             accountServiceMock.Setup(x => x.IsValidTotal(It.IsAny<string>(), It.IsAny<AgreementInformation>()))
@@ -1388,8 +1394,10 @@ namespace Doppler.BillingUser.Test
                     }
                 });
 
+#pragma warning disable CA2201 // Do not raise reserved exception types
             zohoServiceMock.Setup(x => x.UpdateZohoEntityAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ThrowsAsync(new Exception());
+#pragma warning restore CA2201 // Do not raise reserved exception types
 
             var factory = _factory.WithWebHostBuilder(builder =>
             {

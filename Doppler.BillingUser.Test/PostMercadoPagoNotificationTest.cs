@@ -55,8 +55,10 @@ namespace Doppler.BillingUser.Test
                 .ReturnsAsync(new Model.User());
             _billingRepository.Setup(br => br.GetInvoice(It.IsAny<int>(), It.IsAny<string>()))
                 .ReturnsAsync(new Model.AccountingEntry());
+#pragma warning disable CA2201 // Do not raise reserved exception types
             _mercadopagoService.Setup(mps => mps.GetPaymentById(It.IsAny<long>(), It.IsAny<string>()))
                 .ThrowsAsync(new Exception());
+#pragma warning restore CA2201 // Do not raise reserved exception types
 
             // Act
             var response = await _client.PostAsJsonAsync($"accounts/test1@example.com/integration/mercadopagonotification", _notification);
