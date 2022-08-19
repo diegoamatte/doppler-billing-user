@@ -85,7 +85,7 @@ namespace Doppler.BillingUser.Controllers
 
                 await _billingRepository.UpdateInvoiceStatus(invoice.IdAccountingEntry, status);
                 return new OkObjectResult("Successful");
-            } 
+            }
 
             if (status == PaymentStatus.Approved && invoice.Status != PaymentStatus.Approved)
             {

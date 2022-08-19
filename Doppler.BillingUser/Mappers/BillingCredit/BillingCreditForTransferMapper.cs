@@ -55,10 +55,10 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
             buyCreditAgreement.BillingCredit = new BillingCreditModel()
             {
                 Date = now,
-                PaymentDate = (billingCreditType == BillingCreditTypeEnum.UpgradeRequest || billingCreditType == BillingCreditTypeEnum.Credit_Request) ? !isUpgradePending ? now : null : null,
-                ActivationDate = (billingCreditType == BillingCreditTypeEnum.UpgradeRequest || billingCreditType == BillingCreditTypeEnum.Credit_Request) ? !isUpgradePending ? now : null : now,
-                Approved = (billingCreditType != BillingCreditTypeEnum.UpgradeRequest && billingCreditType != BillingCreditTypeEnum.Credit_Request) || !isUpgradePending,
-                Payed = (billingCreditType == BillingCreditTypeEnum.UpgradeRequest || billingCreditType == BillingCreditTypeEnum.Credit_Request) && !isUpgradePending,
+                PaymentDate = (billingCreditType is BillingCreditType.UpgradeRequest or BillingCreditType.CreditRequest) ? !isUpgradePending ? now : null : null,
+                ActivationDate = (billingCreditType is BillingCreditType.UpgradeRequest or BillingCreditType.CreditRequest) ? !isUpgradePending ? now : null : now,
+                Approved = (billingCreditType != BillingCreditType.UpgradeRequest && billingCreditType != BillingCreditType.CreditRequest) || !isUpgradePending,
+                Payed = (billingCreditType == BillingCreditType.UpgradeRequest || billingCreditType == BillingCreditType.CreditRequest) && !isUpgradePending,
                 IdUserTypePlan = newUserTypePlan.IdUserTypePlan,
                 PlanFee = newUserTypePlan.Fee,
                 CreditsQty = newUserTypePlan.EmailQty ?? null,

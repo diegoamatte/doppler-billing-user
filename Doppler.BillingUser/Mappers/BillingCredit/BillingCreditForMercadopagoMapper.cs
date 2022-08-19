@@ -48,7 +48,7 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
                 IdPromotion = promotion?.IdPromotion
             };
 
-            DateTime now = DateTime.UtcNow;
+            var now = DateTime.UtcNow;
             var isUpgradePending = BillingHelper.IsUpgradePending(user, promotion, payment);
 
             buyCreditAgreement.BillingCredit = new BillingCreditModel()

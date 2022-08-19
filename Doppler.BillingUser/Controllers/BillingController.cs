@@ -84,9 +84,9 @@ namespace Doppler.BillingUser.Controllers
 
         private static readonly List<UserType> AllowedUpdatePlanTypesForBilling = new List<UserType>
         {
-            UserTypeEnum.MONTHLY,
-            UserTypeEnum.SUBSCRIBERS,
-            UserTypeEnum.INDIVIDUAL
+            UserType.MONTHLY,
+            UserType.SUBSCRIBERS,
+            UserType.INDIVIDUAL
         };
 
         [LoggerMessage(0, LogLevel.Debug, "Get current payment method.")]
@@ -447,7 +447,7 @@ namespace Doppler.BillingUser.Controllers
                         {
                             billingCreditId = await ChangeBetweenSubscribersPlans(currentPlan, newPlan, user, agreementInformation, promotion, payment);
                         }
-                        else if (currentPlan.IdUserType == UserTypeEnum.INDIVIDUAL && newPlan.IdUserType == UserTypeEnum.INDIVIDUAL)
+                        else if (currentPlan.IdUserType == UserType.INDIVIDUAL && newPlan.IdUserType == UserType.INDIVIDUAL)
                         {
                             billingCreditId = await BuyCredits(currentPlan, newPlan, user, agreementInformation, promotion, payment);
                         }
@@ -596,8 +596,8 @@ namespace Doppler.BillingUser.Controllers
 
             switch (billingCreditType)
             {
-                case BillingCreditTypeEnum.UpgradeRequest:
-                    isUpgradeApproved = (user.PaymentMethod == PaymentMethod.CC || !BillingHelper.IsUpgradePending(user, promotion, payment));
+                case BillingCreditType.UpgradeRequest:
+                    isUpgradeApproved = (user.PaymentMethod == PaymentMethodTypes.CC || !BillingHelper.IsUpgradePending(user, promotion, payment));
 
                     if (newPlan.IdUserType == UserType.INDIVIDUAL)
                     {
@@ -618,9 +618,9 @@ namespace Doppler.BillingUser.Controllers
                 case BillingCreditType.UpgradeBetweenSubscribers:
                     await _emailTemplatesService.SendNotificationForUpdatePlan(accountname, userInformation, currentPlan, newPlan, user, promotion, promocode, discountId, planDiscountInformation, amountDetails);
                     return;
-                case BillingCreditTypeEnum.Credit_Buyed_CC:
-                case BillingCreditTypeEnum.Credit_Request:
-                    isUpgradeApproved = (user.PaymentMethod == PaymentMethodEnum.CC || !BillingHelper.IsUpgradePending(user, promotion, payment));
+                case BillingCreditType.CreditBuyedCC:
+                case BillingCreditType.CreditRequest:
+                    isUpgradeApproved = (user.PaymentMethod == PaymentMethodTypes.CC || !BillingHelper.IsUpgradePending(user, promotion, payment));
                     await _emailTemplatesService.SendNotificationForCredits(accountname, userInformation, newPlan, user, partialBalance, promotion, promocode, !isUpgradeApproved);
                     return;
                 default:
@@ -794,7 +794,7 @@ namespace Doppler.BillingUser.Controllers
         private async Task<int> BuyCredits(UserTypePlanInformation currentPlan, UserTypePlanInformation newPlan, UserBillingInformation user, AgreementInformation agreementInformation, Promotion promotion, CreditCardPayment payment)
         {
             var currentBillingCredit = await _billingRepository.GetBillingCredit(user.IdCurrentBillingCredit);
-            var billingCreditType = user.PaymentMethod == PaymentMethodEnum.CC ? BillingCreditTypeEnum.Credit_Buyed_CC : BillingCreditTypeEnum.Credit_Request;
+            var billingCreditType = user.PaymentMethod == PaymentMethodTypes.CC ? BillingCreditType.CreditBuyedCC : BillingCreditType.CreditRequest;
             var billingCreditMapper = GetBillingCreditMapper(user.PaymentMethod);
             var billingCreditAgreement = await billingCreditMapper.MapToBillingCreditAgreement(agreementInformation, user, newPlan, promotion, payment, billingCreditType);
             billingCreditAgreement.BillingCredit.DiscountPlanFeeAdmin = currentBillingCredit.DiscountPlanFeeAdmin;

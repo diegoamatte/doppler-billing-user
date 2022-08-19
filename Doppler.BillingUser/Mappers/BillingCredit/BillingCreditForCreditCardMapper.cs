@@ -44,7 +44,7 @@ namespace Doppler.BillingUser.Mappers.BillingCredit
                 IdPromotion = promotion?.IdPromotion
             };
 
-            DateTime now = DateTime.UtcNow;
+            var now = DateTime.UtcNow;
             buyCreditAgreement.BillingCredit = new BillingCreditModel()
             {
                 Date = now,
