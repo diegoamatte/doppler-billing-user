@@ -15,6 +15,7 @@ namespace Doppler.BillingUser.Test.Controllers
     {
         [AllowAnonymous]
         [HttpGet("/hello/anonymous")]
+#pragma warning disable CA1822 // Mark members as static
         public string GetForAnonymous() => "Hello anonymous!";
 
         [HttpGet("/hello/valid-token")]
@@ -31,5 +32,6 @@ namespace Doppler.BillingUser.Test.Controllers
         [Authorize(Policies.OwnResourceOrSuperUser)]
         [HttpGet("/accounts/{accountname}/hello")]
         public string GetForAccountByName(string accountname) => $"Hello! \"you\" that have access to the account with accountname '{accountname}'";
+#pragma warning restore CA1822 // Mark members as static
     }
 }
