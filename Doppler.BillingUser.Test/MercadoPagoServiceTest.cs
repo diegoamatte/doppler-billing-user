@@ -24,6 +24,9 @@ namespace Doppler.BillingUser.Test
         private readonly decimal _total;
         private readonly CreditCard _creditCard;
         private readonly PaymentRequestDto _paymentRequestDto;
+        private readonly Mock<IEncryptionService> _encryptionServiceMock;
+        private readonly Mock<IOptions<MercadoPagoSettings>> _mercadoPagoSettingsMock;
+
         public MercadoPagoServiceTest()
         {
             _accountname = "test@example.com";
@@ -67,6 +70,18 @@ namespace Doppler.BillingUser.Test
                     ExpirationYear = "2023"
                 }
             };
+
+            _encryptionServiceMock = new Mock<IEncryptionService>();
+            _encryptionServiceMock.Setup(es => es.DecryptAES256("EncryptedHolderName")).Returns("HolderName");
+            _encryptionServiceMock.Setup(es => es.DecryptAES256("EncryptedNumber")).Returns("Number");
+            _encryptionServiceMock.Setup(es => es.DecryptAES256("EncryptedCode")).Returns("Code");
+
+            _mercadoPagoSettingsMock = new Mock<IOptions<MercadoPagoSettings>>();
+            _mercadoPagoSettingsMock.Setup(x => x.Value)
+                .Returns(new MercadoPagoSettings
+                {
+                    MercadoPagoApiUrlTemplate = "http://localhost:5000/doppler-mercadopago/accounts/{accountname}/payment/{id}"
+                });
         }
 
         [Fact]
@@ -76,7 +91,7 @@ namespace Doppler.BillingUser.Test
             var expectedUrl = $"http://localhost:5000/doppler-mercadopago/accounts/test%40example.com/payment/{_paymentId}";
 
             var service = new MercadoPagoService(
-                GetMercadoPagoSettingsMock().Object,
+                _mercadoPagoSettingsMock.Object,
                 Mock.Of<IJwtTokenGenerator>(),
                 new DefaultFlurlClientFactory(),
                 Mock.Of<ILogger<MercadoPagoService>>(),
@@ -106,7 +121,7 @@ namespace Doppler.BillingUser.Test
         {
             // Arrange
             var service = new MercadoPagoService(
-                GetMercadoPagoSettingsMock().Object,
+                _mercadoPagoSettingsMock.Object,
                 Mock.Of<IJwtTokenGenerator>(),
                 new DefaultFlurlClientFactory(),
                 Mock.Of<ILogger<MercadoPagoService>>(),
@@ -130,11 +145,11 @@ namespace Doppler.BillingUser.Test
             var expectedUrl = "http://localhost:5000/doppler-mercadopago/accounts/test%40example.com/payment/";
 
             var service = new MercadoPagoService(
-                GetMercadoPagoSettingsMock().Object,
+                _mercadoPagoSettingsMock.Object,
                 Mock.Of<IJwtTokenGenerator>(),
                 new DefaultFlurlClientFactory(),
                 Mock.Of<ILogger<MercadoPagoService>>(),
-                GetEncryptionServiceMock().Object,
+                _encryptionServiceMock.Object,
                 Mock.Of<IEmailTemplatesService>());
 
             using var httpTest = new HttpTest();
@@ -165,11 +180,11 @@ namespace Doppler.BillingUser.Test
             var expectedUrl = "http://localhost:5000/doppler-mercadopago/accounts/test%40example.com/payment/";
 
             var service = new MercadoPagoService(
-                GetMercadoPagoSettingsMock().Object,
+                _mercadoPagoSettingsMock.Object,
                 Mock.Of<IJwtTokenGenerator>(),
                 new DefaultFlurlClientFactory(),
                 Mock.Of<ILogger<MercadoPagoService>>(),
-                GetEncryptionServiceMock().Object,
+                _encryptionServiceMock.Object,
                 Mock.Of<IEmailTemplatesService>());
 
             using var httpTest = new HttpTest();
@@ -199,7 +214,7 @@ namespace Doppler.BillingUser.Test
             var expectedUrl = "http://localhost:5000/doppler-mercadopago/accounts/test%40example.com/payment/";
 
             var service = new MercadoPagoService(
-                GetMercadoPagoSettingsMock().Object,
+                _mercadoPagoSettingsMock.Object,
                 Mock.Of<IJwtTokenGenerator>(),
                 new DefaultFlurlClientFactory(),
                 Mock.Of<ILogger<MercadoPagoService>>(),
@@ -221,28 +236,6 @@ namespace Doppler.BillingUser.Test
             httpTest
                 .ShouldHaveCalled(expectedUrl)
                 .WithVerb(HttpMethod.Post);
-        }
-
-        private Mock<IOptions<MercadoPagoSettings>> GetMercadoPagoSettingsMock()
-        {
-            var mercadoPagoSettingsMock = new Mock<IOptions<MercadoPagoSettings>>();
-            mercadoPagoSettingsMock.Setup(x => x.Value)
-                .Returns(new MercadoPagoSettings
-                {
-                    MercadoPagoApiUrlTemplate = "http://localhost:5000/doppler-mercadopago/accounts/{accountname}/payment/{id}"
-                });
-
-            return mercadoPagoSettingsMock;
-        }
-
-        private Mock<IEncryptionService> GetEncryptionServiceMock()
-        {
-            var encryptionServiceMock = new Mock<IEncryptionService>();
-            encryptionServiceMock.Setup(es => es.DecryptAES256("EncryptedHolderName")).Returns("HolderName");
-            encryptionServiceMock.Setup(es => es.DecryptAES256("EncryptedNumber")).Returns("Number");
-            encryptionServiceMock.Setup(es => es.DecryptAES256("EncryptedCode")).Returns("Code");
-
-            return encryptionServiceMock;
         }
     }
 }

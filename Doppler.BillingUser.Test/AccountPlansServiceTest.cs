@@ -15,6 +15,18 @@ namespace Doppler.BillingUser.Test
 {
     public class AccountPlansServiceTest
     {
+        private readonly Mock<IOptions<AccountPlansSettings>> _accountPlansSettingsMock;
+
+        public AccountPlansServiceTest()
+        {
+            _accountPlansSettingsMock = new Mock<IOptions<AccountPlansSettings>>();
+            _accountPlansSettingsMock.Setup(x => x.Value)
+                .Returns(new AccountPlansSettings
+                {
+                    CalculateUrlTemplate = "https://localhost:5000/accounts/{accountname}/newplan/{planId}/calculate?discountId={discountId}"
+                });
+        }
+
         [Fact]
         public async Task Get_account_plans_total_return_true_when_total_amount_is_equal_that_current_total_agreement()
         {
@@ -29,7 +41,7 @@ namespace Doppler.BillingUser.Test
 
             var factory = new PerBaseUrlFlurlClientFactory();
             var service = new AccountPlansService(
-                GetAccountPlansSettingsMock().Object,
+                _accountPlansSettingsMock.Object,
                 Mock.Of<ILogger<AccountPlansService>>(),
                 factory,
                 Mock.Of<ICurrentRequestApiTokenGetter>());
@@ -63,7 +75,7 @@ namespace Doppler.BillingUser.Test
 
             var factory = new PerBaseUrlFlurlClientFactory();
             var service = new AccountPlansService(
-                GetAccountPlansSettingsMock().Object,
+                _accountPlansSettingsMock.Object,
                 Mock.Of<ILogger<AccountPlansService>>(),
                 factory,
                 Mock.Of<ICurrentRequestApiTokenGetter>());
@@ -97,7 +109,7 @@ namespace Doppler.BillingUser.Test
 
             var factory = new PerBaseUrlFlurlClientFactory();
             var service = new AccountPlansService(
-                GetAccountPlansSettingsMock().Object,
+                _accountPlansSettingsMock.Object,
                 Mock.Of<ILogger<AccountPlansService>>(),
                 factory,
                 Mock.Of<ICurrentRequestApiTokenGetter>());
@@ -111,18 +123,6 @@ namespace Doppler.BillingUser.Test
             await Assert.ThrowsAsync<FlurlHttpException>(async () =>
                 // Act
                 await service.IsValidTotal(accountname, agreement));
-        }
-
-        private Mock<IOptions<AccountPlansSettings>> GetAccountPlansSettingsMock()
-        {
-            var accountPlansSettingsMock = new Mock<IOptions<AccountPlansSettings>>();
-            accountPlansSettingsMock.Setup(x => x.Value)
-                .Returns(new AccountPlansSettings
-                {
-                    CalculateUrlTemplate = "https://localhost:5000/accounts/{accountname}/newplan/{planId}/calculate?discountId={discountId}"
-                });
-
-            return accountPlansSettingsMock;
         }
     }
 }
