@@ -80,7 +80,7 @@ namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
                 if (payment.Status is MercadoPagoPaymentStatus.Rejected or
                     MercadoPagoPaymentStatus.Cancelled or
                     MercadoPagoPaymentStatus.Refunded or
-                    MercadoPagoPaymentStatus.Charged_Back)
+                    MercadoPagoPaymentStatus.ChargedBack)
                 {
                     var errorCode = PaymentErrorCode.DeclinedPaymentTransaction;
                     var errorMessage = payment.StatusDetail;
@@ -91,7 +91,7 @@ namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
                     throw new DopplerApplicationException(errorCode, errorMessage);
                 }
 
-                if (payment.Status == MercadoPagoPaymentStatus.In_Process)
+                if (payment.Status == MercadoPagoPaymentStatus.InProcess)
                 {
                     var errorCode = payment.Status.ToString();
                     var errorMessage = string.Format(CultureInfo.InvariantCulture, "payment is in process, MercadopagoStatus: {0}, MercadopagoStatusDetail:{1}", payment.Status, payment.StatusDetail);

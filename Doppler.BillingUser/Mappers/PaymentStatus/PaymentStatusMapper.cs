@@ -9,7 +9,7 @@ namespace Doppler.BillingUser.Mappers.PaymentStatus
             return status switch
             {
                 MercadoPagoPaymentStatus.Approved or MercadoPagoPaymentStatus.Authorized => Enums.PaymentStatus.Approved,
-                MercadoPagoPaymentStatus.In_Mediation or MercadoPagoPaymentStatus.In_Process or MercadoPagoPaymentStatus.Pending => Enums.PaymentStatus.Pending,
+                MercadoPagoPaymentStatus.InMediation or MercadoPagoPaymentStatus.InProcess or MercadoPagoPaymentStatus.Pending => Enums.PaymentStatus.Pending,
                 _ => Enums.PaymentStatus.DeclinedPaymentTransaction,
             };
         }

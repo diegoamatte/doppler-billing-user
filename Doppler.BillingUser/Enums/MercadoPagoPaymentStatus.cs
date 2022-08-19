@@ -1,3 +1,5 @@
+using System.Runtime.Serialization;
+
 namespace Doppler.BillingUser.Enums
 {
     public enum MercadoPagoPaymentStatus
@@ -20,12 +22,14 @@ namespace Doppler.BillingUser.Enums
         /// <summary>
         /// Payment is being reviewed.
         /// </summary>
-        In_Process,
+        [EnumMember(Value = "In_Process")]
+        InProcess,
 
         /// <summary>
         /// Users have initiated a dispute.
         /// </summary>
-        In_Mediation,
+        [EnumMember(Value = "In_Mediation")]
+        InMediation,
 
         /// <summary>
         /// Payment was rejected. The user may retry payment.
@@ -46,6 +50,7 @@ namespace Doppler.BillingUser.Enums
         /// <summary>
         /// Was made a chargeback in the buyer’s credit card.
         /// </summary>
-        Charged_Back
+        [EnumMember(Value = "Charged_Back")]
+        ChargedBack
     }
 }

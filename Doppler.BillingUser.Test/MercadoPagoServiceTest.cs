@@ -123,7 +123,7 @@ namespace Doppler.BillingUser.Test
 
         [Theory]
         [InlineData(MercadoPagoPaymentStatus.Approved)]
-        [InlineData(MercadoPagoPaymentStatus.In_Process)]
+        [InlineData(MercadoPagoPaymentStatus.InProcess)]
         public async void Create_payment_returns_payment_when_status_is_in_process_or_approved(MercadoPagoPaymentStatus mercadoPagoPaymentStatus)
         {
             // Arrange
@@ -158,7 +158,7 @@ namespace Doppler.BillingUser.Test
         [InlineData(MercadoPagoPaymentStatus.Rejected)]
         [InlineData(MercadoPagoPaymentStatus.Refunded)]
         [InlineData(MercadoPagoPaymentStatus.Cancelled)]
-        [InlineData(MercadoPagoPaymentStatus.Charged_Back)]
+        [InlineData(MercadoPagoPaymentStatus.ChargedBack)]
         public async void Create_payment_throws_doppler_application_exception_with_error_code_DeclinedPaymentTransaction_when_payment_status_is_not_in_process_or_approved(MercadoPagoPaymentStatus mercadoPagoPaymentStatus)
         {
             // Arrange
