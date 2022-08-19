@@ -101,7 +101,9 @@ namespace Doppler.BillingUser.Test
             Assert.Equal(expectedContent, responseContent);
         }
 
+#pragma warning disable xUnit1004 // Test methods should not be skipped
         [Fact(Skip = "Mock dapper with null is not working https://github.com/UnoSD/Moq.Dapper/issues/51")]
+#pragma warning restore xUnit1004 // Test methods should not be skipped
         public async Task GET_Invoice_email_recipients_should_return_not_found_when_user_is_invalid()
         {
             // Arrange
