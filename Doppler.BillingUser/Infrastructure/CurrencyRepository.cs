@@ -30,7 +30,7 @@ FROM
 WHERE
     ((R.IdCurrencyTypeFrom = @idCurrencyTypeFrom AND R.IdCurrencyTypeTo = idCurrencyTypeTo) OR
     (R.IdCurrencyTypeFrom = idCurrencyTypeTo AND R.IdCurrencyTypeTo = @idCurrencyTypeFrom)) AND
-    R.UTCFromDate <= @date
+    R.UTCFromDate <= @currencyDate
 ORDER BY R.UTCFromDate DESC",
                 new
                 {

@@ -57,7 +57,7 @@ FROM
     LEFT JOIN [Country] CO ON S.IdCountry = CO.IdCountry
 WHERE
     U.Email = @email",
-                new { accountName });
+                new { @email = accountName });
             return results.FirstOrDefault();
         }
 
