@@ -1,16 +1,16 @@
-using Dapper;
-using Doppler.BillingUser.Model;
-using Doppler.BillingUser.Test.Utils;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
-using Moq;
-using Moq.Dapper;
 using System.Data.Common;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Dapper;
 using Doppler.BillingUser.Encryption;
+using Doppler.BillingUser.Model;
+using Doppler.BillingUser.Test.Utils;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
+using Moq.Dapper;
 using Xunit;
 
 namespace Doppler.BillingUser.Test

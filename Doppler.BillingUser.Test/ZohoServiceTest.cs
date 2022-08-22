@@ -1,3 +1,5 @@
+using System.Net.Http;
+using System.Threading.Tasks;
 using Doppler.BillingUser.ExternalServices.Zoho;
 using Flurl.Http.Configuration;
 using Flurl.Http.Testing;
@@ -5,8 +7,6 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Doppler.BillingUser.Test

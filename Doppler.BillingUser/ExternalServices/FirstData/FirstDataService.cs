@@ -1,6 +1,6 @@
+using System.Globalization;
 using Doppler.BillingUser.Encryption;
 using Microsoft.Extensions.Options;
-using System.Globalization;
 
 namespace Doppler.BillingUser.ExternalServices.FirstData
 {

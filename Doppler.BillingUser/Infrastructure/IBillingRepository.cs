@@ -1,7 +1,7 @@
+using System.Threading.Tasks;
 using Doppler.BillingUser.Enums;
 using Doppler.BillingUser.ExternalServices.FirstData;
 using Doppler.BillingUser.Model;
-using System.Threading.Tasks;
 
 namespace Doppler.BillingUser.Infrastructure
 {

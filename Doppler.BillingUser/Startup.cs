@@ -1,27 +1,27 @@
+using System;
+using System.IdentityModel.Tokens.Jwt;
 using Doppler.BillingUser.Authorization;
 using Doppler.BillingUser.Encryption;
+using Doppler.BillingUser.ExternalServices.AccountPlansApi;
+using Doppler.BillingUser.ExternalServices.EmailSender;
 using Doppler.BillingUser.ExternalServices.FirstData;
+using Doppler.BillingUser.ExternalServices.MercadoPagoApi;
 using Doppler.BillingUser.ExternalServices.Sap;
+using Doppler.BillingUser.ExternalServices.Slack;
+using Doppler.BillingUser.ExternalServices.Zoho;
 using Doppler.BillingUser.Infrastructure;
+using Doppler.BillingUser.Mappers.PaymentStatus;
 using Doppler.BillingUser.Model;
+using Doppler.BillingUser.Services;
 using Doppler.BillingUser.Validators;
 using FluentValidation;
+using Flurl.Http.Configuration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
-using System;
-using System.IdentityModel.Tokens.Jwt;
-using Doppler.BillingUser.ExternalServices.AccountPlansApi;
-using Doppler.BillingUser.ExternalServices.EmailSender;
-using Doppler.BillingUser.ExternalServices.Slack;
-using Flurl.Http.Configuration;
-using Doppler.BillingUser.ExternalServices.Zoho;
-using Doppler.BillingUser.Services;
-using Doppler.BillingUser.ExternalServices.MercadoPagoApi;
-using Doppler.BillingUser.Mappers.PaymentStatus;
 
 namespace Doppler.BillingUser
 {

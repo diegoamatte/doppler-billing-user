@@ -1,7 +1,7 @@
+using System.Data.Common;
 using Doppler.BillingUser.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using System.Data.Common;
 
 namespace Doppler.BillingUser.Test.Utils
 {

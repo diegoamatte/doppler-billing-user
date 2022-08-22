@@ -1,3 +1,13 @@
+using System;
+using System.Collections.Generic;
+using System.Data.Common;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Dapper;
 using Doppler.BillingUser.Encryption;
 using Doppler.BillingUser.Enums;
@@ -15,16 +25,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Dapper;
-using System;
-using System.Collections.Generic;
-using System.Data.Common;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Doppler.BillingUser.Test

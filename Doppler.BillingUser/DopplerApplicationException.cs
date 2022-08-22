@@ -1,5 +1,5 @@
-using Doppler.BillingUser.Enums;
 using System;
+using Doppler.BillingUser.Enums;
 
 namespace Doppler.BillingUser
 {

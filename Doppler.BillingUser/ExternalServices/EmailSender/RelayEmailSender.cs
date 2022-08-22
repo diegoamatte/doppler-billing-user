@@ -1,12 +1,12 @@
-using Flurl.Http;
-using Flurl.Http.Configuration;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Flurl.Http;
+using Flurl.Http.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Tavis.UriTemplates;
 
 namespace Doppler.BillingUser.ExternalServices.EmailSender

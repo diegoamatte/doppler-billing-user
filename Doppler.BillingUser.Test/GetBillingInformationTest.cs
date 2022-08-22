@@ -1,3 +1,8 @@
+using System.Data.Common;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
 using Dapper;
 using Doppler.BillingUser.Encryption;
 using Doppler.BillingUser.Model;
@@ -7,11 +12,6 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Moq.Dapper;
-using System.Data.Common;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 

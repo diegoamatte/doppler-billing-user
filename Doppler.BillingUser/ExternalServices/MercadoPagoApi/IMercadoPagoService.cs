@@ -1,5 +1,5 @@
-using Doppler.BillingUser.ExternalServices.FirstData;
 using System.Threading.Tasks;
+using Doppler.BillingUser.ExternalServices.FirstData;
 
 namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi
 {

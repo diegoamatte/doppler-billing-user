@@ -1,8 +1,3 @@
-using Doppler.BillingUser.Test.Controllers;
-using Microsoft.AspNetCore.Mvc.ApplicationParts;
-using Microsoft.AspNetCore.Mvc.Controllers;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -13,12 +8,17 @@ using System.Threading.Tasks;
 using Dapper;
 using Doppler.BillingUser.Encryption;
 using Doppler.BillingUser.Model;
+using Doppler.BillingUser.Test.Controllers;
 using Doppler.BillingUser.Test.Utils;
+using Microsoft.AspNetCore.Mvc.ApplicationParts;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using Moq.Dapper;
 using Xunit;
 using Xunit.Abstractions;
-using Moq.Dapper;
 
 namespace Doppler.BillingUser.Test
 {

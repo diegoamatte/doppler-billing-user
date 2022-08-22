@@ -1,11 +1,11 @@
-using Doppler.BillingUser.Authorization;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Doppler.BillingUser.Authorization;
 using Flurl.Http;
 using Flurl.Http.Configuration;
-using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Doppler.BillingUser.ExternalServices.Sap
 {

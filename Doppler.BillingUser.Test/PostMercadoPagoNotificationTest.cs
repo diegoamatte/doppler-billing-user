@@ -1,3 +1,8 @@
+using System;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Threading.Tasks;
 using Doppler.BillingUser.Enums;
 using Doppler.BillingUser.ExternalServices.MercadoPagoApi;
 using Doppler.BillingUser.Infrastructure;
@@ -6,11 +11,6 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using System;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Doppler.BillingUser.Test

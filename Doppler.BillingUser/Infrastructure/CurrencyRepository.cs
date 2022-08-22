@@ -1,7 +1,7 @@
-using Dapper;
-using Doppler.BillingUser.Model;
 using System;
 using System.Threading.Tasks;
+using Dapper;
+using Doppler.BillingUser.Model;
 
 namespace Doppler.BillingUser.Infrastructure
 {

@@ -1,10 +1,10 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Cryptography;
 using Doppler.BillingUser.Authorization;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
-using System.Security.Cryptography;
 using Xunit;
 
 namespace Doppler.BillingUser.Test

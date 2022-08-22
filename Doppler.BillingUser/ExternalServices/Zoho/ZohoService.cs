@@ -1,8 +1,8 @@
+using System.Threading.Tasks;
 using Doppler.BillingUser.ExternalServices.Zoho.API;
 using Flurl.Http;
 using Flurl.Http.Configuration;
 using Microsoft.Extensions.Options;
-using System.Threading.Tasks;
 using Tavis.UriTemplates;
 
 namespace Doppler.BillingUser.ExternalServices.Zoho

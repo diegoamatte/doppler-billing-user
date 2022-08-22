@@ -1,10 +1,10 @@
+using System;
+using System.Threading.Tasks;
 using Doppler.BillingUser.Enums;
 using Doppler.BillingUser.ExternalServices.FirstData;
 using Doppler.BillingUser.Model;
 using Doppler.BillingUser.Services;
 using Doppler.BillingUser.Utils;
-using System;
-using System.Threading.Tasks;
 
 namespace Doppler.BillingUser.Mappers
 {

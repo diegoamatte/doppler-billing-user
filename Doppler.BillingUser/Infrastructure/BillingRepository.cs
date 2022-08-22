@@ -1,3 +1,10 @@
+using System;
+using System.Data;
+using System.Data.SqlClient;
+using System.Globalization;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Dapper;
 using Doppler.BillingUser.Encryption;
 using Doppler.BillingUser.Enums;
@@ -6,13 +13,6 @@ using Doppler.BillingUser.ExternalServices.Sap;
 using Doppler.BillingUser.Model;
 using Doppler.BillingUser.Utils;
 using Newtonsoft.Json;
-using System;
-using System.Data;
-using System.Data.SqlClient;
-using System.Globalization;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Doppler.BillingUser.Infrastructure
 {
@@ -159,9 +159,9 @@ WHERE
             return user is null
                 ? null
                 : new EmailRecipients
-            {
-                Recipients = string.IsNullOrEmpty(user.BillingEmails) ? Array.Empty<string>() : user.BillingEmails.Replace(" ", string.Empty).Split(',')
-            };
+                {
+                    Recipients = string.IsNullOrEmpty(user.BillingEmails) ? Array.Empty<string>() : user.BillingEmails.Replace(" ", string.Empty).Split(',')
+                };
         }
 
         public async Task UpdateInvoiceRecipients(string accountName, string[] emailRecipients, int planId)

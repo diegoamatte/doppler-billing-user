@@ -1,8 +1,8 @@
+using System;
+using System.Threading.Tasks;
 using Dapper;
 using Doppler.BillingUser.ExternalServices.FirstData;
 using Doppler.BillingUser.Model;
-using System;
-using System.Threading.Tasks;
 
 namespace Doppler.BillingUser.Infrastructure
 {

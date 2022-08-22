@@ -1,13 +1,13 @@
+using System.Net.Http;
+using System.Threading.Tasks;
 using Doppler.BillingUser.Authorization;
 using Doppler.BillingUser.ExternalServices.Sap;
+using Flurl.Http.Configuration;
+using Flurl.Http.Testing;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Flurl.Http.Configuration;
-using Flurl.Http.Testing;
 using Xunit;
 
 namespace Doppler.BillingUser.Test

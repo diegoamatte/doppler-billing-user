@@ -1,8 +1,3 @@
-using Doppler.BillingUser.Encryption;
-using Doppler.BillingUser.Enums;
-using Doppler.BillingUser.ExternalServices.E4;
-using Doppler.BillingUser.Services;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -15,6 +10,11 @@ using System.ServiceModel.Dispatcher;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using Doppler.BillingUser.Encryption;
+using Doppler.BillingUser.Enums;
+using Doppler.BillingUser.ExternalServices.E4;
+using Doppler.BillingUser.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Doppler.BillingUser.ExternalServices.FirstData
 {

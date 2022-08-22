@@ -1,10 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Text.Json;
 using Doppler.BillingUser.Infrastructure;
 using Doppler.BillingUser.Model;
 using Doppler.BillingUser.Services;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Text.Json;
 using Xunit;
 
 namespace Doppler.BillingUser.Test

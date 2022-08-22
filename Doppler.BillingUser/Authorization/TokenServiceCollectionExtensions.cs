@@ -1,9 +1,9 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Security.Cryptography;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Doppler.BillingUser.Authorization
 {

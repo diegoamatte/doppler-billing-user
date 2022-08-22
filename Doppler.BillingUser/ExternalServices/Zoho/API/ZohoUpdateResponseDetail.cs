@@ -1,5 +1,5 @@
-using Newtonsoft.Json;
 using System;
+using Newtonsoft.Json;
 
 namespace Doppler.BillingUser.ExternalServices.Zoho.API
 {

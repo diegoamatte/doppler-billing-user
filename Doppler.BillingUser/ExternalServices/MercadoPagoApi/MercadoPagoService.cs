@@ -1,3 +1,6 @@
+using System;
+using System.Globalization;
+using System.Threading.Tasks;
 using Doppler.BillingUser.Authorization;
 using Doppler.BillingUser.Encryption;
 using Doppler.BillingUser.Enums;
@@ -7,9 +10,6 @@ using Flurl.Http;
 using Flurl.Http.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System;
-using System.Globalization;
-using System.Threading.Tasks;
 using Tavis.UriTemplates;
 
 namespace Doppler.BillingUser.ExternalServices.MercadoPagoApi

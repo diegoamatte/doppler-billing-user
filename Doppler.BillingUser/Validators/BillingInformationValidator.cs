@@ -1,5 +1,5 @@
-using FluentValidation;
 using Doppler.BillingUser.Model;
+using FluentValidation;
 
 namespace Doppler.BillingUser.Validators
 {

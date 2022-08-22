@@ -1,7 +1,7 @@
-using Microsoft.Extensions.Options;
 using System.Data;
 using System.Data.SqlClient;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 
 namespace Doppler.BillingUser.Infrastructure
 {

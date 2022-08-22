@@ -1,11 +1,11 @@
-using Doppler.BillingUser.DopplerSecurity;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Doppler.BillingUser.DopplerSecurity;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Doppler.BillingUser.Test.Controllers
 {

@@ -1,3 +1,5 @@
+using System.Net.Http;
+using System.Threading.Tasks;
 using Doppler.BillingUser.Authorization;
 using Doppler.BillingUser.Encryption;
 using Doppler.BillingUser.Enums;
@@ -10,8 +12,6 @@ using Flurl.Http.Testing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Doppler.BillingUser.Test

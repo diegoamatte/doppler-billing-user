@@ -1,5 +1,5 @@
-using Microsoft.IdentityModel.Tokens;
 using System.Collections.Generic;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Doppler.BillingUser.DopplerSecurity
 {

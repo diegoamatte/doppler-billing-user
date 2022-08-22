@@ -1,10 +1,10 @@
+using System;
+using System.Threading.Tasks;
 using Doppler.BillingUser.Enums;
 using Doppler.BillingUser.ExternalServices.EmailSender;
 using Doppler.BillingUser.Model;
 using Doppler.BillingUser.Utils;
 using Microsoft.Extensions.Options;
-using System;
-using System.Threading.Tasks;
 
 namespace Doppler.BillingUser.Services
 {

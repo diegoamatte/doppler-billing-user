@@ -1,12 +1,12 @@
+using System;
+using System.Globalization;
+using System.Threading.Tasks;
 using Doppler.BillingUser.Encryption;
 using Doppler.BillingUser.Enums;
 using Doppler.BillingUser.Infrastructure;
 using Doppler.BillingUser.Model;
 using Doppler.BillingUser.Services;
 using Doppler.BillingUser.Utils;
-using System;
-using System.Globalization;
-using System.Threading.Tasks;
 
 namespace Doppler.BillingUser.Mappers.BillingCredit
 {

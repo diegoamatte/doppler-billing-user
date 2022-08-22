@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Threading.Tasks;
 using Doppler.BillingUser.Enums;
 using Doppler.BillingUser.ExternalServices.MercadoPagoApi;
 using Doppler.BillingUser.Infrastructure;
@@ -6,8 +8,6 @@ using Doppler.BillingUser.Mappers.PaymentStatus;
 using Doppler.BillingUser.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using System.Globalization;
-using System.Threading.Tasks;
 
 namespace Doppler.BillingUser.Controllers
 {

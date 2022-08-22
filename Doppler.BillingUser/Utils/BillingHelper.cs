@@ -1,10 +1,10 @@
+using System;
+using System.Linq;
 using Doppler.BillingUser.Enums;
 using Doppler.BillingUser.ExternalServices.Sap;
 using Doppler.BillingUser.ExternalServices.Zoho;
 using Doppler.BillingUser.ExternalServices.Zoho.API;
 using Doppler.BillingUser.Model;
-using System;
-using System.Linq;
 
 namespace Doppler.BillingUser.Utils
 {

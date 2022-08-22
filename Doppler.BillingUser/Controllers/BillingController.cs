@@ -1,33 +1,33 @@
 using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Threading.Tasks;
 using Doppler.BillingUser.DopplerSecurity;
-using Doppler.BillingUser.Model;
+using Doppler.BillingUser.Encryption;
+using Doppler.BillingUser.Enums;
+using Doppler.BillingUser.Extensions;
+using Doppler.BillingUser.ExternalServices.AccountPlansApi;
+using Doppler.BillingUser.ExternalServices.EmailSender;
+using Doppler.BillingUser.ExternalServices.FirstData;
+using Doppler.BillingUser.ExternalServices.MercadoPagoApi;
+using Doppler.BillingUser.ExternalServices.Sap;
+using Doppler.BillingUser.ExternalServices.Slack;
+using Doppler.BillingUser.ExternalServices.Zoho;
+using Doppler.BillingUser.ExternalServices.Zoho.API;
 using Doppler.BillingUser.Infrastructure;
+using Doppler.BillingUser.Mappers;
+using Doppler.BillingUser.Mappers.BillingCredit;
+using Doppler.BillingUser.Mappers.PaymentStatus;
+using Doppler.BillingUser.Model;
+using Doppler.BillingUser.Services;
+using Doppler.BillingUser.Utils;
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using System.Threading.Tasks;
-using Doppler.BillingUser.ExternalServices.AccountPlansApi;
-using FluentValidation;
-using Doppler.BillingUser.Enums;
-using Doppler.BillingUser.ExternalServices.FirstData;
-using Doppler.BillingUser.ExternalServices.Sap;
-using Doppler.BillingUser.Encryption;
-using System.Linq;
-using Doppler.BillingUser.ExternalServices.Slack;
 using Microsoft.Extensions.Options;
-using Doppler.BillingUser.ExternalServices.EmailSender;
-using Doppler.BillingUser.Utils;
-using Doppler.BillingUser.ExternalServices.Zoho;
-using Doppler.BillingUser.ExternalServices.Zoho.API;
 using Newtonsoft.Json;
-using System.Collections.Generic;
-using Doppler.BillingUser.Services;
-using Doppler.BillingUser.Extensions;
-using Doppler.BillingUser.Mappers;
-using Doppler.BillingUser.Mappers.BillingCredit;
-using Doppler.BillingUser.ExternalServices.MercadoPagoApi;
-using Doppler.BillingUser.Mappers.PaymentStatus;
-using System.Globalization;
 
 namespace Doppler.BillingUser.Controllers
 {
@@ -101,7 +101,7 @@ namespace Doppler.BillingUser.Controllers
         [LoggerMessage(3, LogLevel.Error, "Failed at updating payment method for user {accountname}")]
         partial void LogErrorFailedUpdatingPaymentMethodForUser(string accountname);
 
-        [LoggerMessage(4, LogLevel.Error, "Failed at updating payment method for user {accountname} with exception {message}" )]
+        [LoggerMessage(4, LogLevel.Error, "Failed at updating payment method for user {accountname} with exception {message}")]
         partial void LogErrorFailedUpdatingPaymentMethodWithMessage(string accountname, string message);
 
         [LoggerMessage(5, LogLevel.Error, "Failed at updating lead from zoho {accountname} with exception {message}")]
